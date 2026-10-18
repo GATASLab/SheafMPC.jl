@@ -1,5 +1,164 @@
 # SheafMPC.jl
 
+The open-source companion of "Reduced-Order Models and Condensation of
+Multi-Agent MPC by Sheaf Pushforward" (Kadosh, Samuelson and Fairbanks).
+
+Model predictive control of a fleet solves, at every sampling instant, one
+program whose size grows with the number of agents times the horizon. The
+package poses it as a program on a cellular sheaf over the time-expanded
+graph (formation preferences are soft edges, dynamics are hard edges) and
+reduces it by sheaf pushforward along a quotient of that graph:
+
+* in time, blocks of instants give partial or full condensing, which is exact;
+* over agents, teams give reduced-order models: each team is one agent
+  confined to its agreement subspace, and every lifted plan is one each
+  vehicle can execute;
+* reductions compose (teams of teams) and the two kinds commute;
+* the optimality gap of a reduction is bounded from the reduced solve (above)
+  and the fine solve (below), and for quadratic programs a gap kernel gives the
+  gap of every team structure at once, which drives a team selector;
+* a receding-horizon controller keeps the fibers, the reduced QP's structure
+  and every factorization across steps, so a step costs a few sparse products
+  plus a warm solve;
+* distributed MPC by consensus ADMM runs over agents or over teams of the
+  pushforward, each agent or team solving its own small QP.
+
+The solver underneath is an ADMM conic QP solver for sheaf programs (below).
+
+## Example
+
+```julia
+using SheafMPC
+
+sc = GridScenario(rows = 8, cols = 8, H = 10, coherence = :agents)   # the paper's grid fleet
+fl = fleet(sc)                                    # 64 agents, quadrotors and ground vehicles
+refs, term = references(sc, 0.0)                  # tracking references over the horizon
+fp = FleetProgram(fl; x0 = formation_start(sc), references = refs, terminal = term)
+
+fine = solve(fp)                                  # the fine MPC program
+R = reduce(fp, Teams(row_teams(sc)) ⊠ partial_condensing(5))  # rows as teams, blocks of 5 instants
+red = solve(R)
+x = lift(R, red)                                  # a fine plan every agent can execute
+b = gap_bounds(fp, R, red; fine_solution = fine)  # b.lower <= b.gap <= b.upper
+
+K = gap_kernel(fp, fine.x)                        # the gap of every team structure, in closed form
+sel = select_teams(K; k = 8)                      # 8 teams chosen by their gap
+gap(K, sel.teams), gap(K, row_teams(sc))
+
+ctrl = MPCController(fl, Teams(sel.teams))        # receding horizon on the reduced program
+let x = formation_start(sc)
+    for k in 0:29
+        r, rf = references(sc, k * sc.h)
+        info = step!(ctrl, x, r; terminal = rf)   # info.u, info.gap_upper, info.t_solve, ...
+        x = plant_step(fl, x, info.u)             # the nominal plant
+    end
+end
+```
+
+`examples/grid_fleet.jl` runs the paper's grid-fleet scenario end to end
+(levels of reduction, certificates, the selector, the closed loop and its
+timing); `examples/custom_fleet.jl` builds a fleet from its matrices.
+
+## Concepts
+
+**The program.** Agent `i` has state `x_{i,t}`, input `u_{i,t}` and affine
+dynamics `x_{i,t+1} = A_{i,t} x_{i,t} + B_{i,t} u_{i,t} + g_{i,t}`. Its stage
+cost tracks references, its inputs lie in a convex set (a ball or a box), its
+states in polyhedra. Agents joined by a formation edge prefer
+`C_j x_j - C_i x_i = o_ij` with a weight. The time-expanded graph has one
+vertex per agent and instant; its vertex holds `(x_{i,t}, u_{i,t})`. A cellular
+sheaf (Curry 2014; Hansen and Ghrist 2019) says which variables each coupling
+term reads: dynamics edges are hard (they must hold), formation edges are soft
+(springs). `FleetProgram(fleet)` is this program (`SheafProgram` in general).
+
+**Pushforward.** Partition the vertices into blocks and contract the edges
+inside each block. A block's configurations that satisfy every edge inside it
+form an affine set, its fiber, `xbar + range(N)`. Substituting `x = xbar + N y`
+gives the reduced program in the coordinates `y`: the fine program with the
+contracted edges made hard, nothing else changed. `reduce(program,
+resolution)` builds it; `lift(R, y)` maps a reduced plan back.
+
+**Resolutions.** `TimeBlocking` (`partial_condensing(nu)`,
+`full_condensing()`) merges consecutive instants of every agent; it contracts
+only hard dynamics edges, so it is exact (no loss of optimality), and full
+condensing is classical condensed MPC. `Teams(alpha)` merges the agents of each
+team at every instant; it contracts soft formation edges, so it has an
+optimality gap. `teams ⊠ blocking` does both (the order does not matter),
+`Teams(alpha; from = t0)` forms the teams after `t0` instants, and `Mixed` /
+`VertexPartition` give any partition. Reducing a reduced program composes
+(teams of teams).
+
+**The gap and its certificates.** Making soft edges hard can only raise the
+optimal value; the rise is the gap. `gap_bounds` brackets it: from above by
+the energy the contracted springs would store under the forces the teams'
+internal edges carry in the reduced solution (recovered team by team, no fine
+solve needed), from below by the energy they store at the fine optimum. Teams
+that are almost equitable with coherent data have zero gap (rows of the grid
+fleet with `coherence = :rows`).
+
+**Distributed MPC.** `DistributedMPC(fleet, teams)` solves the fully
+condensed pushforward along the teams (singletons by default) by consensus
+ADMM (Boyd et al. 2011; Summers and Lygeros 2012): every agent or team solves
+its own QP with half of each formation spring and a consensus penalty, and
+exchanges with each neighbour the positions its springs read, once per
+iteration. Teams cut the messages: rigid rows of the grid exchange one
+planar trajectory per pair of rows instead of one per vehicle.
+
+**The gap kernel.** For an equality-constrained QP the gap of hardening any set
+of soft edges is `(1/2) s' K^+ s`, with `s` their defects at the fine optimum
+and `K` a kernel from one KKT factorization (`gap_kernel`). `gap(K, teams)`
+evaluates a team structure without reducing or solving, and `select_teams`
+merges teams greedily by the least gap increment (optionally with a beam and a
+local search). With inequalities that become active in the reduced program the
+formula is a lower bound.
+
+## API
+
+| | |
+|---|---|
+| modelling | `Agent(A, B; C, Q, R, Cr, g, Cf, Qf, input, state)`, `BallSet`, `BoxSet`, `Polyhedron`, `Fleet(agents, edges; H, offsets, targets, weights, present)`, `FleetProgram(fleet; x0, references, terminal)`, `set_state!`, `set_references!`, `set_targets!`, `set_drift!`, `set_state_bound!`, `trajectories`, `first_inputs`, `plant_step` |
+| the paper's agents | `quadrotor(h)`, `ground_vehicle(h)`, `grid_graph`, `GridScenario`, `fleet`, `references`, `formation_start`, `row_teams`, `strip_teams`, `block_teams` |
+| programs | `SheafProgram(nodes, edges)`, `NodeData`, `SheafEdge`, `objective`, `quadratic_form`, `coboundary`, `feasibility`, `harden`, `solve` |
+| resolutions | `Fine`, `TimeBlocking`, `partial_condensing`, `full_condensing`, `Teams`, `⊠` / `Product`, `Mixed`, `VertexPartition` |
+| reductions | `reduce(program, resolution; basis, reuse)`, `update!(R)`, `lift`, `restrict`, `reduction_chain`, `composite_partition` |
+| certificates | `gap_bounds(fine, R, sol; fine_solution)`, `Certifier`, `gap_kernel(program, xstar)`, `gap(K, teams)`, `team_front`, `select_teams(K; k, budget, beam, refine)` |
+| receding horizon | `MPCController(fleet, resolution; certify, settings...)`, `step!(ctrl, x, refs; terminal, targets, drift)`, `plan`, `StepInfo` |
+| distributed | `DistributedMPC(fleet, teams; rho, eps_abs, eps_rel, budget)`, `step!`, `floats_per_iteration` |
+
+Every exported function has a docstring (`?reduce` in the REPL).
+
+## Performance
+
+The structure of the program, the fibers of a resolution, the reduced QP's
+Hessian and constraint matrix, and the solver's factorizations do not change
+between the sampling instants of a fleet with fixed matrices. The particular
+solution of each fiber is kept as an operator of the internal targets, so the
+reduced program's vectors are affine in the data that do change (measured
+states, references, formation targets, drifts), and `update!` recomputes them
+with a few sparse products, without allocating. On the 8 x 8 grid fleet
+(`bench/controller.jl`, H = 10, 30 closed-loop steps, results in
+`bench/results/controller.txt`) the construction of a step (data, program,
+pushforward, QP vectors) went from 15 to 18 ms with the paper repository's
+per-step pipeline (rebuild, pushforward with fiber reuse, `sheaf_qp`) to 0.2
+to 0.35 ms with `MPCController`, below the warm solve (0.5 to 1 ms); a step
+allocates a constant 48 bytes.
+
+## Tests
+
+    julia --project=. -e 'using Pkg; Pkg.test()'
+
+The reduction tests port the paper repository's structured-basis tests and
+check the identities of the paper on small fleets: `J'(y) = J(lift(y))`, the
+same value as the fine program with the contracted edges hard, exact time
+blocking, commuting legs, teams of teams, zero gap for coherent rows, bounds
+that bracket the true gap, the kernel against pushforward and solve, the
+selector, in-place updates against rebuilds, and a 30-step closed loop without
+allocation growth. When the paper repository is present (`SHEAFMPC_PAPER`,
+default `~/Projects/GATAS/mpc-sheaf-pushforward`), the fleet programs and
+reductions are also compared with its research module, read only.
+
+## The solver
+
 An operator-splitting conic QP solver for sheaf programs and multi-agent model
 predictive control.
 
@@ -10,7 +169,7 @@ with `C` a product of intervals (equality, one-sided, two-sided rows) and
 translated second-order cones (`b_B - A_B x in SOC`, the convention of
 Clarabel and of sheaf programs).
 
-## Algorithm
+### Algorithm
 
 * ADMM of OSQP (Stellato et al. 2020, Algorithm 1) with over-relaxation
   `alpha = 1.6`, per-row penalties (`rho_eq_scale * rho` on equality rows,
@@ -47,7 +206,7 @@ Clarabel and of sheaf programs).
   and a warm-started `solve!` first tries the polish on the active set of the
   warm start (with the cached polish factorization if it is the same).
 
-## API
+### Solver API
 
 ```julia
 using SheafMPC
@@ -68,7 +227,7 @@ edges with `tail, head, Ft, Fh, hard, W, b`, stalk `offsets`): node costs and
 soft edges go into `P, q, c`, hard edges and node cones become rows (hard
 edges first, the row order of the paper's `solve_direct`).
 
-## Tests and benchmarks
+### Solver tests and benchmarks
 
     julia --project=. -e 'using Pkg; Pkg.test()'
 

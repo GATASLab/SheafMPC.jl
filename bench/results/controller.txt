@@ -1,0 +1,33 @@
+grid 8x8, H = 10, 30 steps, eps = 1.0e-7; medians over steps 2..30, ms
+level              pipeline   construct     setup     solve      lift   certify     total
+fine               research       7.722     0.028     1.569     0.007     0.000     9.326
+fine               rebuild        4.914     0.021     1.224     0.004     0.000     6.164
+fine               controller     0.170     0.040     1.052     0.003     0.000     1.264
+fine               certified      0.169     0.035     1.046     0.003     0.000     1.254
+                   controller allocates 48..2887968 bytes per step
+teams k=8 (rows)   research      14.675     0.023     0.747     0.034     0.000    15.480
+teams k=8 (rows)   rebuild        7.078     0.023     0.912     0.025     0.000     8.038
+teams k=8 (rows)   controller     0.195     0.031     0.524     0.010     0.000     0.761
+teams k=8 (rows)   certified      0.236     0.043     0.563     0.012     0.308     1.162
+                   controller allocates 48..48 bytes per step
+teams k=4          research      14.944     0.020     0.600     0.022     0.000    15.587
+teams k=4          rebuild        6.069     0.018     0.589     0.021     0.000     6.697
+teams k=4          controller     0.182     0.028     0.496     0.009     0.000     0.716
+teams k=4          certified      0.181     0.034     0.493     0.010     0.267     0.984
+                   controller allocates 48..48 bytes per step
+teams k=2          research      17.444     0.021     0.826     0.028     0.000    18.320
+teams k=2          rebuild        7.754     0.023     1.069     0.028     0.000     8.873
+teams k=2          controller     0.346     0.059     0.978     0.018     0.000     1.401
+teams k=2          certified      0.253     0.046     0.540     0.012     0.384     1.236
+                   controller allocates 48..48 bytes per step
+fleet (k=1)        research      16.817     0.019     0.616     0.025     0.000    17.478
+fleet (k=1)        rebuild        6.717     0.020     0.579     0.024     0.000     7.341
+fleet (k=1)        controller     0.215     0.031     0.494     0.010     0.000     0.749
+fleet (k=1)        certified      0.227     0.038     0.463     0.013     0.468     1.209
+                   controller allocates 48..48 bytes per step
+full condensing    research      16.543     0.020     1.099     0.041     0.000    17.703
+full condensing    rebuild        9.259     0.023     1.198     0.037     0.000    10.518
+full condensing    controller     0.319     0.005     0.846     0.019     0.000     1.190
+full condensing    certified      0.213     0.003     0.786     0.015     0.000     1.017
+                   controller allocates 48..2672 bytes per step
+wrote bench/results/controller.json
