@@ -148,8 +148,9 @@
             @test setup(p; method = :admm).ipm === nothing
             @test setup(p; method = :ipm).ipm !== nothing
             # a crossover builds it, and the solve still meets the tolerance
+            # (no polish: it would be tried at the budget and could end the solve)
             ref, _, _ = clarabel_ref(p)
-            s = setup(p; eps_abs = 1e-8, eps_rel = 1e-8, crossover = 1e-6, polish_interval = 0)
+            s = setup(p; eps_abs = 1e-8, eps_rel = 1e-8, crossover = 1e-6, polish_interval = 0, polish = false)
             info = solve!(s)
             info.method == :admm_ipm && @test s.ipm !== nothing
             @test info.status == :solved && relgap(info.obj, ref) <= 1e-7
