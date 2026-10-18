@@ -424,6 +424,89 @@ function trajectories(F::FleetProgram, x::AbstractVector)
     return X, U
 end
 
+"""
+    shift_plan!(out, fp, x, x0) -> out
+    shift_plan(fp, x, x0)
+
+The fine plan `x` moved one instant earlier, the receding-horizon warm start:
+every agent's state and input at instant `t` take their values at `t + 1`, the
+last input is held, the last state is propagated by the dynamics of instant
+`H - 1` from the previous last state and the held input, and the first state is
+the measured `x0[i]`. The result satisfies every dynamics edge except the
+first (the measured state need not be the predicted one); `restrict` maps it to
+the coordinates of a reduction (the nearest plan of every fiber).
+"""
+function shift_plan!(out::AbstractVector, F::FleetProgram, x::AbstractVector, x0::AbstractVector)
+    fl = F.fleet; H = fl.H; P = F.program
+    length(out) == length(x) == c0dim(P) || throw(DimensionMismatch("plans must have $(c0dim(P)) entries"))
+    out === x && throw(ArgumentError("out must not be x"))
+    @inbounds for (i, ag) in enumerate(fl.agents)
+        nx, nu = ag.nx, ag.nu
+        for t in 0:(H-1)
+            ro = P.offsets[F.vid[i, t+1]]
+            rn = P.offsets[F.vid[i, t+2]]
+            for k in 1:nx
+                out[ro+k] = x[rn+k]
+            end
+            src = t + 1 < H ? rn : ro                 # the last input is held
+            for k in 1:nu
+                out[ro+nx+k] = x[src+nx+k]
+            end
+        end
+        A, B, g = dynamics(ag, H - 1)
+        rH = P.offsets[F.vid[i, H+1]]
+        rl = P.offsets[F.vid[i, H]]
+        for k in 1:nx
+            s = g[k]
+            for j in 1:nx
+                s += A[k, j] * x[rH+j]
+            end
+            for j in 1:nu
+                s += B[k, j] * x[rl+nx+j]
+            end
+            out[rH+k] = s
+        end
+        r0 = P.offsets[F.vid[i, 1]]
+        for k in 1:nx
+            out[r0+k] = x0[i][k]
+        end
+    end
+    return out
+end
+shift_plan(F::FleetProgram, x::AbstractVector, x0::AbstractVector) = shift_plan!(similar(x, Float64), F, x, x0)
+
+"""
+    free_response!(out, fp, x0) -> out
+
+The plan with zero inputs from the measured states `x0[i]` (each agent's free
+response, its drift included): the warm start when there is no previous plan.
+"""
+function free_response!(out::AbstractVector, F::FleetProgram, x0::AbstractVector)
+    fl = F.fleet; H = fl.H; P = F.program
+    length(out) == c0dim(P) || throw(DimensionMismatch("the plan must have $(c0dim(P)) entries"))
+    fill!(out, 0.0)
+    @inbounds for (i, ag) in enumerate(fl.agents)
+        nx = ag.nx
+        r = P.offsets[F.vid[i, 1]]
+        for k in 1:nx
+            out[r+k] = x0[i][k]
+        end
+        for t in 0:(H-1)
+            A, _, g = dynamics(ag, t)
+            ro = P.offsets[F.vid[i, t+1]]
+            rn = P.offsets[F.vid[i, t+2]]
+            for k in 1:nx
+                s = g[k]
+                for j in 1:nx
+                    s += A[k, j] * out[ro+j]
+                end
+                out[rn+k] = s
+            end
+        end
+    end
+    return out
+end
+
 """`first_inputs(fp, x)`: every agent's input at instant 0 in the plan `x` (what receding horizon applies)."""
 function first_inputs(F::FleetProgram, x::AbstractVector)
     P = F.program

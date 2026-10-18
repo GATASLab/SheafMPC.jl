@@ -26,4 +26,59 @@
     refs, term = references(sc)
     info = step!(D, formation_start(sc), refs; terminal = term)
     @test info.iter == 5 && all(isfinite, reduce(vcat, info.u))
+
+    @testset "shifted warm start" begin
+        # the closed-loop cost (true stage cost, formation included) over coordinated MPC, one ADMM iteration per step
+        scw = GridScenario(rows = 3, cols = 3, H = 8, coherence = :agents, seed = 1)
+        flw = fleet(scw)
+        function closed_loop(c; steps = 10)
+            x = formation_start(scw); J = 0.0
+            for k in 0:(steps-1)
+                r, rf = references(scw, k * scw.h)
+                u = step!(c, x, r; terminal = rf).u
+                J += sum(0.5 * dot(flw.agents[i].Cr * x[i] - r[i][:, 1], flw.agents[i].Q * (flw.agents[i].Cr * x[i] - r[i][:, 1])) +
+                         0.5 * dot(u[i], flw.agents[i].R * u[i]) for i in eachindex(x))
+                J += sum(0.5 * flw.weights[e, 1] * sum(abs2, flw.agents[j].C * x[j] - flw.agents[i].C * x[i] - flw.targets[:, e, 1])
+                         for (e, (i, j)) in enumerate(flw.edges))
+                x = plant_step(flw, x, u)
+            end
+            return J
+        end
+        Jc = closed_loop(MPCController(flw, Fine(); certify = false))
+        Js = closed_loop(DistributedMPC(flw; rho = 0.3, budget = 1))
+        Jp = closed_loop(DistributedMPC(flw; rho = 0.3, budget = 1, warm = :previous))
+        @test Js / Jc < 1.06
+        @test Js < Jp
+        # converged, the warm start does not change the plans
+        D1 = DistributedMPC(flw; rho = 0.3, eps_abs = 1e-8, eps_rel = 1e-7)
+        D2 = DistributedMPC(flw; rho = 0.3, eps_abs = 1e-8, eps_rel = 1e-7, warm = :previous)
+        x = formation_start(scw)
+        it1 = 0; it2 = 0
+        for k in 0:3
+            r, rf = references(scw, k * scw.h)
+            i1 = step!(D1, x, r; terminal = rf); i2 = step!(D2, x, r; terminal = rf)
+            @test D1.converged && D2.converged
+            @test srelerr(i1.J, i2.J) < 1e-5
+            k > 0 && (it1 += i1.iter; it2 += i2.iter)
+            x = plant_step(flw, x, i1.u)
+        end
+        @test it1 < it2
+        # the dual shift moves every interface row to the next instant (the last held)
+        I1 = D1.ifs[1]
+        @test length(I1.shift) == 2 * scw.H
+        @test I1.shift == [collect(3:(2*scw.H)); 2 * scw.H - 1; 2 * scw.H]
+        # the shifted plan: one instant earlier, the measured first state, every later dynamics edge satisfied
+        fp = D1.fp
+        xs = shift_plan(fp, plan(D1), x)
+        X0, U0 = trajectories(fp, plan(D1)); X1, U1 = trajectories(fp, xs)
+        @test X1[1][:, 1] == x[1] && X1[2][:, 2:scw.H] == X0[2][:, 3:(scw.H+1)] && U1[3][:, 1:(scw.H-1)] == U0[3][:, 2:scw.H]
+        @test U1[3][:, scw.H] == U0[3][:, scw.H]
+        Pf = fp.program
+        @test maximum(maximum(abs, edge_defect(Pf, fp.dyn[i, t], xs)) for i in 1:9, t in 2:scw.H) < 1e-10
+        # restrict inverts the lift, with or without the cached factorizations
+        R = D1.R
+        y = randn(Xoshiro(3), c0dim(R.program))
+        @test norm(restrict(R, lift(R, y)) - y) < 1e-8 * norm(y)
+        @test restrict!(zeros(length(y)), R, lift(R, y)) == restrict(R, lift(R, y))
+    end
 end

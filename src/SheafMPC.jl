@@ -75,7 +75,7 @@ export coboundary, targets, quadratic_form, node_constraints, feasibility, harde
 # fleets
 export Agent, BallSet, BoxSet, Polyhedron, Fleet, FleetProgram, nagents
 export set_state!, set_references!, set_targets!, set_drift!, set_state_bound!
-export trajectories, first_inputs, plant_step
+export trajectories, first_inputs, plant_step, shift_plan, shift_plan!, free_response!
 export quadrotor, ground_vehicle, grid_graph, GridScenario, fleet, slots, references, formation_start
 export agent_kind, row_teams, strip_teams, block_teams
 # resolutions and reductions
