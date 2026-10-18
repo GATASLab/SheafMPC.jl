@@ -12,7 +12,7 @@
 # environments. HPG_EXCLUSIVE=1 holds the whole node (no neighbours sharing
 # memory bandwidth or L3). The load gate is off on HPG; the load is recorded.
 #
-# HPG_PKGDIR: the SheafMPC.jl tree to run (default $ROOT/SheafMPC.jl; a ref
+# HPG_CPUS: cores reserved per job (default 2; one is pinned). HPG_PKGDIR: the SheafMPC.jl tree to run (default $ROOT/SheafMPC.jl; a ref
 # snapshot from prepare_ref.sh). HPG_SOLVERS=a,b restricts the main pass;
 # HPG_SUFFIX names the job set and its results directory.
 set -euo pipefail
@@ -65,7 +65,7 @@ for TIER in quick hpg full; do
 #SBATCH --account=fairbanksj
 #SBATCH --partition=hpg-default
 #SBATCH --constraint=rome
-#SBATCH --nodes=1 --ntasks=1 --cpus-per-task=2 --mem=${MEM} --time=${TIME}
+#SBATCH --nodes=1 --ntasks=1 --cpus-per-task=${HPG_CPUS:-2} --mem=${MEM} --time=${TIME}
 ${EXCL}
 #SBATCH --output=${ROOT}/logs/%x_%j.log
 module load julia/1.12.6
