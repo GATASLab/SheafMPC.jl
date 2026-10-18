@@ -74,7 +74,7 @@ export nvertices, nedges, c0dim, c1dim, vrange, erange, edgedim, hard_edges, sof
 export coboundary, targets, quadratic_form, node_constraints, feasibility, harden, edge_defect
 # fleets
 export Agent, BallSet, BoxSet, Polyhedron, Fleet, FleetProgram, nagents
-export set_state!, set_references!, set_targets!, set_drift!, set_state_bound!
+export set_state!, set_references!, set_targets!, set_drift!, set_state_bound!, set_state_set!, set_state_sets!
 export trajectories, first_inputs, plant_step, shift_plan, shift_plan!, free_response!
 export quadrotor, ground_vehicle, grid_graph, GridScenario, fleet, slots, references, formation_start
 export agent_kind, row_teams, strip_teams, block_teams

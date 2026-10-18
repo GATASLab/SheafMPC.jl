@@ -26,13 +26,28 @@ struct BoxSet
     hi::Vector{Float64}
 end
 
-"""`Polyhedron(G, h)`: the points `z` with `G z <= h` (a state set, or an input set)."""
+"""
+    Polyhedron(G, h; pattern = G .!= 0)
+
+The points `z` with `G z <= h` (a state set, or an input set). `pattern`
+(a Boolean matrix the size of `G`) marks the entries of `G` that may be
+nonzero: the program keeps exactly these entries in its constraint matrix, so
+a state set changed in place later (`set_state_set!`, `step!(...; states)`, a
+re-linearized keep-out whose normals rotate) may use any of them. By default
+the nonzeros of `G`; give the pattern explicitly when an entry is zero now but
+may not be later (for a half-space on a planar position `p = C x`, the support
+of `C` in every row).
+"""
 struct Polyhedron
     G::Matrix{Float64}
     h::Vector{Float64}
-    function Polyhedron(G::AbstractMatrix, h::AbstractVector)
+    pattern::BitMatrix
+    function Polyhedron(G::AbstractMatrix, h::AbstractVector; pattern = nothing)
         size(G, 1) == length(h) || throw(DimensionMismatch("G has $(size(G, 1)) rows, h has $(length(h))"))
-        new(Matrix{Float64}(G), Vector{Float64}(h))
+        pat = pattern === nothing ? BitMatrix(G .!= 0) : BitMatrix(pattern)
+        size(pat) == size(G) || throw(DimensionMismatch("the pattern must be $(size(G, 1)) x $(size(G, 2))"))
+        all(pat .| (G .== 0)) || throw(ArgumentError("G has nonzeros outside its pattern"))
+        new(Matrix{Float64}(G), Vector{Float64}(h), pat)
     end
 end
 
@@ -183,6 +198,7 @@ struct FleetProgram
     form::Matrix{Int}
     CrQ::Vector{Matrix{Float64}}     # Cr'Q per agent
     CfQf::Vector{Matrix{Float64}}    # Cf'Qf per agent
+    changed::Vector{Int}             # vertices whose constraint matrices changed in place since the controller last read them
 end
 
 _sheaf(F::FleetProgram) = F.program
@@ -223,7 +239,18 @@ function _stage_node(ag::Agent, t::Int, H::Int)
         push!(Ablocks, [X.G zeros(size(X.G, 1), du)]); append!(b, X.h); push!(cones, nonneg_cone(length(X.h)))
     end
     A = isempty(Ablocks) ? zeros(0, d) : reduce(vcat, Ablocks)
-    return NodeData(Q, zeros(d), 0.0, A, b, cones)
+    # the stored entries: the nonzeros, and the whole pattern of the state rows (the last rows), so that the
+    # state set can change in place on that pattern
+    keep = A .!= 0
+    if X !== nothing && !isempty(X.h)
+        m = length(X.h)
+        keep[(end-m+1):end, 1:ag.nx] .|= X.pattern
+    end
+    I_ = Int[]; J_ = Int[]; V_ = Float64[]
+    for j in 1:d, i in axes(A, 1)
+        keep[i, j] && (push!(I_, i); push!(J_, j); push!(V_, A[i, j]))
+    end
+    return NodeData(Q, zeros(d), 0.0, sparse(I_, J_, V_, size(A, 1), d), b, cones)
 end
 
 function FleetProgram(fleet::Fleet; x0 = nothing, references = nothing, terminal = nothing, absent::Symbol = :omit)
@@ -263,7 +290,7 @@ function FleetProgram(fleet::Fleet; x0 = nothing, references = nothing, terminal
         end
     end
     F = FleetProgram(fleet, SheafProgram(nodes, edges), FleetLayout(vid), vid, dyn, form,
-                     [ag.Cr' * ag.Q for ag in fleet.agents], [ag.Cf' * ag.Qf for ag in fleet.agents])
+                     [ag.Cr' * ag.Q for ag in fleet.agents], [ag.Cf' * ag.Qf for ag in fleet.agents], Int[])
     x0 === nothing || set_state!(F, x0)
     references === nothing || set_references!(F, references; terminal = terminal)
     return F
@@ -393,6 +420,75 @@ function set_state_bound!(F::FleetProgram, i::Integer, t::Integer, h::AbstractVe
     m = length(h)
     @inbounds for k in 1:m
         nd.b[end-m+k] = h[k]
+    end
+    return F
+end
+
+"""
+    set_state_set!(fp, i, t, G, h)
+    set_state_set!(fp, i, t, X::Polyhedron)
+
+Replace agent `i`'s state polyhedron `G x <= h` at instant `t` (`1 <= t <= H`)
+in place: new half-space normals and offsets on the same number of rows, with
+the nonzeros of `G` inside the pattern the program was built with (see
+`Polyhedron`; an inactive half-space can be a zero row with a positive
+offset). The constraint matrix of vertex `(i, t)` changes in place and the
+vertex is recorded in `fp.changed`, from which `MPCController` and
+`DistributedMPC` update their reduced programs, fibers and solvers on the next
+`step!` without rebuilding (programs that share this program's matrices see
+the change too).
+"""
+function set_state_set!(F::FleetProgram, i::Integer, t::Integer, G::AbstractMatrix, h::AbstractVector)
+    H = F.fleet.H
+    1 <= i <= nagents(F.fleet) || throw(ArgumentError("no agent $i"))
+    1 <= t <= H || throw(ArgumentError("state sets apply at t = 1, ..., $H, not $t"))
+    ag = F.fleet.agents[i]
+    m = length(h)
+    size(G) == (m, ag.nx) || throw(DimensionMismatch("G must be $m x $(ag.nx)"))
+    v = F.vid[i, t+1]
+    nd = F.program.nodes[v]
+    X = _state_set(ag, t)
+    (X !== nothing && length(X.h) == m) ||
+        throw(ArgumentError("agent $i has $(X === nothing ? 0 : length(X.h)) state rows at t = $t, not $m: the rows are fixed when the program is built"))
+    r0 = size(nd.A, 1) - m
+    A = nd.A
+    rv = rowvals(A); nz = nonzeros(A)
+    written = 0
+    @inbounds for j in 1:ag.nx, k in nzrange(A, j)
+        r = rv[k] - r0
+        r >= 1 || continue
+        nz[k] = G[r, j]
+        G[r, j] != 0 && (written += 1)
+    end
+    written == count(!=(0), G) ||
+        throw(ArgumentError("G has nonzeros outside the pattern of agent $i's state set at t = $t (give Polyhedron a pattern)"))
+    @inbounds for k in 1:m
+        nd.b[r0+k] = h[k]
+    end
+    v in F.changed || push!(F.changed, v)
+    return F
+end
+set_state_set!(F::FleetProgram, i::Integer, t::Integer, X::Polyhedron) = set_state_set!(F, i, t, X.G, X.h)
+
+"""
+Apply `states` (one entry per agent: `nothing` to keep its sets, a `Polyhedron`
+for every instant, or a vector of `H` entries, `nothing` keeping that instant)
+with `set_state_set!`.
+"""
+function set_state_sets!(F::FleetProgram, states::AbstractVector)
+    length(states) == nagents(F.fleet) || throw(DimensionMismatch("need one entry per agent (nothing to keep its sets)"))
+    for (i, S) in enumerate(states)
+        S === nothing && continue
+        if S isa Polyhedron
+            for t in 1:F.fleet.H
+                set_state_set!(F, i, t, S)
+            end
+        else
+            length(S) == F.fleet.H || throw(DimensionMismatch("agent $i: give one state set per instant t = 1, ..., $(F.fleet.H)"))
+            for t in 1:F.fleet.H
+                S[t] === nothing || set_state_set!(F, i, t, S[t])
+            end
+        end
     end
     return F
 end
