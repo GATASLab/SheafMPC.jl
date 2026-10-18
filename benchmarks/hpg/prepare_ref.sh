@@ -38,6 +38,6 @@ ssh hpg "mkdir -p $DEST/SheafMPC.jl/benchmarks/data/refcache && cp -n $ROOT/Shea
 ssh hpg "bash -lc 'module load julia/1.12.6; export JULIA_DEPOT_PATH=/blue/fairbanksj/itaykadosh/julia_depot: JULIA_PKG_PRECOMPILE_AUTO=0;
   cd $DEST/SheafMPC.jl/benchmarks && for e in . envs/mumblebee_fast envs/mumblebee_fast_ct; do
     julia --project=\$e -e \"using Pkg; Pkg.resolve(); Pkg.instantiate()\" 2>&1 | tail -1; done'"
-HPG_PKGDIR="$DEST/SheafMPC.jl" HPG_EXCLUSIVE=1 HPG_GROUPING=coarse HPG_SUFFIX="_${SHA}_excl" bash "$HERE/hpg/make_jobs.sh"
+HPG_PKGDIR="$DEST/SheafMPC.jl" HPG_EXCLUSIVE=1 HPG_QOS="${HPG_QOS:-fairbanksj-b}" HPG_GROUPING=coarse HPG_SUFFIX="_${SHA}_excl" bash "$HERE/hpg/make_jobs.sh"
 rsync -a "$HERE/hpg/jobs/" "hpg:$DEST/SheafMPC.jl/benchmarks/hpg/jobs/"
 echo "prepared $DEST ($REF = $FULL); submit with: HPG_TIER=all HPG_SUFFIX=_${SHA}_excl HPG_PKGDIR=$DEST/SheafMPC.jl benchmarks/hpg/submit.sh"

@@ -24,6 +24,9 @@ SOLVERS_ARG=""; [ -n "${HPG_SOLVERS:-}" ] && SOLVERS_ARG="--solvers ${HPG_SOLVER
 SUF="${HPG_SUFFIX:-}"
 GROUPING="${HPG_GROUPING:-fine}"
 EXCL=""; [ "${HPG_EXCLUSIVE:-0}" = 1 ] && EXCL="#SBATCH --exclusive"
+# HPG_QOS: e.g. fairbanksj-b (burst: the investment QOS caps the group at 262 cores, two exclusive nodes)
+[ -n "${HPG_QOS:-}" ] && EXCL="$EXCL
+#SBATCH --qos=${HPG_QOS}"
 mkdir -p "$HERE/hpg/jobs"; rm -f "$HERE/hpg/jobs/"*${SUF}.sbatch
 
 groups() {   # tier -> lines "name|only-pattern"
