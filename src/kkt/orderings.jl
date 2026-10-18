@@ -475,9 +475,12 @@ Base.@kwdef struct CostModel
     par_overhead::NTuple{2,Float64} = (1.5e-4, 1e-4)   # task start-up per threaded factor / solve (s), EPYC 7702
 end
 
-# fitted coefficients (seconds per column, per flop, per column, per entry of L)
+# fitted coefficients (seconds per column, per flop, per column, per entry of L);
+# BlockLDL refitted after the blocked Schur updates and light relaxation
+# (bench/kkt_calibrate.jl, relative least squares, scaled by the QDLDL times of
+# the same run against the original fit to remove the node's load)
 const QCOEF = (2.63e-8, 1.20e-9, 1.92e-9, 1.85e-9)
-const BCOEF = (5.70e-8, 3.10e-10, 1.04e-8, 8.21e-10)
+const BCOEF = (6.84e-8, 2.46e-10, 1.07e-8, 7.50e-10)
 
 function estimate(cm::CostModel, s, N::Int, engine::Symbol)
     if engine == :simplicial
