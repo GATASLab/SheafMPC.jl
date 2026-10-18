@@ -35,7 +35,8 @@ end
 function CQDLDL(K::SparseMatrixCSC{Float64,Int})
     n = size(K, 1)
     perm = Vector{Int}(QDLDL.amd(K))
-    Kp = sparse(triu(Symmetric(K, :U)[perm, perm]))
+    Kf = K + sparse(transpose(triu(K, 1)))           # full symmetric (sparse; Symmetric indexing is dense)
+    Kp = triu(Kf[perm, perm])
     Ap = CInt.(Kp.colptr .- 1); Ai = CInt.(Kp.rowval .- 1); Ax = copy(Kp.nzval)
     Lnz = zeros(CInt, n); etree = zeros(CInt, n); iwork = zeros(CInt, 3n)
     sumLnz = ccall((:QDLDL_etree, libosqp), CInt, (CInt, Ptr{CInt}, Ptr{CInt}, Ptr{CInt}, Ptr{CInt}, Ptr{CInt}),
