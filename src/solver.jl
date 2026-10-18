@@ -99,6 +99,12 @@ mutable struct Solver{LS<:LinearSystem}
     zsol::Vector{Float64}
     warm_pending::Bool
     has_iterate::Bool
+    # second-order cone blocks in the polish: KKT indices of each dense (2,2)
+    # block and the boundary parametrization s = tau (1, u), y = eta (1, -u)
+    soc_idx::Vector{Matrix{Int}}
+    soc_tau::Vector{Float64}
+    soc_eta::Vector{Float64}
+    soc_u::Vector{Float64}
 end
 
 function _rowtypes(l, u, kinds)
@@ -152,7 +158,7 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
     rowtype = _rowtypes(l, u, p.kinds)
     Pdiag = Vector{Float64}(diag(P))
     xdiag = Pdiag .+ st.sigma
-    K, diag_idx = kkt_pattern(P, A)
+    K, diag_idx, soc_idx, upd_idx = kkt_pattern(P, A, p.socs)
     rhovec = zeros(m); rhoinv = zeros(m)
     # rho per row
     for i in 1:m
@@ -167,14 +173,14 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
         # time a few backends and orderings on this matrix, keep the fastest solve
         best = Inf
         for (k, o) in ((:qdldl, :amd), (:qdldl, :mmd), (:qdldl, :amf), (:cliquetrees, :default))
-            S = make_system(k, copy(K), diag_idx, n; ordering = o == :default ? :amd : o)
+            S = make_system(k, copy(K), diag_idx, n; ordering = o == :default ? :amd : o, upd_idx = upd_idx)
             t = time_solves(S, 30)
             if t < best
                 best = t; kkt = S; kind = k == :qdldl ? Symbol("qdldl_", o) : k
             end
         end
     else
-        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering)
+        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering, upd_idx = upd_idx)
     end
     pol = _polish_system(kkt, copy(K), n)
     s = Solver(st, Info(), n, m, P, q, A, l, u, socb, copy(p.socs), copy(p.kinds), rowtype, p.c, scl, Pdiag,
@@ -184,7 +190,8 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
                fill(ACT_NONE, m), fill(Int8(-99), m), fill(ACT_NONE, m), false, fill(false, m), false,
                zeros(m), zeros(n + m), zeros(n + m), zeros(n + m), zeros(n), zeros(m), zeros(m), zeros(m),
                zeros(n), zeros(n),
-               zeros(n), zeros(m), zeros(m), false, false)
+               zeros(n), zeros(m), zeros(m), false, false,
+               soc_idx, zeros(length(p.socs)), zeros(length(p.socs)), zeros(m))
     s.info.setup_time = (time_ns() - t0) / 1e9
     s.info.linsys = kind
     s.info.rho = st.rho
@@ -193,7 +200,7 @@ end
 
 # the polish system shares the ordering (and, for the supernodal backend, the
 # symbolic factorization) of the ADMM system
-_polish_system(S::QDLDLSystem, K::SpMat, n::Int) = QDLDLSystem(K, S.diag_idx; perm = copy(S.perm))
+_polish_system(S::QDLDLSystem, K::SpMat, n::Int) = QDLDLSystem(K, S.diag_idx, S.upd_idx; perm = copy(S.perm))
 function _polish_system(S::ChordalSystem, K::SpMat, n::Int)
     F = Multifrontal.ChordalLDLt(Hermitian(K, :U), S.F.P, S.F.S)
     N = size(K, 1)
@@ -423,11 +430,11 @@ function solve!(s::Solver)
     pint = st.polish_interval
     wait = 2 * pint
     next_polish = 0
-    next_adapt = st.adaptive_rho_interval
+    next_adapt = st.adaptive_rho_first > 0 ? st.adaptive_rho_first : st.adaptive_rho_interval
     if !polished
         while k < st.max_iter
             k += 1
-            check = k % st.check_termination == 0 || k == st.max_iter
+            check = k % st.check_termination == 0 || k == st.max_iter || (st.adaptive_rho && k == st.adaptive_rho_first)
             if check
                 copyto!(s.xprev, s.x); copyto!(s.yprev, s.y)
             end

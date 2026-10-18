@@ -11,6 +11,21 @@
 # block), so it has an LDLt factorization with D of known signs for every
 # symmetric permutation (Vanderbei 1995); no pivoting is needed.
 #
+# Interface (what the solver uses; a new backend implements exactly this):
+#   * the KKT matrix `K` (upper triangle, CSC, pattern from `kkt_pattern`, every
+#     diagonal entry and every SOC (2,2) block stored) is owned by the system as
+#     the field `S.K`, with `S.diag_idx` its diagonal indices; the solver writes
+#     new values into `nonzeros(S.K)` (only at `diag_idx` and SOC block entries,
+#     i.e. at `upd_idx`) and then calls
+#   * `refactor!(S)`: numerical refactorization of the current `S.K` values
+#     (same pattern; no symbolic work), and
+#   * `solve!(S, b)`: solve `K v = b` in place, allocation free;
+#   * `factor_nnz(S)`: nonzeros of the factor (reporting only).
+# Construction goes through `make_system(kind, K, diag_idx, n; ordering,
+# upd_idx)` (the ADMM system) and `_polish_system(S, K, n)` in solver.jl (a
+# second system with the same pattern, sharing the ordering and, when the
+# backend can, the symbolic factorization).
+#
 # Two backends with the same interface:
 #   QDLDLSystem    simplicial LDLt (QDLDL, the factorization of OSQP), AMD order
 #   ChordalSystem  supernodal multifrontal LDLt (CliqueTrees.Multifrontal)
@@ -19,19 +34,28 @@
 abstract type LinearSystem end
 
 """
-    kkt_pattern(P, A) -> (K, diag_idx)
+    kkt_pattern(P, A, socs = []) -> (K, diag_idx, soc_idx, upd_idx)
 
 Upper triangle of the KKT matrix with zero values on the diagonal and the
 off-diagonal values of `P` and `A`. `diag_idx[j]` is the index in `K.nzval` of
-the diagonal entry `(j, j)`.
+the diagonal entry `(j, j)`. The (2,2) block of every second-order cone block
+`B in socs` is stored dense (explicit zeros for ADMM), so that the polish can
+write a full block there; `soc_idx[k][a, b]` is the index of entry
+`(n + B[a], n + B[b])` of block `k` (symmetric). `upd_idx` lists every entry a
+refactorization may change (diagonal and SOC blocks).
 """
-function kkt_pattern(P::SpMat, A::SpMat)
+function kkt_pattern(P::SpMat, A::SpMat, socs::Vector{UnitRange{Int}} = UnitRange{Int}[])
     n = size(P, 1); m = size(A, 1)
     At = SpMat(sparse(transpose(A)))       # column i of At is row i of A
     N = n + m
+    blk = zeros(Int, m)
+    for (k, B) in enumerate(socs), i in B
+        blk[i] = k
+    end
     colptr = Vector{Int}(undef, N + 1)
     rowval = Int[]; nzval = Float64[]
     diag_idx = Vector{Int}(undef, N)
+    soc_idx = [zeros(Int, length(B), length(B)) for B in socs]
     sizehint!(rowval, nnz(P) ÷ 2 + n + nnz(A) + m)
     sizehint!(nzval, nnz(P) ÷ 2 + n + nnz(A) + m)
     colptr[1] = 1
@@ -51,11 +75,25 @@ function kkt_pattern(P::SpMat, A::SpMat)
         for k in nzrange(At, i)
             push!(rowval, Arow[k]); push!(nzval, Aval[k])
         end
+        b = blk[i]
+        if b > 0
+            B = socs[b]
+            for i2 in first(B):(i-1)
+                push!(rowval, n + i2); push!(nzval, 0.0)
+                a1, a2 = i2 - first(B) + 1, i - first(B) + 1
+                soc_idx[b][a1, a2] = length(nzval); soc_idx[b][a2, a1] = length(nzval)
+            end
+        end
         push!(rowval, n + i); push!(nzval, 0.0)
         diag_idx[n+i] = length(nzval)
+        b > 0 && (a = i - first(socs[b]) + 1; soc_idx[b][a, a] = length(nzval))
         colptr[n+i+1] = length(nzval) + 1
     end
-    return SparseMatrixCSC(N, N, colptr, rowval, nzval), diag_idx
+    upd = copy(diag_idx)
+    for (k, B) in enumerate(socs), a2 in 1:length(B), a1 in 1:(a2-1)
+        push!(upd, soc_idx[k][a1, a2])
+    end
+    return SparseMatrixCSC(N, N, colptr, rowval, nzval), diag_idx, soc_idx, upd
 end
 
 "Write the diagonal: `xdiag` on the first `n` entries, `-dinv` on the last `m`."
@@ -78,6 +116,7 @@ end
 mutable struct QDLDLSystem <: LinearSystem
     K::SpMat
     diag_idx::Vector{Int}
+    upd_idx::Vector{Int}
     F::QDLDL.QDLDLFactorisation{Float64,Int}
     perm::Vector{Int}
     work::Vector{Float64}
@@ -88,16 +127,17 @@ mutable struct QDLDLSystem <: LinearSystem
     Dinv::Vector{Float64}
 end
 
-function QDLDLSystem(K::SpMat, diag_idx::Vector{Int}; perm::Union{Nothing,Vector{Int}} = nothing)
+function QDLDLSystem(K::SpMat, diag_idx::Vector{Int}, upd_idx::Vector{Int} = diag_idx;
+                     perm::Union{Nothing,Vector{Int}} = nothing)
     F = perm === nothing ? QDLDL.qdldl(K) : QDLDL.qdldl(K; perm = perm)
     ws = F.workspace
     p = F.perm === nothing ? collect(1:size(K, 1)) : F.perm
-    return QDLDLSystem(K, diag_idx, F, p, zeros(size(K, 1)), ws.Ln, ws.Lp, ws.Li, ws.Lx, ws.Dinv)
+    return QDLDLSystem(K, diag_idx, upd_idx, F, p, zeros(size(K, 1)), ws.Ln, ws.Lp, ws.Li, ws.Lx, ws.Dinv)
 end
 
-"Refactor after `K.nzval` changed on the diagonal (same pattern, no symbolic work)."
+"Refactor after `K.nzval` changed on the diagonal or SOC blocks (same pattern, no symbolic work)."
 function refactor!(S::QDLDLSystem)
-    QDLDL.update_values!(S.F, S.diag_idx, view(nonzeros(S.K), S.diag_idx))
+    QDLDL.update_values!(S.F, S.upd_idx, view(nonzeros(S.K), S.upd_idx))
     QDLDL.refactor!(S.F)
     return S
 end
@@ -208,10 +248,11 @@ values. For `:qdldl` the fill-reducing `ordering` is `:amd` (QDLDL's own),
 or one of CliqueTrees' `:mmd` (multiple minimum degree), `:amf` (approximate
 minimum fill), `:mf` (minimum fill).
 """
-function make_system(kind::Symbol, K::SpMat, diag_idx::Vector{Int}, n::Int; ordering::Symbol = :amd)
+function make_system(kind::Symbol, K::SpMat, diag_idx::Vector{Int}, n::Int; ordering::Symbol = :amd,
+                     upd_idx::Vector{Int} = diag_idx)
     if kind == :qdldl
-        ordering == :amd && return QDLDLSystem(K, diag_idx)
-        return QDLDLSystem(K, diag_idx; perm = fill_ordering(K, ordering))
+        ordering == :amd && return QDLDLSystem(K, diag_idx, upd_idx)
+        return QDLDLSystem(K, diag_idx, upd_idx; perm = fill_ordering(K, ordering))
     end
     kind == :cliquetrees && return ChordalSystem(K, diag_idx, n)
     throw(ArgumentError("unknown linear system backend $kind (use :qdldl or :cliquetrees)"))

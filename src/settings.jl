@@ -6,12 +6,14 @@
 Solver settings (defaults follow OSQP where the option exists there):
 
 ADMM
-* `rho = 0.1`, `sigma = 1e-6`, `alpha = 1.6` (over-relaxation);
+* `rho = 0.03` (OSQP uses 0.1; 0.03 was faster on the fleet MPC family), `sigma = 1e-6`,
+  `alpha = 1.6` (over-relaxation);
 * `rho_eq_scale = 1e3`: equality rows get `rho_eq_scale * rho`, free rows `rho_min`;
 * `adaptive_rho = true`, `adaptive_rho_interval = 25`, `adaptive_rho_tolerance = 5`:
   every `adaptive_rho_interval` iterations rho is re-estimated from the ratio of
   the normalized primal and dual residuals and the KKT matrix is refactored
   only if the estimate moved by more than the tolerance factor;
+  `adaptive_rho_first > 0` adds one early estimate at that iteration;
 * `max_iter = 4000`, `time_limit = Inf` (seconds).
 
 Termination (OSQP's unscaled criteria)
@@ -29,6 +31,8 @@ Polishing (active-set refinement)
   (primal and dual residuals and the signs of the multipliers);
 * `polish_corrections = 1`: if not, correct the active set from the polished
   point (a primal-dual active-set step) and try again, up to this many times;
+* `polish_soc_newton = 6`: Newton steps of the polish for second-order cone
+  blocks on their boundary (see polish.jl);
 * `polish_restart = true`: after a rejected polish, restart ADMM from the
   polished point (its primal, and the Moreau decomposition of `A x + y / rho`
   for the constraint and dual iterates), which carries the active-set
@@ -50,7 +54,7 @@ Linear algebra
   (`:amd`, `:mmd`, `:amf`, `:mf`).
 """
 Base.@kwdef mutable struct Settings
-    rho::Float64 = 0.1
+    rho::Float64 = 0.03
     sigma::Float64 = 1e-6
     alpha::Float64 = 1.6
     rho_eq_scale::Float64 = 1e3
@@ -58,6 +62,7 @@ Base.@kwdef mutable struct Settings
     rho_max::Float64 = 1e6
     adaptive_rho::Bool = true
     adaptive_rho_interval::Int = 25
+    adaptive_rho_first::Int = 0
     adaptive_rho_tolerance::Float64 = 5.0
     max_iter::Int = 4000
     time_limit::Float64 = Inf
@@ -70,6 +75,7 @@ Base.@kwdef mutable struct Settings
     polish::Bool = true
     polish_corrections::Int = 1
     polish_restart::Bool = true
+    polish_soc_newton::Int = 6
     polish_interval::Int = 5
     polish_warm::Bool = true
     polish_delta::Float64 = 1e-6

@@ -70,3 +70,26 @@ end
         end
     end
 end
+
+@testset "fleet QP with second-order cone inputs: Newton polish" begin
+    for n in (1, 4), b in (1, 8)
+        Q = FleetQP.blocked_qp(n, 24, b)
+        ny = length(Q.q); nb = length(Q.ubox)
+        I = Int[]; J = Int[]; V = Float64[]; bb = Float64[]; row = 0
+        cones = Tuple{Symbol,Int}[(:zero, size(Q.Aeq, 1))]
+        for k in 1:2:nb
+            row += 1; push!(bb, FleetQP.ABAR)
+            for a in 0:1
+                row += 1; push!(I, row); push!(J, Q.ubox[k+a]); push!(V, -1.0); push!(bb, 0.0)
+            end
+            push!(cones, (:soc, 3))
+        end
+        p = ConicQP(Q.P, Q.q, [Q.Aeq; sparse(I, J, V, row, ny)], [Q.beq; bb], cones; c = Q.c)
+        ref, _, _ = clarabel_ref(p)
+        s = setup(p; eps_abs = 1e-7, eps_rel = 1e-7)
+        info = solve!(s)
+        @test info.status == :solved && info.polish == :success
+        @test relgap(info.obj, ref) <= 1e-8
+        @test violation(p, s.xsol) <= 1e-7
+    end
+end
