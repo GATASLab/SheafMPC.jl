@@ -186,10 +186,11 @@ Clarabel and of sheaf programs).
   by projection, as in COSMO.
 * Modified Ruiz equilibration (OSQP), uniform within each SOC block.
 * One quasi-definite KKT matrix `[P + sigma I, A'; A, -R^{-1}]`, ordered and
-  factored once in `setup` (QDLDL, or the supernodal multifrontal LDLt of
-  CliqueTrees; with `ordering = :auto` the AMD and MMD orderings are compared by
-  the nonzeros and flops of their factors, counted on the elimination tree, and
-  only the cheaper one is factored). The iteration allocates nothing.
+  factored once in `setup` (QDLDL, the structured multifrontal BlockLDL, or the
+  supernodal multifrontal LDLt of CliqueTrees; `linsys = :auto` picks the
+  engine and the order by BlockLDL's cost model, no trial factorizations). The
+  polish system shares the symbolic factorization. The iteration allocates
+  nothing.
 * Polish (active-set refinement). The equality-constrained QP on the guessed
   active set is solved with a matrix of the same sparsity pattern as the ADMM
   KKT matrix (inactive rows get `-1/delta`, active rows `-delta` on the
