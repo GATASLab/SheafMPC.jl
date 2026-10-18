@@ -97,7 +97,12 @@ function reference(p::QP; cache = true)
     h = qp_hash(p)
     file = joinpath(REF_DIR[], h * ".jls")
     if cache && isfile(file)
-        return deserialize(file)::Reference
+        r = try
+            deserialize(file)::Reference
+        catch
+            nothing                       # being written by another job: compute it here
+        end
+        r === nothing || return r
     end
     t = @elapsed begin
         x, y, status = _clarabel_ref(p)
@@ -119,7 +124,9 @@ function reference(p::QP; cache = true)
     r = Reference(x, y, f0, src, status, c.prim_rel, c.dual_rel, t)
     if cache
         mkpath(REF_DIR[])
-        serialize(file, r)
+        tmp = file * ".tmp$(getpid())"
+        serialize(tmp, r)
+        mv(tmp, file; force = true)       # atomic on one file system: concurrent jobs never read a partial file
     end
     return r
 end

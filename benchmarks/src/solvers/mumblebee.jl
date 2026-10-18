@@ -237,6 +237,8 @@ mutable struct MBHandle
     R::MBRecipe
     solver::Any
     h::Vector{Float64}
+    seq::String          # "reinit" (keep the symbolic analysis) or "rebuild" (IPMProblem + init per QP)
+    st::Any
 end
 
 const MB_STATUS = Dict("OPTIMAL" => :solved, "NEAR_OPTIMAL" => :almost_solved, "ITERATION_LIMIT" => :max_iter,
@@ -249,7 +251,7 @@ function mumblebee_spec(; max_iter = 200)
         alg = v["elim"] == "amf" ? AMF() : ND(AMF(), METISND())
         st = IPMSettings{Float64}(; elim_alg = alg, feas_tol = eps, gap_tol = eps, max_iter = max_iter, verbose = 0)
         prob = IPMProblem(R.Q, R.B, f, g, 0.0, R.K, R.s)
-        return MBHandle(R, MBI.init(prob, st), h)
+        return MBHandle(R, MBI.init(prob, st), h, String(get(v, "seq", "reinit")), st)
     end
     solve! = function (hd::MBHandle)
         r = MBI.solve!(hd.solver)
@@ -259,7 +261,11 @@ function mumblebee_spec(; max_iter = 200)
     update! = function (hd::MBHandle, p::QP)
         f, g, h = mb_vectors(hd.R, p)
         hd.h = h
-        MBI.reinit!(hd.solver; f = f, g = g)
+        if hd.seq == "rebuild"
+            hd.solver = MBI.init(IPMProblem(hd.R.Q, hd.R.B, f, g, 0.0, hd.R.K, hd.R.s), hd.st)
+        else
+            MBI.reinit!(hd.solver; f = f, g = g)
+        end
         return nothing
     end
     info = () -> Dict{String,Any}("package" => "Mumblebee", "path" => pkgdir(Mumblebee),
@@ -267,14 +273,18 @@ function mumblebee_spec(; max_iter = 200)
                                               git_state(pkgdir(Mumblebee); paths = ["src"]) :
                                               "e78d9b9a3a0a2f4c226bf2eb0cf20f662e7d676b (pinned as in the paper's bench/mpc)",
                                   "settings" => "feas_tol = gap_tol = eps, max_iter $max_iter, other IPMSettings defaults; ordering per variant",
-                                  "warm_start" => "none (interior point); sequence mode keeps the symbolic analysis through reinit!(f, g), which restarts from Mumblebee's starting point (its iteration count can differ by one from a fresh setup: some internal state survives reinit!)")
+                                  "warm_start" => "none (interior point); sequence mode keeps the symbolic analysis through reinit!(f, g), which restarts from Mumblebee's starting point (its iteration count can differ by one from a fresh setup: some internal state survives reinit!), or, strategy rebuild, a fresh IPMProblem + init per QP inside the clock; the harness keeps the strategy with fewer failures, then the faster. Pinned commit defect: reinit! after a high-accuracy solve can end in NUMERICAL_FAILURE at iteration 1")
     readback = function (hd::MBHandle)
         st = hd.solver.settings
         d = Dict{String,Any}(string(f) => string(getfield(st, f)) for f in fieldnames(typeof(st)))
         d["tols"] = Dict("feas_tol" => st.feas_tol, "gap_tol" => st.gap_tol)
         return d
     end
-    return SolverSpec(name = "mumblebee", readback = readback, kind = :ipm, applicable = p -> true,
+    # pinned Mumblebee: a reinit! right after a high-accuracy solve can stop with
+    # NUMERICAL_FAILURE at iteration 1 (state in the KKT object survives reinit!),
+    # so the sequence mode is also run with a fresh init per QP (inside the clock)
+    return SolverSpec(name = "mumblebee", readback = readback,
+                      seq_variants = [Dict{String,Any}("seq" => "reinit"), Dict{String,Any}("seq" => "rebuild")], kind = :ipm, applicable = p -> true,
                       variants = [Dict{String,Any}("elim" => "amf"), Dict{String,Any}("elim" => "nd")],
                       setup = setup, solve! = solve!, update! = update!, warm! = nothing, info = info)
 end

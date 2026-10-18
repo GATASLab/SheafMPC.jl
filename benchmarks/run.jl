@@ -99,8 +99,7 @@ function solver_specs()
     if haskey(ENV, "BENCH_MUMBLEBEE_NAME")
         i = findfirst(s -> s.name == "mumblebee", sp)
         s = sp[i]
-        sp[i] = BH.SolverSpec(name = ENV["BENCH_MUMBLEBEE_NAME"], kind = s.kind, applicable = s.applicable, variants = s.variants,
-                              setup = s.setup, solve! = s.solve!, update! = s.update!, warm! = s.warm!, info = s.info)
+        sp[i] = BH.SolverSpec(; (f => getfield(s, f) for f in fieldnames(BH.SolverSpec))..., name = ENV["BENCH_MUMBLEBEE_NAME"])
     end
     isempty(SOLV) || filter!(s -> s.name in SOLV, sp)
     return sp
@@ -154,9 +153,22 @@ function run_instance(s, solvers)
             else
                 v, tol = ch["variant"], ch["tol"]
                 cold = BH.run_cold(sp, inst, eps, v, tol; reps = s.reps, cold_qps = s.cold)
-                warm, tsu = BH.run_warm(sp, inst, eps, v, tol; reps = s.reps)
+                # warm mode, once per sequence strategy of the solver; keep the fewest failures, then the fastest
+                strat = Dict{String,Any}[]
+                best = nothing
+                for sv in sp.seq_variants
+                    w, tsu = BH.run_warm(sp, inst, eps, merge(v, sv), tol; reps = s.reps)
+                    st = BH.seqstats(w; skipfirst = true)
+                    push!(strat, Dict{String,Any}("strategy" => sv, "stats" => st))
+                    key = (st["failures"], isnan(st["median"]) ? Inf : st["median"])
+                    if best === nothing || key < best[1]
+                        best = (key, w, tsu, sv)
+                    end
+                end
+                _, warm, tsu, sv = best
                 tr["status"] = "ran"; tr["variant"] = v; tr["tol"] = tol
                 tr["cold"] = cold; tr["warm"] = warm; tr["warm_setup"] = tsu
+                tr["warm_strategy"] = sv; tr["warm_strategies"] = strat
                 tr["cold_stats"] = BH.seqstats(cold); tr["warm_stats"] = BH.seqstats(warm; skipfirst = true)
                 tr["setup_med"] = median([r["t_setup_med"] for r in cold])
                 cs = tr["cold_stats"]; ws = tr["warm_stats"]

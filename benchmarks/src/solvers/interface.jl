@@ -48,6 +48,9 @@ Base.@kwdef struct SolverSpec
     warm!::Union{Nothing,Function} = nothing
     info::Function = () -> Dict{String,Any}()
     readback::Function = h -> Dict{String,Any}()
+    # warm-mode strategies (merged into the variant at setup); the protocol runs
+    # each and keeps the one with the fewest failures, then the fastest
+    seq_variants::Vector{Dict{String,Any}} = [Dict{String,Any}()]
 end
 
 failed_result(n) = SolveResult(fill(NaN, n), nothing, :failed, 0, NaN)
