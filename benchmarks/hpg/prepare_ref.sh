@@ -4,7 +4,8 @@
 #   benchmarks/hpg/prepare_ref.sh master        # or opt/admm, opt/conic, a SHA
 #   HPG_TIER=all HPG_AFTER=<build id or none> benchmarks/hpg/submit_ref.sh REF
 #
-# Builds $ROOT/refs/<sha>/SheafMPC.jl from `git archive REF src Project.toml`
+# Builds $ROOT/refs/<sha>/SheafMPC.jl (sha: the last commit at REF touching src
+# or Project.toml) from `git archive REF src Project.toml`
 # (the package under test, exactly as committed at REF) and `git archive HEAD
 # benchmarks` (the harness at its own commit), records both in PACKAGE_REF and
 # HARNESS_REF, copies the generated data and the reference cache, links the
@@ -16,15 +17,17 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"
 PKG="$(dirname "$HERE")"
 ROOT="${HPG_ROOT:-/blue/fairbanksj/itaykadosh/sheafmpc_bench}"
 REF="${1:?usage: prepare_ref.sh REF}"
-SHA=$(git -C "$PKG" rev-parse --short=10 "$REF")
-FULL=$(git -C "$PKG" rev-parse "$REF")
+# the snapshot is named by the last commit at REF that touched the package (src, Project.toml)
+FULL=$(git -C "$PKG" log -1 --format=%H "$REF" -- src Project.toml)
+SHA=${FULL:0:10}
+TIP=$(git -C "$PKG" rev-parse "$REF")
 HSHA=$(git -C "$PKG" rev-parse HEAD)
 [ -z "$(git -C "$PKG" status --porcelain -- benchmarks/src benchmarks/run.jl benchmarks/summarize.jl benchmarks/hpg)" ] || \
   { echo "commit the harness first (the snapshot takes benchmarks/ at HEAD)"; exit 1; }
 TMP=$(mktemp -d)
 git -C "$PKG" archive "$REF" src Project.toml | tar -x -C "$TMP"
 git -C "$PKG" archive HEAD benchmarks | tar -x -C "$TMP"
-echo "$FULL $REF" > "$TMP/PACKAGE_REF"
+echo "$FULL $REF@$TIP" > "$TMP/PACKAGE_REF"
 echo "$HSHA HEAD" > "$TMP/HARNESS_REF"
 DEST="$ROOT/refs/$SHA"
 ssh hpg "mkdir -p $DEST && ln -sfn $ROOT/Mumblebee.jl $DEST/Mumblebee.jl && ln -sfn $ROOT/CliqueTrees-fast-0015e2b $DEST/CliqueTrees-fast-0015e2b"
