@@ -42,6 +42,8 @@ const THREADS = parse.(Int, envlist("BENCH_THREADS", "1,2,4,8"))
 const BUDGET = parse(Float64, get(ENV, "BENCH_BUDGET", "0.5"))
 const TAG = get(ENV, "BENCH_TAG", "")
 const HN = 24
+const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
+"reduced" in SETS && include(joinpath(PAPER, "scripts", "resolution", "experiments", "common_spatial.jl"))
 
 loadavg() = (s = read("/proc/loadavg", String); parse(Float64, split(s)[1]))
 
@@ -159,27 +161,23 @@ end
 
 "The paper's grid fleet (Resolution, common_spatial.jl) and its team pushforwards."
 function reduced_set(rows)
-    paper = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
-    isdefined(Main, :FleetScenario) ||
-        Base.include(Main, joinpath(paper, "scripts", "resolution", "experiments", "common_spatial.jl"))
     for (R, Cc) in ((8, 8), (16, 16))
-        sc = Base.invokelatest(Main.FleetScenario; rows = R, cols = Cc, H = HN, coherence = :rows, seed = 20261018)
-        layout = Base.invokelatest(Main.sp_grid, R, Cc; spacing = sc.spacing)[2]
-        spec = Base.invokelatest(Main.fleet_spec, sc; xhat = Base.invokelatest(Main.formation_start, sc, layout), t0 = 0.0)
-        model = Base.invokelatest(Main.build_model, spec)
+        sc = FleetScenario(; rows = R, cols = Cc, H = HN, coherence = :rows, seed = 20261018)
+        layout = sp_grid(R, Cc; spacing = sc.spacing)[2]
+        spec = fleet_spec(sc; xhat = formation_start(sc, layout), t0 = 0.0)
+        model = build_model(spec)
         P = model.program
-        ag, tm = Base.invokelatest(Main.vertex_coordinates, model)
+        ag, tm = vertex_coordinates(model)
         for k in (0, 1, 2, 4, R)
-            alpha = k == 0 ? collect(1:(R*Cc)) : k == 1 ? Base.invokelatest(Main.sp_rows, R, Cc) :
-                    Base.invokelatest(Main.sp_strips, R, Cc, k)
-            Pi = Base.invokelatest(Main.spatial_partition, model, alpha)
+            alpha = k == 0 ? collect(1:(R*Cc)) : k == 1 ? sp_rows(R, Cc) : sp_strips(R, Cc, k)
+            Pi = spatial_partition(model, alpha)
             tp = 0.0
             if k == 0
                 Pk = P
             else
-                tp = @elapsed (Pk, _) = Base.invokelatest(Main.pushforward, P, Pi; basis = :structured)
+                tp = @elapsed (Pk, _) = pushforward(P, Pi; basis = :structured)
             end
-            Pc = Base.invokelatest(Main.canonical_partition, Pi)
+            Pc = canonical_partition(Pi)
             nb = maximum(Pc)
             vteam = zeros(Int, nb); vtime = zeros(Int, nb)
             for v in eachindex(Pc)
@@ -290,14 +288,14 @@ function main()
     BLAS.set_num_threads(1)
     rows = Dict{String,Any}[]
     @printf("host %s, %s, %d threads, load %.1f\n", gethostname(), Sys.cpu_info()[1].model, Threads.nthreads(), loadavg())
-    "fleet" in SETS && fleet_set(rows)
-    "reduced" in SETS && reduced_set(rows)
-    "threads" in SETS && threads_set(rows)
-    "lowrank" in SETS && lowrank_set(rows)
     mkpath(joinpath(@__DIR__, "results"))
     out = joinpath(@__DIR__, "results", "kkt" * (isempty(TAG) ? "" : "_" * TAG) * ".json")
-    open(io -> JSON.print(io, Dict("rows" => rows, "host" => gethostname(), "cpu" => Sys.cpu_info()[1].model,
-                                   "threads" => Threads.nthreads(), "sets" => SETS), 1), out, "w")
+    save() = open(io -> JSON.print(io, Dict("rows" => rows, "host" => gethostname(), "cpu" => Sys.cpu_info()[1].model,
+                                            "threads" => Threads.nthreads(), "sets" => SETS), 1), out, "w")
+    "fleet" in SETS && (fleet_set(rows); save())
+    "reduced" in SETS && (reduced_set(rows); save())
+    "threads" in SETS && (threads_set(rows); save())
+    "lowrank" in SETS && (lowrank_set(rows); save())
     println("wrote ", out)
 end
 
