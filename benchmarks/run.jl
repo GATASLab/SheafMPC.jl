@@ -142,6 +142,7 @@ function run_instance(s, solvers)
                                               "calibration" => "tolerance in eps .* (1, 0.1, 0.01, 0.001), fastest variant meeting the tier on the first, middle and last QP",
                                               "timer" => "time_ns around the call; GC.gc(false) before, outside the clock"),
                            "solvers" => Dict{String,Any}())
+    nv0 = BH.nvcsw()
     for sp in solvers
         sp.applicable(inst.seq[1]) || continue
         sres = Dict{String,Any}("info" => sp.info(), "kind" => string(sp.kind), "tiers" => Dict{String,Any}())
@@ -188,6 +189,8 @@ function run_instance(s, solvers)
         res["solvers"][sp.name] = sres
     end
     res["load_after"] = BH.loadavg()
+    res["preemptions"] = BH.nvcsw() - nv0          # involuntary context switches while timing this instance
+    res["core_util_after"] = (c = tryparse(Int, get(ENV, "BENCH_CORE", ""))) === nothing ? NaN : BH.core_util(c; dt = 1.0)
     return res
 end
 

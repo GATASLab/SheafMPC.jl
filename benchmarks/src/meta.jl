@@ -74,20 +74,45 @@ function machine_info()
                             "slurm_job" => get(ENV, "SLURM_JOB_ID", ""), "date" => string(now()))
 end
 
+"Busy fraction of one core over `dt` seconds, from /proc/stat (NaN if unavailable)."
+function core_util(core::Integer; dt = 2.0)
+    rd() = try
+        l = first(filter(x -> startswith(x, "cpu$core "), readlines("/proc/stat")))
+        v = parse.(Int, split(l)[2:end])
+        (sum(v), v[4] + (length(v) >= 5 ? v[5] : 0))       # total, idle + iowait
+    catch
+        (0, 0)
+    end
+    t1, i1 = rd(); sleep(dt); t2, i2 = rd()
+    t2 == t1 && return NaN
+    return 1 - (i2 - i1) / (t2 - t1)
+end
+
+"Involuntary context switches of this process so far (a preemption count; -1 if unavailable)."
+nvcsw() = try
+    l = first(filter(x -> startswith(x, "nonvoluntary_ctxt_switches"), readlines("/proc/self/status")))
+    parse(Int, split(l)[end])
+catch
+    -1
+end
+
 """
     wait_for_load(; max_load, max_wait, poll) -> Dict
 
-Block until the 1-minute load average is at most `max_load` (default 4), for
+Block until the 1-minute load average is at most `max_load` (default 4) and
+the pinned core (ENV BENCH_CORE, when set) is at most 15% busy, for
 at most `max_wait` seconds; returns the load seen and whether the gate was
 passed or timed out (recorded with every timed block).
 """
 function wait_for_load(; max_load = parse(Float64, get(ENV, "BENCH_MAX_LOAD", "4")),
                        max_wait = parse(Float64, get(ENV, "BENCH_MAX_WAIT", "7200")), poll = 30.0)
     t0 = time(); waited = 0.0
+    core = tryparse(Int, get(ENV, "BENCH_CORE", ""))       # the pinned core must also be idle (another job pinned there)
     while true
         l = loadavg()
-        if l[1] <= max_load
-            return Dict{String,Any}("load" => l, "waited" => waited, "gate" => "passed")
+        cu = core === nothing ? NaN : core_util(core)
+        if l[1] <= max_load && !(cu > 0.15)
+            return Dict{String,Any}("load" => l, "waited" => waited, "gate" => "passed", "core" => core, "core_util" => cu)
         end
         if time() - t0 > max_wait
             return Dict{String,Any}("load" => l, "waited" => waited, "gate" => "timed_out")

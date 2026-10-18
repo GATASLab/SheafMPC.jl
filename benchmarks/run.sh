@@ -11,7 +11,7 @@
 # thread, and wait for the 1-minute load to drop below BENCH_MAX_LOAD (4).
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-CORE="${BENCH_CORE:-3}"
+CORE="${BENCH_CORE:-6}"; export BENCH_CORE="$CORE"     # another agent times on cores 3 and 10
 export JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 STAMP="$(date +%Y%m%d_%H%M)"
 jl() { taskset -c "$CORE" julia --startup-file=no -t 1 "$@"; }

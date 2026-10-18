@@ -96,6 +96,13 @@ function main()
     gates = [r["load_before"]["gate"] for r in R]
     @printf(io, "- 1-minute load before each instance: median %.1f, max %.1f; gate passed %d, timed out %d, skipped %d\n",
             median(loads), maximum(loads), count(==("passed"), gates), count(==("timed_out"), gates), count(==("skipped"), gates))
+    pre = [(r["key"], get(r, "preemptions", -1)) for r in R]
+    pm = filter(x -> x[2] >= 0, pre)
+    if !isempty(pm)
+        w = pm[argmax(last.(pm))]
+        @printf(io, "- involuntary context switches while timing an instance: median %d, max %d (%s)\n",
+                median(last.(pm)), maximum(last.(pm)), w[1])
+    end
     for s in solvers
         r = first(filter(r -> haskey(r["solvers"], s), R))
         inf = r["solvers"][s]["info"]
