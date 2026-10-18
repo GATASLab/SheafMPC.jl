@@ -81,4 +81,35 @@
         @test norm(restrict(R, lift(R, y)) - y) < 1e-8 * norm(y)
         @test restrict!(zeros(length(y)), R, lift(R, y)) == restrict(R, lift(R, y))
     end
+
+    @testset "every step terminates with a status" begin
+        sct = GridScenario(rows = 2, cols = 3, H = 6, coherence = :agents, seed = 4)
+        flt = fleet(sct)
+        x = formation_start(sct)
+        refs, term = references(sct)
+        # rho far too small or too large: the iteration cap ends the step, reported as such
+        for rho in (1e-7, 1e7)
+            D = DistributedMPC(flt; rho = rho, maxit = 25)
+            info = step!(D, x, refs; terminal = term)
+            @test info.iter == 25 && info.status == :max_iter && !D.converged
+            @test all(isfinite, reduce(vcat, info.u))
+        end
+        # the time limit (checked after every iteration)
+        D = DistributedMPC(flt; rho = 1e-7, maxit = 10^9, time_limit = 1e-3)
+        t = @elapsed info = step!(D, x, refs; terminal = term)
+        @test info.status == :time_limit && !D.converged && t < 5
+        # a NaN in the data stops the iteration at once, and the next step starts afresh
+        D = DistributedMPC(flt; rho = 1.0)
+        bad = deepcopy(refs); bad[2][1, 3] = NaN
+        t = @elapsed info = step!(D, x, bad; terminal = term)
+        @test info.status == :numerical_error && info.iter == 1 && !D.converged
+        @test D.local_failures <= 1 && t < 5           # at most one local solve runs into the NaN
+        info = step!(D, x, refs; terminal = term)
+        @test info.status == :solved && D.converged && all(isfinite, plan(D))
+        # bad arguments
+        @test_throws ArgumentError DistributedMPC(flt; rho = NaN)
+        @test_throws ArgumentError DistributedMPC(flt; rho = -1.0)
+        @test_throws ArgumentError DistributedMPC(flt; maxit = 0)
+        @test_throws ArgumentError DistributedMPC(flt; warm = :sideways)
+    end
 end

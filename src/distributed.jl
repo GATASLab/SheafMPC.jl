@@ -114,7 +114,7 @@ end
 
 """
     DistributedMPC(fleet, teams = 1:n; rho = 1.0, eps_abs = 1e-6, eps_rel = 1e-4, maxit = 3000, budget = 0,
-                   warm = :shift, settings...)
+                   warm = :shift, time_limit = Inf, settings...)
 
 Distributed MPC of `fleet` over agents (`teams = 1:n`, the default) or teams:
 consensus ADMM on the fully condensed pushforward along `Teams(teams) ⊠
@@ -130,6 +130,16 @@ plan and scaled duals moved one instant earlier (see the file header),
 `:previous` from the previous step's consensus iterates as they are (in the
 previous step's coordinates), `:cold` from zero. Other keywords are `Settings`
 of the local solvers (defaults `eps_abs = eps_rel = 1e-9`, `max_iter = 20000`).
+
+Every step ends, with its outcome in `info.status`: `:solved` (converged to
+the tolerances, or the budget run with every local QP solved), `:max_iter` (the
+`maxit` iterations ran out before the tolerances, or a local QP stopped at its
+own `max_iter`), `:time_limit` (the step took more than `time_limit` seconds,
+checked after every iteration), `:primal_infeasible` or `:dual_infeasible` (a
+local QP is, the iteration stops at once) and `:numerical_error` (a residual or
+a local solution is not finite; the iterates are reset, so the next step starts
+from the free response). `dmpc.local_failures` counts the local solves of the
+step that did not end `:solved`.
 """
 mutable struct DistributedMPC
     fleet::Fleet
@@ -158,13 +168,20 @@ mutable struct DistributedMPC
     floats::Int
     t_parallel::Float64
     t_warm::Float64
+    time_limit::Float64
+    local_failures::Int
+    healthy::Bool                     # false after a numerical failure: the next step restarts the iterates
     steps::Int
 end
 
 function DistributedMPC(fl::Fleet, teams = collect(1:nagents(fl)); rho::Real = 1.0, eps_abs::Real = 1e-6,
                         eps_rel::Real = 1e-4, maxit::Integer = 3000, budget::Integer = 0, basis::Symbol = :structured,
-                        warm::Symbol = :shift, kwargs...)
+                        warm::Symbol = :shift, time_limit::Real = Inf, kwargs...)
     warm in (:shift, :previous, :cold) || throw(ArgumentError("warm must be :shift, :previous or :cold"))
+    (isfinite(rho) && rho > 0) || throw(ArgumentError("rho must be positive and finite, got $rho"))
+    maxit >= 1 || throw(ArgumentError("maxit must be at least 1"))
+    budget >= 0 || throw(ArgumentError("budget must be nonnegative"))
+    time_limit > 0 || throw(ArgumentError("time_limit must be positive"))
     fp = FleetProgram(fl)
     R = reduce(fp, Teams(teams) ⊠ full_condensing(); basis = basis)
     Pc = R.program
@@ -228,7 +245,8 @@ function DistributedMPC(fl::Fleet, teams = collect(1:nagents(fl)); rho::Real = 1
     nfine = c0dim(fp.program)
     return DistributedMPC(fl, fp, R, ifs, locals, Float64(rho), Float64(eps_abs), Float64(eps_rel), Int(maxit),
                           Int(budget), warm, z, deepcopy(z), deepcopy(z), deepcopy(z), deepcopy(z), zeros(c0dim(Pc)),
-                          zeros(nfine), zeros(nfine), zeros(c0dim(Pc)), info, 0, false, 0, 0.0, 0.0, 0)
+                          zeros(nfine), zeros(nfine), zeros(c0dim(Pc)), info, 0, false, 0, 0.0, 0.0, Float64(time_limit),
+                          0, true, 0)
 end
 
 function Base.show(io::IO, D::DistributedMPC)
@@ -259,7 +277,7 @@ keep their own warm starts (their previous solutions).
 function _shift_warm!(D::DistributedMPC, x::AbstractVector)
     fp, R = D.fp, D.R
     Pc = R.program
-    started = D.steps > 0
+    started = D.steps > 0 && D.healthy
     started ? shift_plan!(D.xs, fp, D.x, x) : free_response!(D.xs, fp, x)
     restrict!(D.y0, R, D.xs)
     for (k, I) in enumerate(D.ifs)
@@ -267,6 +285,8 @@ function _shift_warm!(D::DistributedMPC, x::AbstractVector)
         if started
             _shift_values!(D.lam[k], I.shift, D.a[k])
             _shift_values!(D.mu[k], I.shift, D.a[k])
+        else
+            fill!(D.lam[k], 0.0); fill!(D.mu[k], 0.0)
         end
     end
     return D
@@ -299,17 +319,24 @@ function step!(D::DistributedMPC, x::AbstractVector, refs::AbstractVector; termi
     tw = time_ns()
     if D.warm == :shift
         _shift_warm!(D, x)
-    elseif D.warm == :cold
+    elseif D.warm == :cold || !D.healthy
         for k in eachindex(D.z)
             fill!(D.z[k], 0.0); fill!(D.lam[k], 0.0); fill!(D.mu[k], 0.0)
         end
+    end
+    if !D.healthy
+        for L in D.locals
+            reset!(L.solver)
+        end
+        D.healthy = true
     end
     t1 = time_ns()
     D.t_warm = (t1 - tw) / 1e9
     rho = D.rho
     pdim = floats_per_iteration(D)
     maxit = D.budget > 0 ? D.budget : D.maxit
-    it = 0; converged = false; tseq = 0.0; tpar = 0.0; status = :solved
+    it = 0; converged = false; tseq = 0.0; tpar = 0.0
+    nfail = 0; lstatus = :solved; stop = :none
     while it < maxit
         it += 1
         tmax = 0.0
@@ -335,8 +362,14 @@ function step!(D::DistributedMPC, x::AbstractVector, refs::AbstractVector; termi
             end
             update!(L.solver; q = q)
             si = solve!(L.solver)
-            si.status == :solved || (status = si.status)
+            if si.status != :solved
+                nfail += 1
+                lstatus = si.status
+                si.status in (:primal_infeasible, :dual_infeasible) && (stop = si.status)
+            end
             w = L.solver.xsol
+            # a NaN makes every later local solve run to its max_iter: stop here
+            stop == :none && !all(isfinite, w) && (stop = :numerical_error)
             copyto!(view(D.y, vrange(Pc, L.u)), view(w, 1:L.d))
             for (kk, ko) in enumerate(L.own)
                 mul!(D.a[ko], D.ifs[ko].R, view(w, 1:L.d))
@@ -344,8 +377,10 @@ function step!(D::DistributedMPC, x::AbstractVector, refs::AbstractVector; termi
             end
             dt = (time_ns() - ts) / 1e9
             tseq += dt; tmax = max(tmax, dt)
+            stop == :none || break
         end
         tpar += tmax
+        stop == :none || break
         r2 = 0.0; s2 = 0.0; an2 = 0.0; zn2 = 0.0; yn2 = 0.0
         for k in eachindex(D.ifs)
             z, lam, mu, a, c = D.z[k], D.lam[k], D.mu[k], D.a[k], D.c[k]
@@ -359,12 +394,25 @@ function step!(D::DistributedMPC, x::AbstractVector, refs::AbstractVector; termi
                 an2 += a[j]^2 + c[j]^2; zn2 += 2 * zn^2; yn2 += lam[j]^2 + mu[j]^2
             end
         end
+        if !(isfinite(r2) && isfinite(s2) && isfinite(an2) && isfinite(yn2))
+            stop = :numerical_error                # a NaN would disable the test below
+            break
+        end
         epri = sqrt(pdim) * D.eps_abs + D.eps_rel * max(sqrt(an2), sqrt(zn2))
         edua = sqrt(pdim) * D.eps_abs + D.eps_rel * rho * sqrt(yn2)
         if D.budget == 0 && sqrt(r2) <= epri && rho * sqrt(s2) <= edua
             converged = true
             break
         end
+        if D.time_limit < Inf && (time_ns() - t1) / 1e9 > D.time_limit
+            stop = :time_limit
+            break
+        end
+    end
+    status = stop != :none ? stop : D.budget == 0 && !converged ? :max_iter : lstatus
+    if stop == :numerical_error || !all(isfinite, D.y)
+        status = :numerical_error
+        D.healthy = false
     end
     t2 = time_ns()
     lift!(D.x, R, D.y)
@@ -377,7 +425,8 @@ function step!(D::DistributedMPC, x::AbstractVector, refs::AbstractVector; termi
         end
     end
     t3 = time_ns()
-    D.iterations = it; D.converged = converged || D.budget > 0; D.floats = it * pdim; D.t_parallel = tpar
+    D.iterations = it; D.converged = converged || (D.budget > 0 && stop == :none); D.floats = it * pdim; D.t_parallel = tpar
+    D.local_failures = nfail
     info.status = status; info.J = objective(Pc, D.y); info.iter = it; info.polish = :none; info.feasible = R.feasible
     info.gap_upper = NaN; info.gap_residual = NaN
     info.t_construct = (t1 - t0) / 1e9; info.t_setup = 0.0; info.t_solve = tseq; info.t_lift = (t3 - t2) / 1e9
