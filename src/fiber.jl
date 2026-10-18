@@ -47,6 +47,7 @@ struct Fiber
     kind::Symbol
 end
 
+"""`fiberdim(F)`: the dimension of the fiber's section space, the coarse stalk."""
 fiberdim(F::Fiber) = size(F.N, 2)
 Base.length(F::Fiber) = F.offsets[end]
 

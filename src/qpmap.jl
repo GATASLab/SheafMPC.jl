@@ -179,6 +179,7 @@ struct ProgramSolution
     info::Info
 end
 
+"""`isoptimal(sol)`: the solve succeeded."""
 isoptimal(s::ProgramSolution) = s.status == :solved
 
 """Split a full-QP dual vector into hard edge duals (flat over C^1) and node duals."""

@@ -54,7 +54,10 @@ a vector of them for teams of teams, applied in order) and applies the first
 inputs of the lifted plan, which every agent can execute (Cor. 1). The fibers,
 the reduced QP's structure and the solver's factorizations are built once;
 `step!` updates vectors only and solves warm. With `certify`, every step also
-reports bound (a) on the gap of the reduction. Other keywords are solver
+reports bound (a) on the gap of the reduction. `warm = :shift` (the default)
+starts each solve from the previous plan moved one instant earlier (for
+resolutions without time blocking; otherwise, and with `warm = :previous`,
+from the previous plan itself), `warm = :cold` from zero. Other keywords are solver
 `Settings` (defaults `eps_abs = eps_rel = 1e-6`, `max_iter = 20000`).
 """
 mutable struct MPCController
@@ -73,10 +76,15 @@ mutable struct MPCController
     levels::Vector{Vector{Float64}}        # lifted plan at every level, finest first
     info::StepInfo
     steps::Int
+    warm::Symbol
+    xmap::Vector{Int}                      # shifted warm start: variable maps (empty when unavailable)
+    ymap::Vector{Int}
 end
 
 function MPCController(fl::Fleet, resolution = Fine(); certify::Bool = true, dedup::Bool = true,
-                       basis::Symbol = :structured, absent::Symbol = :omit, settings::Settings = Settings(), kwargs...)
+                       basis::Symbol = :structured, absent::Symbol = :omit, warm::Symbol = :shift,
+                       settings::Settings = Settings(), kwargs...)
+    warm in (:shift, :previous, :cold) || throw(ArgumentError("warm must be :shift, :previous or :cold"))
     fp = FleetProgram(fl; absent = absent)
     ress = resolution isa Resolution ? Resolution[resolution] : Vector{Resolution}(collect(resolution))
     chain = ReducedProgram[]
@@ -107,8 +115,10 @@ function MPCController(fl::Fleet, resolution = Fine(); certify::Bool = true, ded
     m = length(qmap.group)
     info = StepInfo([zeros(ag.nu) for ag in fl.agents], :unsolved, NaN, 0, :none, true, NaN, NaN,
                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-    return MPCController(fl, fp, ress, chain, qmap, dedup, nothing, st, cert, zeros(m), zeros(c1dim(Pq)),
-                         zeros(noderows(Pq)), levels, info, 0)
+    C = MPCController(fl, fp, ress, chain, qmap, dedup, nothing, st, cert, zeros(m), zeros(c1dim(Pq)),
+                      zeros(noderows(Pq)), levels, info, 0, warm, Int[], Int[])
+    warm == :shift && _shift_maps!(C)
+    return C
 end
 
 function Base.show(io::IO, C::MPCController)
@@ -118,11 +128,87 @@ function Base.show(io::IO, C::MPCController)
           ", reduced QP: $(c0dim(Pq)) variables, $(nrows(C.qmap.qp)) rows, $(C.steps) steps)")
 end
 
+"""
+The index maps of the shifted warm start: every coordinate of the reduced
+program at (team, t) takes the previous solution's value at (team, t + 1) when
+the two vertices have the same fiber (the same members and basis), and keeps
+its own value otherwise (the last instants repeat); every multiplier likewise
+(dynamics edges by their tag, node rows by vertex). Needs a layout of
+(team, instant) vertices, so time blockings fall back to the previous plan.
+"""
+function _shift_maps!(C::MPCController)
+    fp = C.fp
+    P = reduced_program(C)
+    L = isempty(C.chain) ? fp.layout : C.chain[end].layout
+    (L === nothing || ntimes(L) != C.fleet.H + 1) && return C
+    same(v, w) = isempty(C.chain) ? P.dims[v] == P.dims[w] :
+                 (Fv = C.chain[end].fibers[v]; Fw = C.chain[end].fibers[w];
+                  length(Fv.members) == length(Fw.members) && Fv.N == Fw.N && P.dims[v] == P.dims[w])
+    # composite fibers of a chain: only the last level is compared, which is enough for teams of teams over instants
+    src = collect(1:nvertices(P))
+    for a in axes(L.vid, 1), t in 1:(ntimes(L)-1)
+        v, w = L.vid[a, t], L.vid[a, t+1]
+        (v > 0 && w > 0 && same(v, w)) && (src[v] = w)
+    end
+    xmap = zeros(Int, c0dim(P))
+    for v in 1:nvertices(P), (k, j) in enumerate(vrange(P, v))
+        xmap[j] = P.offsets[src[v]] + k
+    end
+    # multipliers, in the full row order of sheaf_qp: hard edges, then node rows
+    M = C.qmap
+    bytag = Dict{EdgeTag,Int}()
+    for (e, E) in enumerate(P.edges)
+        bytag[E.tag] = e
+    end
+    full = Int[]
+    hard = [e for (e, E) in enumerate(P.edges) if E.hard && edgedim(E) > 0]
+    hpos = Dict{Int,Int}()
+    r = 0
+    for e in hard
+        hpos[e] = r; r += edgedim(P.edges[e])
+    end
+    for e in hard
+        E = P.edges[e]
+        t2 = EdgeTag(E.tag.kind, E.tag.i, E.tag.j, E.tag.t + 1)
+        f = get(bytag, t2, 0)
+        f = (f > 0 && haskey(hpos, f) && edgedim(P.edges[f]) == edgedim(E)) ? f : e
+        append!(full, hpos[f] .+ (1:edgedim(E)))
+    end
+    nh = r
+    for v in 1:nvertices(P)
+        w = src[v]
+        w2 = length(rrange(P, w)) == length(rrange(P, v)) ? w : v
+        append!(full, nh .+ collect(rrange(P, w2)))
+    end
+    ymap = [M.group[full[i]] for i in M.keep]
+    C.xmap = xmap
+    C.ymap = ymap
+    return C
+end
+
 """The reduced QP's current program (the last level of the reduction)."""
 reduced_program(C::MPCController) = isempty(C.chain) ? C.fp.program : C.chain[end].program
 
+"""The QP of `M` with its current vectors (the scaling is computed from the first step's data)."""
+function _current_qp(M::QPMap)
+    qp = M.qp
+    m = nrows(qp)
+    l = fill(-Inf, m); u = fill(Inf, m); socb = zeros(m)
+    @inbounds for i in 1:m
+        k = qp.kinds[i]
+        if k == ROW_EQ
+            l[i] = M.b[i]; u[i] = M.b[i]
+        elseif k == ROW_LEQ
+            u[i] = M.b[i]
+        else
+            socb[i] = M.b[i]
+        end
+    end
+    return ConicQP(qp.P, M.q, qp.A, l, u; c = M.c, socs = qp.socs, socb = socb, kinds = qp.kinds)
+end
+
 function _setup!(C::MPCController)
-    C.solver = setup(C.qmap.qp; settings = C.settings)
+    C.solver = setup(_current_qp(C.qmap); settings = C.settings)
     return C
 end
 
@@ -157,16 +243,21 @@ function step!(C::MPCController, x::AbstractVector, refs::AbstractVector; termin
         C.dedup = false
         C.yfull = zeros(length(C.qmap.group))
         C.solver = nothing
+        C.warm == :shift && _shift_maps!(C)
     end
     t1 = time_ns()
     M = C.qmap
     if C.solver === nothing
         _setup!(C)
         s = C.solver
-        update!(s; q = M.q, b = M.b)
     else
         s = C.solver
         update!(s; q = M.q, b = M.b)
+        if C.warm == :cold || s.info.status != :solved
+            reset!(s)
+        elseif C.warm == :shift && !isempty(C.xmap)
+            warm_start_shifted!(s, C.xmap, C.ymap)
+        end
     end
     t2 = time_ns()
     sinfo = solve!(s)

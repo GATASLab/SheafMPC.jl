@@ -72,6 +72,7 @@ _sheaf(R::ReducedProgram) = R.program
 _layout(::SheafProgram) = nothing
 _layout(R::ReducedProgram) = R.layout
 
+"""`fiber_kinds(R)`: the basis of every fiber (`:identity`, `:structured`, `:structured_reduced`, `:orthonormal`)."""
 fiber_kinds(R::ReducedProgram) = [F.kind for F in R.fibers]
 
 function Base.show(io::IO, R::ReducedProgram)
@@ -82,7 +83,7 @@ function Base.show(io::IO, R::ReducedProgram)
 end
 
 """Rows of the member `l` of a block, as a sparse slice of `N_B` (read through its transpose)."""
-_member_basis(NtB::SpMat, lr::UnitRange{Int}) = SpMat(transpose(NtB[:, lr]))
+_member_basis(NtB::SpMat, lr::UnitRange{Int}) = copy(transpose(NtB[:, lr]))
 
 """
     reduce(program, resolution; basis = :structured, reuse = nothing, consistency_tol = 1e-8) -> ReducedProgram
@@ -100,6 +101,9 @@ SVD per block); the lifted plans and values do not depend on it.
 `reuse = R0`, a previous reduction along the same resolution (receding
 horizon), keeps every fiber whose internal restriction maps are unchanged: the
 targets may change, since the particular solution is an operator of them.
+When nothing structural changed (the same node matrices and edge maps), the
+coarse matrices and the update operators are shared too, and the reduction
+costs one `update!`.
 Reducing a `ReducedProgram` composes the reductions (teams of teams, the
 paper's Thm. 4): `lift` then lifts level by level.
 """
@@ -136,6 +140,10 @@ function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int},
         else
             fibers[b] = _make_fiber(P, members[b], internal[b], local_index, basis)
         end
+    end
+    if reusable && all(b -> fibers[b] === R0.fibers[b], 1:nb) && _same_structure(P, R0.fine, cross)
+        # nothing structural changed: share the coarse matrices and operators, recompute the vectors
+        return _reuse_structure(parent, P, res, R0, clayout)
     end
     kdims = [fiberdim(F) for F in fibers]
     coarse_offsets = [0; cumsum(kdims)]
@@ -193,7 +201,7 @@ function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int},
         end
         QB = sparse(QI, QJ, QV, length(F), length(F))
         AB = sparse(AI, AJ, AV, arow, length(F))
-        Qc = SpMat(NB' * (QB * NB))
+        Qc = NtB[b] * (QB * NB)
         Qc = SpMat((Qc + Qc') / 2)
         Ac = SpMat(AB * NB)
         cnodes[b] = NodeData(Qc, zeros(kdims[b]), 0.0, Ac, zeros(arow), cones)
@@ -201,14 +209,17 @@ function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int},
     # coarse edges: one per edge that is not contracted
     cedges = Vector{SheafEdge}(undef, length(cross))
     xrows = Int[]
+    member_rows = Dict{Tuple{Int,Int},SpMat}()
     for (k, e) in enumerate(cross)
         E = P.edges[e]
         bt, bh = Pi[E.tail], Pi[E.head]
         Ft, Fh = fibers[bt], fibers[bh]
         lt = (Ft.offsets[local_index[E.tail]]+1):Ft.offsets[local_index[E.tail]+1]
         lh = (Fh.offsets[local_index[E.head]]+1):Fh.offsets[local_index[E.head]+1]
-        Ftc = E.Ft * _member_basis(NtB[bt], lt)
-        Fhc = E.Fh * _member_basis(NtB[bh], lh)
+        Nt_ = get!(() -> _member_basis(NtB[bt], lt), member_rows, (bt, local_index[E.tail]))
+        Nh_ = get!(() -> _member_basis(NtB[bh], lh), member_rows, (bh, local_index[E.head]))
+        Ftc = E.Ft * Nt_
+        Fhc = E.Fh * Nh_
         cedges[k] = SheafEdge(bt, bh, Ftc, Fhc, E.hard, E.W, zeros(edgedim(E)), E.tag)
         append!(xrows, erange(P, e))
     end
@@ -220,6 +231,34 @@ function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int},
                        N, SpMat(transpose(N)), X, Cons, clayout, true, 0.0, Float64(consistency_tol),
                        Qn, An, Dx, xrows, rowmap, vertex_block, FlatData(P), zeros(n), zeros(n), zeros(noderows(P)),
                        zeros(c1dim(Pc)), zeros(c0dim(Pc)), zeros(nb), zeros(size(Cons, 1)))
+    update!(R)
+    return R
+end
+
+"""True when the node matrices of `P` and `Pp` agree and the edges `cross` have the same maps, kind and stiffness."""
+function _same_structure(P::SheafProgram, Pp::SheafProgram, cross)
+    for v in 1:nvertices(P)
+        a, b = P.nodes[v], Pp.nodes[v]
+        (a.Q === b.Q || a.Q == b.Q) && (a.A === b.A || a.A == b.A) && a.cones == b.cones || return false
+    end
+    for e in cross
+        E, G = P.edges[e], Pp.edges[e]
+        (E.tail == G.tail && E.head == G.head && E.hard == G.hard && E.W == G.W && (E.Ft === G.Ft || E.Ft == G.Ft) &&
+         (E.Fh === G.Fh || E.Fh == G.Fh) && E.tag == G.tag) || return false
+    end
+    return true
+end
+
+function _reuse_structure(parent, P::SheafProgram, res::Resolution, R0::ReducedProgram, clayout)
+    P0c = R0.program
+    cnodes = [NodeData(nd.Q, zeros(length(nd.q)), 0.0, nd.A, zeros(length(nd.b)), nd.cones) for nd in P0c.nodes]
+    cedges = [SheafEdge(E.tail, E.head, E.Ft, E.Fh, E.hard, E.W, zeros(edgedim(E)), E.tag) for E in P0c.edges]
+    Pc = SheafProgram(cnodes, cedges)
+    n = c0dim(P)
+    R = ReducedProgram(parent, P, Pc, res, R0.basis, R0.partition, R0.local_index, R0.fibers, R0.collapsed, R0.cross,
+                       R0.coarse_offsets, R0.N, R0.Nt, R0.X, R0.Cons, clayout, true, 0.0, R0.consistency_tol,
+                       R0.Qn, R0.An, R0.Dx, R0.xrows, R0.rowmap, R0.vertex_block, FlatData(P), zeros(n), zeros(n),
+                       zeros(noderows(P)), zeros(c1dim(Pc)), zeros(c0dim(Pc)), zeros(nvertices(Pc)), zeros(size(R0.Cons, 1)))
     update!(R)
     return R
 end

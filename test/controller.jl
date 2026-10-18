@@ -29,6 +29,23 @@ fl = fleet(sc)
     end
 end
 
+@testset "warm starts: shifted, previous and cold give the same plans" begin
+    scb = GridScenario(rows = 3, cols = 3, H = 8, coherence = :agents, umax_scale = 0.3, seed = 2)
+    flb = fleet(scb)
+    for res in (Fine(), Teams(row_teams(scb)), Teams(row_teams(scb)) ⊠ partial_condensing(2))
+        ctrls = [MPCController(flb, res; warm = w, certify = false, eps_abs = 1e-8, eps_rel = 1e-8) for w in (:shift, :previous, :cold)]
+        @test !isempty(ctrls[1].xmap) == !(res isa Product)
+        x = formation_start(scb)
+        for k in 0:5
+            refs, term = references(scb, k * scb.h)
+            infos = [step!(c, x, refs; terminal = term) for c in ctrls]
+            @test all(i -> i.status == :solved, infos)
+            @test srelerr(infos[1].J, infos[3].J) < 1e-6 && srelerr(infos[2].J, infos[3].J) < 1e-6
+            x = plant_step(flb, x, infos[3].u)
+        end
+    end
+end
+
 @testset "teams of teams" begin
     ctrl = MPCController(fl, [Teams(row_teams(sc)), Teams([1, 1, 2, 2])])
     refs, term = references(sc)

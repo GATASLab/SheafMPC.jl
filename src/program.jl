@@ -33,9 +33,16 @@ struct ConeBlock
     dim::Int
 end
 
+"""`zero_cone(d)`: `d` equality rows."""
 zero_cone(d::Integer) = ConeBlock(ZERO_CONE, d)
+"""`nonneg_cone(d)`: `d` half-space rows."""
 nonneg_cone(d::Integer) = ConeBlock(NONNEG_CONE, d)
+"""`soc_cone(d)`: one second-order cone of dimension `d` (`d - 1` entries bounded in norm by the first)."""
 soc_cone(d::Integer) = ConeBlock(SOC_CONE, d)
+
+# matrices are shared, not copied (they are never changed in place); vectors are copied
+_spmat(M::SpMat) = M
+_spmat(M::AbstractMatrix) = SpMat(sparse(M))
 
 """
     NodeData(Q, q, c, A, b, cones)
@@ -48,7 +55,8 @@ The convex data at one vertex `v` of a program:
   cones in `cones` (their dimensions add up to the number of rows of `A`).
 
 The vectors `q`, `b` and the constant `c` may be changed in place between
-solves (receding horizon); the matrices are fixed.
+solves (receding horizon); the matrices are fixed (and shared, not copied,
+when given as sparse matrices).
 """
 mutable struct NodeData
     Q::SpMat
@@ -65,7 +73,7 @@ mutable struct NodeData
         size(A, 1) == length(b) || throw(DimensionMismatch("A has $(size(A, 1)) rows, b has $(length(b))"))
         sum((cb.dim for cb in cones); init = 0) == length(b) ||
             throw(DimensionMismatch("the cone dimensions do not add up to the rows of A"))
-        new(SpMat(sparse(Q)), Vector{Float64}(q), Float64(c), SpMat(sparse(A)), Vector{Float64}(b), cones)
+        new(_spmat(Q), Vector{Float64}(q), Float64(c), _spmat(A), Vector{Float64}(b), cones)
     end
 end
 
@@ -113,10 +121,11 @@ struct SheafEdge
         d = length(b)
         size(Ft, 1) == d && size(Fh, 1) == d || throw(DimensionMismatch("restriction maps must have $d rows"))
         size(W) == (d, d) || throw(DimensionMismatch("W must be $d x $d"))
-        new(tail, head, SpMat(sparse(Ft)), SpMat(sparse(Fh)), hard, Matrix{Float64}(W), Vector{Float64}(b), tag)
+        new(tail, head, _spmat(Ft), _spmat(Fh), hard, Matrix{Float64}(W), Vector{Float64}(b), tag)
     end
 end
 
+"""`edgedim(E)`: the dimension of the edge stalk (0 for an absent edge)."""
 edgedim(E::SheafEdge) = length(E.b)
 
 """
@@ -156,7 +165,9 @@ struct SheafProgram
     end
 end
 
+"""`nvertices(P)`: the number of vertices."""
 nvertices(P::SheafProgram) = length(P.nodes)
+"""`nedges(P)`: the number of edges."""
 nedges(P::SheafProgram) = length(P.edges)
 """`dim C^0`, the number of scalar decision variables."""
 c0dim(P::SheafProgram) = P.offsets[end]
@@ -164,11 +175,14 @@ c0dim(P::SheafProgram) = P.offsets[end]
 c1dim(P::SheafProgram) = P.edge_offsets[end]
 """The number of node constraint rows."""
 noderows(P::SheafProgram) = P.row_offsets[end]
+"""`vrange(P, v)`: the entries of vertex `v` in a flat 0-cochain."""
 vrange(P::SheafProgram, v::Integer) = (P.offsets[v]+1):P.offsets[v+1]
+"""`erange(P, e)`: the entries of edge `e` in a flat 1-cochain (and in the stacked edge targets)."""
 erange(P::SheafProgram, e::Integer) = (P.edge_offsets[e]+1):P.edge_offsets[e+1]
 rrange(P::SheafProgram, v::Integer) = (P.row_offsets[v]+1):P.row_offsets[v+1]
+"""`hard_edges(P)`, `soft_edges(P)`: the indices of the hard (constraint) and soft (spring) edges."""
 hard_edges(P::SheafProgram) = [e for (e, E) in enumerate(P.edges) if E.hard]
-soft_edges(P::SheafProgram) = [e for (e, E) in enumerate(P.edges) if !E.hard]
+@doc (@doc hard_edges) soft_edges(P::SheafProgram) = [e for (e, E) in enumerate(P.edges) if !E.hard]
 edgedims(P::SheafProgram, S) = sum((edgedim(P.edges[e]) for e in S); init = 0)
 
 """`(delta x)_e` for one edge."""
@@ -201,6 +215,7 @@ function coboundary(P::SheafProgram, edge_ids = 1:nedges(P))
     return sparse(I, J, V, row, c0dim(P))
 end
 
+"""`targets(P, S)`: the stacked targets `b_S` of the edges `S`."""
 targets(P::SheafProgram, edge_ids = 1:nedges(P)) = reduce(vcat, (P.edges[e].b for e in edge_ids); init = Float64[])
 
 """Block diagonal stiffness of the edges `S` (as a sparse matrix)."""

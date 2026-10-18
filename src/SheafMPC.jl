@@ -15,7 +15,8 @@ Pushforward".
   back, and reductions compose (teams of teams).
 * Certificates: `gap_bounds` (from the reduced solve, and the fine one when
   available), `gap_kernel`, `gap` and `select_teams`.
-* Receding horizon: `MPCController` and `step!`.
+* Receding horizon: `MPCController` and `step!`; `DistributedMPC`, consensus
+  ADMM over agents or teams.
 * The solver: an operator-splitting (ADMM) conic QP solver for sheaf programs
   (OSQP's algorithm with second-order cones, a quasi-definite KKT matrix
   factored once, an active-set polish), with `update!` and warm starts that
@@ -49,6 +50,7 @@ include("fleet.jl")
 include("scenarios.jl")
 include("certificates.jl")
 include("controller.jl")
+include("distributed.jl")
 
 # the conic QP solver
 export ConicQP, RowKind, ROW_INTERVAL, ROW_EQ, ROW_LEQ, ROW_SOC
@@ -75,5 +77,7 @@ export gap_bounds, gap_lower_bound, Certifier, certify!, multipliers
 export GapKernel, gap_kernel, gap, team_front, select_teams
 # receding horizon
 export MPCController, StepInfo, step!, plan, reduced_program
+# distributed MPC
+export DistributedMPC, floats_per_iteration
 
 end

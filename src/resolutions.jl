@@ -42,6 +42,7 @@ function FleetLayout(vid::Matrix{Int})
     return FleetLayout(vid, agent, time)
 end
 
+"""`nagents(x)`: the number of agents of a fleet, scenario or layout (teams, for a reduced layout)."""
 nagents(L::FleetLayout) = size(L.vid, 1)
 ntimes(L::FleetLayout) = size(L.vid, 2)
 
@@ -120,6 +121,7 @@ struct Product <: Resolution
     teams::Teams
     blocking::TimeBlocking
 end
+"""`teams ⊠ blocking`: the product resolution `alpha box beta` (see `Product`)."""
 ⊠(a::Teams, b::TimeBlocking) = Product(a, b)
 ⊠(b::TimeBlocking, a::Teams) = Product(a, b)
 
