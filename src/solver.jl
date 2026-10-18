@@ -478,20 +478,40 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     tlim = st.time_limit
     dw = st.polish && s.m > 0 ? s.dual::Union{Nothing,DualWork} : nothing
     if dw !== nothing
-        # the dense active-set path (dual.jl): warm solves from the active set of
-        # the last accepted solution, then from the warm iterate's; every solve
-        # from the equality-only solution (after repeated failures, every 4th)
         dw.xbar_ok = false
         dw.iters = 0; dw.cols = 0
         dw.toobig = false; dw.nbig = 0
-        ok = false
-        if !cold && st.polish_warm && s.has_last
+        dw.accepted = false
+    end
+    warm = !cold && st.polish && st.polish_warm && s.m > 0
+    retry = max(st.polish_warm_retry, 1)
+    ok = false
+    # 1. when the sparse polish found the last accepted solution: its active
+    # set, unshifted (in steady tracking it stays put in index space), with the
+    # polish factorization still cached, and a few corrections (after a failure
+    # only every `polish_warm_retry`-th solve, as a failure costs a factorization)
+    if warm && s.has_last && (dw === nothing || !dw.last_dense)
+        if st.polish_warm_last >= 0 && (s.last_fails == 0 || s.last_fails % retry == 0)
             copyto!(s.act, s.act_last)
-            ok = _try_dual!(s, :act)
+            ok = _try_polish!(s; restart = false, corrections = st.polish_warm_last)
+            s.last_fails = ok ? 0 : s.last_fails + 1
+        else
+            s.last_fails += 1
         end
-        if !ok && !cold && st.polish_warm
+        st.verbose && @printf("  warm polish (last active set) %s\n", ok ? "accepted" : "rejected")
+    end
+    # 2. the dense path: from the warm iterate's guess (with a shifted warm
+    # start, the shifted active set), then from the last accepted active set
+    # unshifted, then from the equality-only solution (after repeated
+    # failures, every 4th solve)
+    if !ok && dw !== nothing
+        if warm
             _guess_active!(s, s.z, s.y)
             ok = _try_dual!(s, :act)
+            if !ok && s.has_last && s.act != s.act_last
+                copyto!(s.act, s.act_last)
+                ok = _try_dual!(s, :act)
+            end
         end
         if !ok && (dw.fails == 0 || dw.fails % 4 == 0)
             ok = _try_dual!(s, :xbar)
@@ -499,39 +519,20 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
         elseif !ok
             dw.fails += 1
         end
-        if ok
-            polished = true; converged = true; status = :solved
-        end
     end
-    # the sparse warm polish (also when the dense path found the active sets too large)
-    if !polished && (dw === nothing || dw.toobig) && st.polish && st.polish_warm && st.warm_start && s.has_iterate && s.m > 0
-        # skip the warm polish after a failure, retrying every 4th solve (a
-        # failure costs a factorization; when the warm start's active set is
-        # usually right, as in steady receding horizon, it saves the iterations)
-        ok = false
-        if st.polish_warm_last >= 0 && s.has_last && (s.last_fails == 0 || s.last_fails % max(st.polish_warm_retry, 1) == 0)
-            # first the active set of the last accepted polish, unshifted: in
-            # steady tracking the active set stays put in index space, and its
-            # polish factorization is still cached (no factorization at all)
-            copyto!(s.act, s.act_last)
-            ok = _try_polish!(s; restart = false, corrections = st.polish_warm_last)
-            s.last_fails = ok ? 0 : s.last_fails + 1
-        elseif s.has_last
-            s.last_fails += 1
-            st.verbose && @printf("  warm polish (last active set) %s\n", ok ? "accepted" : "rejected")
-        end
-        if !ok && (s.warm_fails == 0 || s.warm_fails % max(st.polish_warm_retry, 1) == 0)
-            _guess_active!(s, s.z, s.y, st.polish_soc_band)
-            ok = _try_polish!(s)
-            st.verbose && @printf("  warm polish %s\n", ok ? "accepted" : "rejected")
-        end
-        if ok
-            polished = true; converged = true; status = :solved
-            s.warm_fails = 0
-        else
-            s.warm_fails += 1
-        end
+    # 3. the sparse polish of the warm iterate's guess, without the dense path
+    # or when it found the active sets too large (every `polish_warm_retry`-th
+    # solve after a failure: when the warm start's active set is usually right,
+    # as in steady receding horizon, it saves the iterations)
+    if !ok && warm && (dw === nothing || dw.toobig) && (s.warm_fails == 0 || s.warm_fails % retry == 0)
+        _guess_active!(s, s.z, s.y, st.polish_soc_band)
+        ok = _try_polish!(s)
+        st.verbose && @printf("  warm polish %s\n", ok ? "accepted" : "rejected")
     end
+    if ok
+        polished = true; converged = true; status = :solved
+    end
+    warm && (s.warm_fails = ok ? 0 : s.warm_fails + 1)
     s.warm_pending = false
     k = 0
     pint = st.polish_interval
@@ -634,6 +635,7 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     if info.polish == :success
         copyto!(s.act_last, s.act)
         s.has_last = true
+        dw === nothing || (dw.last_dense = dw.accepted)
     end
     status == :budget && return status
     _finalize!(s, status)

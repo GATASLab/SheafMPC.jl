@@ -82,6 +82,8 @@ mutable struct DualWork
     fails::Int                   # consecutive failed attempts seeded from xbar
     toobig::Bool                 # two attempts of this solve hit the size budget: use the sparse polish
     nbig::Int                    # attempts of this solve that hit it
+    accepted::Bool               # this solve's point came from the dense path
+    last_dense::Bool             # so did the last accepted one (its factor is cached)
     cols::Int                    # factor columns computed in the last solve (statistics)
 end
 
@@ -149,7 +151,7 @@ function _dual_setup!(s::Solver)
     w = DualWork(sys, At, rows, zeros(mi, mi), fill(false, mi), zeros(mi, mi), zeros(Int, mi), 0, 0, zeros(Int, mi),
                  fill(false, mi), zeros(Int8, mi), zeros(Int8, mi), zeros(Int8, mi),
                  zeros(mi), zeros(mi), zeros(mi), zeros(mi), zeros(mi),
-                 zeros(N), zeros(N), zeros(N), false, t_fac, Inf, ffma, sfma, 0.0, 0.0, 0.0, 0, 0, false, 0, 0)
+                 zeros(N), zeros(N), zeros(N), false, t_fac, Inf, ffma, sfma, 0.0, 0.0, 0.0, 0, 0, false, 0, 0, false, false)
     # Z costs one solve per inequality row: all of them in setup when that fits
     # the budget (`dual_setup_budget` seconds), otherwise each column when its
     # row first enters an active set (kept for later solves)
@@ -615,6 +617,7 @@ function _try_dual!(s::Solver, w::DualWork, seed::Symbol)
             info.prim_res = pr; info.dual_res = dr
             info.polish = :success
             info.polish_iter = info.iter
+            w.accepted = true
         end
         st.verbose && @printf("    dense active set (%s): %d rows, %s\n", seed, w.na, ok ? "accepted" : "rejected")
     else
