@@ -52,7 +52,8 @@ Cost model of the automatic method choice (method.jl): seconds per ADMM
 iteration, per interior-point solve and per ADMM solve (exponential averages,
 measured in `setup` and refreshed by every solve; a solve that crossed over
 counts as twice the time its ADMM part took, a censored lower bound). When the
-ADMM solves cost more on average than an IPM solve, `prefer_ipm` sends the
+ADMM solves cost more on average than an IPM solve and the last two solves
+crossed over (one crossover in a warm sequence is weak evidence), `prefer_ipm` sends the
 following solves to the IPM directly, with an ADMM probe every `PROBE_EVERY`
 solves (`since` counts them).
 """
@@ -63,8 +64,9 @@ mutable struct CostModel
     prefer_ipm::Bool
     since::Int
     t_admm_solve::Float64
+    ncross::Int                  # consecutive crossovers
 end
-CostModel() = CostModel(NaN, NaN, 0, false, 0, NaN)
+CostModel() = CostModel(NaN, NaN, 0, false, 0, NaN, 0)
 
 const IPM_FREE = 0x00
 const IPM_EQ = 0x01

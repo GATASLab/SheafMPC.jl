@@ -21,7 +21,8 @@
 #     start). The work lost to a crossover is bounded by `crossover` times an
 #     IPM solve;
 #   * when the ADMM solves of this solver cost more on average than its IPM
-#     solves (a crossover counts as twice its ADMM time), the next solves go to
+#     solves (a crossover counts as twice its ADMM time) and the last two
+#     crossed over, the next solves go to
 #     the IPM directly, warm solves after the cheap warm polish, with an ADMM
 #     probe every `PROBE_EVERY` solves (`update!` keeps the structure, so the
 #     experience of the last solves is a good predictor of the next).
@@ -161,8 +162,16 @@ function solve!(s::Solver)
             status == :budget && (ta *= 2)
             c.t_admm_solve = isfinite(c.t_admm_solve) ? 0.7 * c.t_admm_solve + 0.3 * ta : ta
             was = c.prefer_ipm
-            c.prefer_ipm = status == :budget && isfinite(c.t_ipm) ? c.t_admm_solve > c.t_ipm :
-                           (c.prefer_ipm && c.t_admm_solve > c.t_ipm)
+            if was && status != :budget && info.iter > 0
+                # a probe that converged within its budget: ADMM works again
+                c.prefer_ipm = false
+                c.t_admm_solve = ta
+                c.ncross = 0
+            else
+                c.ncross = status == :budget ? c.ncross + 1 : 0
+                c.prefer_ipm = status == :budget && isfinite(c.t_ipm) ? (c.ncross >= 2 && c.t_admm_solve > c.t_ipm) :
+                               (c.prefer_ipm && c.t_admm_solve > c.t_ipm)
+            end
             c.prefer_ipm && !was && (c.since = 0)
         end
         if status == :budget
