@@ -442,7 +442,12 @@ function solve!(s::Solver)
             info.iter = k
             if st.polish && pint > 0 && k % pint == 0 && s.m > 0 && k >= next_polish
                 _guess_active!(s, s.z, s.y)
-                if s.act == s.act_prev && !(s.has_fail && s.act == s.act_fail)
+                gate_ok = true
+                if st.polish_gate > 0
+                    gpr, gdr, gpn, gdn = _residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty)
+                    gate_ok = max(gpr / (gpn + 1e-10), gdr / (gdn + 1e-10)) <= st.polish_gate
+                end
+                if gate_ok && s.act == s.act_prev && !(s.has_fail && s.act == s.act_fail)
                     if _try_polish!(s)
                         polished = true; converged = true; status = :solved
                         break

@@ -37,7 +37,7 @@ Polishing (active-set refinement)
   polished point (its primal, and the Moreau decomposition of `A x + y / rho`
   for the constraint and dual iterates), which carries the active-set
   correction into the iterations;
-* `polish_interval = 5`: also attempt the polish during the iterations, as soon
+* `polish_interval = 10`: also attempt the polish during the iterations, as soon
   as the active set guess has been the same for `polish_interval` iterations
   (0 disables these early attempts); after a failed early attempt the wait
   before the next one doubles, so failed attempts cost a bounded fraction of
@@ -76,7 +76,8 @@ Base.@kwdef mutable struct Settings
     polish_corrections::Int = 1
     polish_restart::Bool = true
     polish_soc_newton::Int = 6
-    polish_interval::Int = 5
+    polish_interval::Int = 10
+    polish_gate::Float64 = 0.0
     polish_warm::Bool = true
     polish_delta::Float64 = 1e-6
     polish_refine_iter::Int = 3

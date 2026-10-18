@@ -1,0 +1,32 @@
+cone    n   b solver           status    iters   setup ms     min ms     med ms   rel gap      viol  notes
+soc     1   1 sheafmpc         solved       60    296.702      0.160      0.161   3.4e-11   1.2e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+1, it 2.0 us, fact 7 us, nnzL 950
+soc     1   1 sheafmpc_resolve solved        0      1.188      0.023      0.023   3.4e-11   1.2e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+0, it 2.6 us, fact 9 us, nnzL 950
+soc     1   1 clarabel         SOLVED        6        NaN      0.375      0.388   3.4e-09   1.6e-13  
+soc     1   8 sheafmpc         solved       30      0.803      0.053      0.054   3.4e-11   5.6e-17  polish success (1 tries, 1 fact.) qdldl_amf rho+0, it 1.2 us, fact 4 us, nnzL 653
+soc     1   8 sheafmpc_resolve solved        0      0.608      0.014      0.014   3.4e-11   8.3e-17  polish success (1 tries, 1 fact.) qdldl_amf rho+0, it 1.2 us, fact 4 us, nnzL 653
+soc     1   8 clarabel         SOLVED        8        NaN      0.355      0.370   1.9e-10   3.1e-16  
+soc     4   1 sheafmpc         solved       50      4.641      0.983      0.990   5.9e-12   1.4e-10  polish success (2 tries, 2 fact.) qdldl_mmd rho+1, it 11.6 us, fact 91 us, nnzL 10070
+soc     4   1 sheafmpc_resolve solved        0      4.568      0.150      0.150   4.5e-12   2.2e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+0, it 11.6 us, fact 81 us, nnzL 10070
+soc     4   1 clarabel         SOLVED        9        NaN      2.700      2.769   1.3e-09   1.9e-16  
+soc     4   8 sheafmpc         solved      130      3.619      2.000      2.002   5.2e-11   2.1e-08  polish success (3 tries, 3 fact.) qdldl_mmd rho+3, it 9.2 us, fact 97 us, nnzL 8212
+soc     4   8 sheafmpc_resolve solved        0      3.609      0.153      0.153   4.5e-12   4.2e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+0, it 9.2 us, fact 95 us, nnzL 8212
+soc     4   8 clarabel         SOLVED       11        NaN      2.921      3.011   3.3e-10   3.4e-14  
+soc    16   1 sheafmpc         solved       60     24.473      9.315      9.424   3.8e-11   3.8e-13  polish success (3 tries, 3 fact.) qdldl_mmd rho+1, it 68.4 us, fact 1415 us, nnzL 59368
+soc    16   1 sheafmpc_resolve solved        0    467.426      1.389      1.906   3.8e-11   3.5e-16  polish success (1 tries, 1 fact.) qdldl_amd rho+0, it 163.1 us, fact 2316 us, nnzL 56585
+soc    16   1 clarabel         SOLVED       10        NaN     25.157     32.778   1.8e-10   7.9e-12  
+soc    16   8 sheafmpc         solved       90     25.126      9.028      9.273   4.5e-11   2.8e-07  polish success (2 tries, 2 fact.) qdldl_mmd rho+0, it 60.8 us, fact 1344 us, nnzL 57844
+soc    16   8 sheafmpc_resolve solved        0     19.032      1.596      1.605   3.8e-11   4.2e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+0, it 58.9 us, fact 1266 us, nnzL 57844
+soc    16   8 clarabel         SOLVED       10        NaN     16.794     17.180   5.5e-10   4.6e-16  
+soc    32   1 sheafmpc         solved      140     63.107     38.040     39.248   4.1e-12   1.4e-08  polish success (3 tries, 3 fact.) qdldl_mmd rho+3, it 155.4 us, fact 2360 us, nnzL 130260
+soc    32   1 sheafmpc_resolve solved        0     53.176      3.089      3.102   4.0e-12   2.5e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+0, it 139.2 us, fact 2310 us, nnzL 130260
+soc    32   1 clarabel         SOLVED        9        NaN     41.775     51.125   3.7e-09   3.5e-16  
+soc    32   8 sheafmpc         solved      110     57.608     33.947     40.124   4.0e-12   1.7e-08  polish success (4 tries, 4 fact.) qdldl_mmd rho+1, it 146.7 us, fact 3787 us, nnzL 123172
+soc    32   8 sheafmpc_resolve solved        0     88.360      3.789      3.840   4.0e-12   5.1e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+0, it 129.6 us, fact 3069 us, nnzL 123172
+soc    32   8 clarabel         SOLVED       10        NaN     44.372     47.271   1.8e-09   4.7e-16  
+soc    64   1 sheafmpc         solved      170    243.476     99.521    107.490   9.9e-12   1.2e-08  polish success (5 tries, 5 fact.) qdldl_amd rho+1, it 362.8 us, fact 5223 us, nnzL 256213
+soc    64   1 sheafmpc_resolve solved        0    138.211      6.727      6.945   9.8e-12   3.1e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+0, it 286.1 us, fact 4620 us, nnzL 270480
+soc    64   1 clarabel         SOLVED       10        NaN    117.185    128.148   1.1e-09   3.5e-16  
+soc    64   8 sheafmpc         solved      130    126.225     84.002     90.535   9.8e-12   5.4e-10  polish success (4 tries, 4 fact.) qdldl_amd rho+0, it 336.3 us, fact 6255 us, nnzL 227833
+soc    64   8 sheafmpc_resolve solved        0    126.101      9.773     11.277   9.8e-12   4.3e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+0, it 311.2 us, fact 9309 us, nnzL 253828
+soc    64   8 clarabel         SOLVED       11        NaN    145.447    180.716   5.7e-10   4.1e-16  
+wrote /home/itaykadosh/Projects/GATAS/SheafMPC.jl/bench/results/single_soc.json

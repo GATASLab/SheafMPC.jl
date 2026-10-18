@@ -19,6 +19,7 @@
 #                    previous solution, unshifted)
 #   osqp_shift       OSQP.update!, OSQP.warm_start! with the same shifted plan
 #                    and multipliers, solve!
+#   osqp_rho0.03     as osqp, with SheafMPC's default rho
 #   clarabel         setup and solve at 1e-8 (solve timed)
 # Reported: median and max per-step time over steps 1..STEPS-1 (step 0 is the
 # first, cold solve after setup, reported separately), iterations, and the
@@ -79,11 +80,11 @@ function run_sheafmpc(seq, xmap, ymap; cold = false)
     return (; ts, its, gaps, pol, facs, setup = s.info.setup_time)
 end
 
-function run_osqp(seq, xmap, ymap; shift = false)
+function run_osqp(seq, xmap, ymap; shift = false, rho = 0.1)
     p0 = seq[1].p
     mk() = (m = OSQP.Model(); OSQP.setup!(m; P = SparseMatrixCSC(triu(p0.P)), q = p0.q, A = p0.A, l = p0.l, u = p0.u,
                                           verbose = false, eps_abs = EPS, eps_rel = EPS, polish = true, warm_start = true,
-                                          max_iter = 400_000, adaptive_rho = true); m)
+                                          max_iter = 400_000, adaptive_rho = true, rho = rho); m)
     OSQP.solve!(mk())                        # compile
     m = nothing
     tsetup = @elapsed (m = mk())
@@ -129,15 +130,16 @@ function main()
         if CONE == "box"
             res["osqp"] = run_osqp(seq, xmap, ymap)
             res["osqp_shift"] = run_osqp(seq, xmap, ymap; shift = true)
+            res["osqp_rho0.03"] = run_osqp(seq, xmap, ymap; rho = 0.03)
         end
         res["clarabel"] = run_clarabel(seq)
-        for name in ("sheafmpc", "sheafmpc_cold", "osqp", "osqp_shift", "clarabel")
+        for name in ("sheafmpc", "sheafmpc_cold", "osqp", "osqp_shift", "osqp_rho0.03", "clarabel")
             haskey(res, name) || continue
             r = res[name]
             w = 2:length(r.ts)
             st = stats(r.ts[w]); it = stats(r.its[w])
             note = name == "sheafmpc" ? @sprintf("warm polish at it 0: %d/%d steps, polish factorizations %d", count(==(2), r.pol[w]), length(w), sum(r.facs[w])) :
-                   name in ("osqp", "osqp_shift") ? @sprintf("internal solve med %.3f ms", 1e3 * median(r.tin[w])) : ""
+                   startswith(name, "osqp") ? @sprintf("internal solve med %.3f ms", 1e3 * median(r.tin[w])) : ""
             @printf("%-4s %3d %2d %-14s %10.3f %10.3f %10.3f %8.1f %8d %9.1e  %s\n", CONE, n, b, name, 1e3 * r.ts[1],
                     1e3 * st.med, 1e3 * st.max, it.med, Int(it.max), maximum(r.gaps), note)
             d = Dict{String,Any}("cone" => CONE, "n" => n, "N" => N, "b" => b, "solver" => name, "eps" => EPS, "steps" => STEPS,

@@ -1,0 +1,75 @@
+cone    n   b solver           status    iters   setup ms     min ms     med ms   rel gap      viol  notes
+box     1   1 sheafmpc         solved       40    258.414      0.070      0.071   4.6e-12   1.1e-16  polish success (1 tries, 1 fact.) qdldl_mmd rho+1, it 1.2 us, fact 4 us, nnzL 506
+box     1   1 sheafmpc_resolve solved        0      0.750      0.010      0.011   4.6e-12   1.1e-16  polish success (1 tries, 0 fact.) qdldl_mmd rho+0, it 1.2 us, fact 5 us, nnzL 506
+box     1   1 osqp             Solved       75    147.565      0.223      0.224   4.6e-12   1.1e-16  polish 1, 3.0 us/it
+box     1   1 osqp_rho0.03     Solved      100      0.151      0.295      0.297   4.6e-12   1.1e-16  polish 1, 3.2 us/it
+box     1   1 osqp_nopolish    Solved       75      0.139      0.220      0.221   4.1e-09   2.6e-08  polish 0, 2.9 us/it
+box     1   1 osqp_paper       Solved       25      0.145      0.073      0.073   4.6e-12   1.1e-16  polish 1, 2.9 us/it
+box     1   1 clarabel         SOLVED        7        NaN      0.284      0.287   4.5e-10   3.2e-15  
+box     1   8 sheafmpc         solved       20      0.696      0.024      0.031   4.6e-12   1.4e-16  polish success (1 tries, 1 fact.) qdldl_amf rho+0, it 0.7 us, fact 3 us, nnzL 356
+box     1   8 sheafmpc_resolve solved        0      0.547      0.007      0.008   4.6e-12   1.4e-16  polish success (1 tries, 0 fact.) qdldl_mmd rho+0, it 0.8 us, fact 4 us, nnzL 338
+box     1   8 osqp             Solved       75      0.165      0.101      0.112   4.6e-12   1.4e-16  polish 1, 1.5 us/it
+box     1   8 osqp_rho0.03     Solved      100      0.153      0.113      0.148   4.6e-12   1.4e-16  polish 1, 1.5 us/it
+box     1   8 osqp_nopolish    Solved       75      0.111      0.101      0.113   1.1e-08   4.3e-08  polish 0, 1.5 us/it
+box     1   8 osqp_paper       Solved       25      0.145      0.032      0.035   4.6e-12   1.4e-16  polish 1, 1.3 us/it
+box     1   8 clarabel         SOLVED        8        NaN      0.227      0.310   1.3e-09   1.1e-15  
+box     4   1 sheafmpc         solved       50      6.089      0.624      0.773   1.6e-12   1.1e-16  polish success (2 tries, 2 fact.) qdldl_mmd rho+1, it 11.1 us, fact 56 us, nnzL 5024
+box     4   1 sheafmpc_resolve solved        0      5.729      0.081      0.083   1.6e-12   1.1e-16  polish success (1 tries, 0 fact.) qdldl_mmd rho+0, it 7.3 us, fact 57 us, nnzL 5024
+box     4   1 osqp             Solved      150      0.820      2.297      2.871   1.6e-12   2.3e-16  polish 1, 16.7 us/it
+box     4   1 osqp_rho0.03     Solved      150      0.839      1.857      2.402   1.6e-12   2.3e-16  polish 1, 15.2 us/it
+box     4   1 osqp_nopolish    Solved      150      0.741      2.197      3.012   1.4e-08   7.2e-08  polish 0, 18.9 us/it
+box     4   1 osqp_paper       Solved       25      0.667      0.356      0.495   1.6e-12   2.3e-16  polish 1, 22.3 us/it
+box     4   1 clarabel         SOLVED       10        NaN      1.798      2.470   1.6e-10   2.8e-16  
+box     4   8 sheafmpc         solved       80     10.433      0.609      0.612   1.6e-12   5.3e-16  polish success (3 tries, 3 fact.) qdldl_mmd rho+1, it 4.3 us, fact 38 us, nnzL 4062
+box     4   8 sheafmpc_resolve solved        0      3.175      0.034      0.034   1.6e-12   5.3e-16  polish success (1 tries, 0 fact.) qdldl_mmd rho+0, it 4.2 us, fact 37 us, nnzL 4062
+box     4   8 osqp             Solved      250      0.505      2.023      2.660   1.6e-12   3.0e-16  polish 1, 11.1 us/it
+box     4   8 osqp_rho0.03     Solved      350      0.413      3.028      3.467   1.6e-12   3.0e-16  polish 1, 8.7 us/it
+box     4   8 osqp_nopolish    Solved      250      0.576      2.179      2.552   3.9e-10   3.8e-08  polish 0, 8.7 us/it
+box     4   8 osqp_paper       Solved       25      0.506      0.198      0.246   1.6e-12   3.0e-16  polish 1, 10.4 us/it
+box     4   8 clarabel         SOLVED       10        NaN      1.465      1.786   2.8e-09   4.9e-16  
+box    16   1 sheafmpc         solved       40     21.001      3.088      4.415   1.3e-12   4.9e-16  polish success (2 tries, 2 fact.) qdldl_mmd rho+1, it 51.6 us, fact 509 us, nnzL 29640
+box    16   1 sheafmpc_resolve solved        0     22.280      0.263      0.271   1.3e-12   4.9e-16  polish success (1 tries, 0 fact.) qdldl_amf rho+0, it 44.2 us, fact 452 us, nnzL 33188
+box    16   1 osqp             Solved      275      2.385     20.086     22.714   1.3e-12   4.9e-16  polish 1, 73.0 us/it
+box    16   1 osqp_rho0.03     Solved      225      2.575     15.615     20.436   1.3e-12   4.9e-16  polish 1, 82.8 us/it
+box    16   1 osqp_nopolish    Solved      275      2.597     20.489     23.342   1.1e-09   2.6e-08  polish 0, 84.9 us/it
+box    16   1 osqp_paper       Solved       25      3.081      1.742      2.109   1.3e-12   4.9e-16  polish 1, 94.8 us/it
+box    16   1 clarabel         SOLVED       10        NaN     15.213     16.889   1.3e-10   6.5e-16  
+box    16   8 sheafmpc         solved       80     24.717      4.628      5.978   1.3e-12   4.2e-16  polish success (2 tries, 2 fact.) qdldl_mmd rho+1, it 27.1 us, fact 624 us, nnzL 28746
+box    16   8 sheafmpc_resolve solved        0     35.539      0.186      0.211   1.3e-12   4.2e-16  polish success (1 tries, 0 fact.) qdldl_mmd rho+0, it 27.1 us, fact 664 us, nnzL 28746
+box    16   8 osqp             Solved      300      2.565     17.727     18.513   1.3e-12   2.2e-16  polish 1, 60.0 us/it
+box    16   8 osqp_rho0.03     Solved      400      2.020     22.208     27.873   1.3e-12   2.5e-16  polish 1, 74.4 us/it
+box    16   8 osqp_nopolish    Solved      300      2.216     17.277     21.191   1.2e-10   2.1e-08  polish 0, 58.9 us/it
+box    16   8 osqp_paper       Solved       25      2.027      1.153      1.358   1.3e-12   2.1e-16  polish 1, 46.1 us/it
+box    16   8 clarabel         SOLVED       11        NaN     12.355     13.526   1.0e-10   5.4e-16  
+box    32   1 sheafmpc         solved       50     50.905      9.992     11.119   7.0e-12   4.4e-16  polish success (2 tries, 2 fact.) qdldl_mmd rho+1, it 113.9 us, fact 975 us, nnzL 65042
+box    32   1 sheafmpc_resolve solved        0     84.447      0.532      0.620   7.0e-12   4.4e-16  polish success (1 tries, 0 fact.) qdldl_mmd rho+0, it 118.6 us, fact 919 us, nnzL 65042
+box    32   1 osqp             Solved      275      5.939     49.515     57.003   7.0e-12   4.4e-16  polish 1, 223.1 us/it
+box    32   1 osqp_rho0.03     Solved      225      7.845     45.151     53.111   7.0e-12   4.4e-16  polish 1, 232.1 us/it
+box    32   1 osqp_nopolish    Solved      275      5.353     46.584     48.734   1.9e-09   1.2e-07  polish 0, 175.7 us/it
+box    32   1 osqp_paper       Solved       25      4.951      4.131      4.595   7.0e-12   4.4e-16  polish 1, 403.5 us/it
+box    32   1 clarabel         SOLVED       10        NaN     32.730     35.990   8.1e-10   3.2e-15  
+box    32   8 sheafmpc         solved      140     55.809     19.194     20.449   7.0e-12   4.6e-16  polish success (4 tries, 4 fact.) qdldl_mmd rho+1, it 75.6 us, fact 1493 us, nnzL 61234
+box    32   8 sheafmpc_resolve solved        0     35.407      0.481      0.498   7.0e-12   4.6e-16  polish success (1 tries, 0 fact.) qdldl_mmd rho+0, it 57.1 us, fact 1100 us, nnzL 61234
+box    32   8 osqp             Solved      275      4.063     30.034     41.787   7.0e-12   3.6e-16  polish 1, 130.4 us/it
+box    32   8 osqp_rho0.03     Solved      325      4.247     30.952     32.351   7.0e-12   3.6e-16  polish 1, 131.0 us/it
+box    32   8 osqp_nopolish    Solved      275      5.961     32.616     43.315   2.1e-10   2.0e-08  polish 0, 163.3 us/it
+box    32   8 osqp_paper       Solved       25      5.197      3.141      3.327   7.0e-12   3.6e-16  polish 1, 130.6 us/it
+box    32   8 clarabel         SOLVED       11        NaN     22.839     33.609   4.5e-10   4.1e-16  
+box    64   1 sheafmpc         solved       70     79.238     23.924     30.915   1.3e-11   5.0e-16  polish success (2 tries, 2 fact.) qdldl_mmd rho+1, it 199.2 us, fact 2223 us, nnzL 135064
+box    64   1 sheafmpc_resolve solved        0    104.058      1.548      1.600   1.3e-11   5.0e-16  polish success (1 tries, 0 fact.) qdldl_mmd rho+0, it 249.8 us, fact 2831 us, nnzL 135064
+box    64   1 osqp             Solved      300     12.128     79.994     91.687   1.3e-11   5.0e-16  polish 1, 269.2 us/it
+box    64   1 osqp_rho0.03     Solved      450      7.827     61.974    102.066   1.3e-11   5.0e-16  polish 1, 414.1 us/it
+box    64   1 osqp_nopolish    Solved      300     12.024    105.924    115.045   1.8e-09   2.0e-07  polish 0, 353.1 us/it
+box    64   1 osqp_paper       Solved       25      8.479      9.362      9.479   1.3e-11   5.0e-16  polish 1, 378.5 us/it
+box    64   1 clarabel         SOLVED       10        NaN     58.071     69.404   3.1e-09   2.1e-15  
+box    64   8 sheafmpc         solved      180     87.734     54.105     64.228   1.3e-11   4.8e-16  polish success (4 tries, 4 fact.) qdldl_mmd rho+1, it 172.6 us, fact 3376 us, nnzL 126210
+box    64   8 sheafmpc_resolve solved        0     73.368      1.000      1.121   1.3e-11   4.8e-16  polish success (1 tries, 0 fact.) qdldl_mmd rho+0, it 128.3 us, fact 3594 us, nnzL 126210
+box    64   8 osqp             Solved      525      8.738    100.735    146.226   1.3e-11   3.0e-16  polish 1, 340.8 us/it
+box    64   8 osqp_rho0.03     Solved      475      9.742    117.408    175.317   1.3e-11   3.0e-16  polish 1, 330.9 us/it
+box    64   8 osqp_nopolish    Solved      525      9.959     94.166    137.921   9.5e-11   2.2e-08  polish 0, 399.2 us/it
+box    64   8 osqp_paper       Solved       25      8.887      6.660      7.944   1.3e-11   3.0e-16  polish 1, 724.4 us/it
+box    64   8 clarabel         SOLVED       11        NaN     62.642     76.807   1.3e-09   5.4e-16  
+Precompiling packages...
+   1560.3 ms  ✓ SheafMPC
+  1 dependency successfully precompiled in 2 seconds. 40 already precompiled.
+wrote /home/itaykadosh/Projects/GATAS/SheafMPC.jl/bench/results/single_box.json
