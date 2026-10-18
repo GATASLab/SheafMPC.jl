@@ -16,6 +16,8 @@ import JSON
 using Printf, Statistics
 
 const SHIFT = 1e-4
+# the solver of the "equal or faster" gate: Mumblebee fast-symbolic with AMF
+const GATE = get(ENV, "BENCH_GATE", "mumblebee_fast")
 const MODES = ["cold", "warm"]
 const TIERNAMES = ["low", "medium", "high"]
 
@@ -103,15 +105,16 @@ function main()
     println(io, "\nProtocol: accuracy tiers low 1e-3, medium 1e-6, high 1e-9 (relative objective error and relative primal residual against the reference, one shared checker on the unscaled problem); tolerance and variant calibrated per solver and instance on the first, middle and last QP; per-QP time is the median over the repeats; warm statistics exclude the first (cold) QP of the sequence. `--` means not applicable, or no QP met the tier. `f/n` = QPs missing the tier.\n")
 
     # per family tables
-    losses = []
+    losses = []; gates = []
     for fam in fams
         RF = sort(filter(r -> r["instance"]["family"] == fam, R); by = r -> (num(r["instance"]["params"]["size"]), r["key"]))
         fs = filter(s -> any(r -> haskey(r["solvers"], s), RF), solvers)
         println(io, "## $fam\n")
         for mode in MODES, tier in TIERNAMES
             println(io, "### $fam, $mode, $tier\n")
-            println(io, "| instance | vars | ", join(fs, " | "), " | sheafmpc / best other |")
-            println(io, "|---|---:|", repeat("---:|", length(fs)), "---:|")
+            gate = GATE in fs
+            println(io, "| instance | vars | ", join(fs, " | "), " | sheafmpc / best other |", gate ? " sheafmpc / $GATE |" : "")
+            println(io, "|---|---:|", repeat("---:|", length(fs)), "---:|", gate ? "---:|" : "")
             for r in RF
                 cells = String[]; med = Dict{String,Float64}()
                 for s in fs
@@ -131,7 +134,11 @@ function main()
                 rs = isfinite(ratio) ? @sprintf("%.2f (%s)", ratio, bests) : (haskey(med, pkg) && !isnan(best) ? "pkg fails" : "--")
                 push!(losses, (fam = fam, key = r["key"], mode = mode, tier = tier, ratio = ratio, best = bests,
                                pkg = get(med, pkg, NaN), other = best, pkgfail = haskey(med, pkg) && isnan(med[pkg])))
-                println(io, "| $(r["key"]) | $(r["instance"]["nvars"]) | ", join(cells, " | "), " | $rs |")
+                gr = get(med, pkg, NaN) / get(med, GATE, NaN)
+                gs = gate ? (isfinite(gr) ? @sprintf(" %.2f |", gr) : " -- |") : ""
+                gate && push!(gates, (key = r["key"], mode = mode, tier = tier, ratio = gr,
+                                      pkgmiss = haskey(med, pkg) && isnan(med[pkg]) && isfinite(get(med, GATE, NaN))))
+                println(io, "| $(r["key"]) | $(r["instance"]["nvars"]) | ", join(cells, " | "), " | $rs |", gs)
             end
             println(io, mode == "warm" ? "\nWarm cells: median (max) ms.\n" : "\nCold cells: median ms of the solve; setup is separate.\n")
         end
@@ -213,6 +220,21 @@ function main()
     if !isempty(W)
         @printf(io, "\nsheafmpc is fastest (ratio <= 1) in %d of %d (instance, mode, tier) cells with a finite ratio; median ratio %.2f.\n",
                 count(l -> l.ratio <= 1, W), length(W), median([l.ratio for l in W]))
+    end
+    G = filter(g -> isfinite(g.ratio) || g.pkgmiss, gates)
+    if !isempty(G)
+        println(io, "\n## Gate: sheafmpc against $GATE (median time ratio; <= 1 passes)\n")
+        println(io, "| mode | tier | cells | pass | sheafmpc misses the tier | median ratio | worst ratio (instance) |")
+        println(io, "|---|---|---:|---:|---:|---:|---|")
+        for mode in MODES, tier in TIERNAMES
+            g = filter(x -> x.mode == mode && x.tier == tier, G)
+            isempty(g) && continue
+            gf = filter(x -> isfinite(x.ratio), g)
+            w = isempty(gf) ? nothing : gf[argmax([x.ratio for x in gf])]
+            @printf(io, "| %s | %s | %d | %d | %d | %s | %s |\n", mode, tier, length(g), count(x -> isfinite(x.ratio) && x.ratio <= 1, g),
+                    count(x -> x.pkgmiss, g), isempty(gf) ? "--" : @sprintf("%.2f", median([x.ratio for x in gf])),
+                    w === nothing ? "--" : @sprintf("%.2f (%s)", w.ratio, w.key))
+        end
     end
     write(joinpath(out, "summary.md"), String(take!(io)))
     println("wrote ", joinpath(out, "summary.md"))

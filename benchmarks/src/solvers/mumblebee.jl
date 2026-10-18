@@ -24,6 +24,7 @@ using Mumblebee.IPM: IPMProblem, IPMSettings, PositiveCone, CofreeCone, SecondOr
 import Mumblebee.IPM as MBI
 import Mumblebee
 using CliqueTrees: AMF, ND, METISND
+import CliqueTrees as CliqueTreesPkg
 import Metis
 
 struct MBRecipe
@@ -239,7 +240,11 @@ mutable struct MBHandle
     h::Vector{Float64}
     seq::String          # "reinit" (keep the symbolic analysis) or "rebuild" (IPMProblem + init per QP)
     st::Any
+    symb::Any            # IPMSymbolic (fast-symbolic branch): ordering and symbolic factorization, reused by rebuild
 end
+
+const MB_HAS_SYMB = isdefined(MBI, :IPMSymbolic)
+_mb_init(prob, st, symb) = symb === nothing ? MBI.init(prob, st) : MBI.init(prob, st; symb = symb)
 
 const MB_STATUS = Dict("OPTIMAL" => :solved, "NEAR_OPTIMAL" => :almost_solved, "ITERATION_LIMIT" => :max_iter,
                        "STALLED" => :stalled, "NUMERICAL_FAILURE" => :failed)
@@ -251,7 +256,8 @@ function mumblebee_spec(; max_iter = 200)
         alg = v["elim"] == "amf" ? AMF() : ND(AMF(), METISND())
         st = IPMSettings{Float64}(; elim_alg = alg, feas_tol = eps, gap_tol = eps, max_iter = max_iter, verbose = 0)
         prob = IPMProblem(R.Q, R.B, f, g, 0.0, R.K, R.s)
-        return MBHandle(R, MBI.init(prob, st), h, String(get(v, "seq", "reinit")), st)
+        symb = MB_HAS_SYMB ? MBI.IPMSymbolic(prob, st) : nothing
+        return MBHandle(R, _mb_init(prob, st, symb), h, String(get(v, "seq", "reinit")), st, symb)
     end
     solve! = function (hd::MBHandle)
         r = MBI.solve!(hd.solver)
@@ -262,17 +268,20 @@ function mumblebee_spec(; max_iter = 200)
         f, g, h = mb_vectors(hd.R, p)
         hd.h = h
         if hd.seq == "rebuild"
-            hd.solver = MBI.init(IPMProblem(hd.R.Q, hd.R.B, f, g, 0.0, hd.R.K, hd.R.s), hd.st)
+            hd.solver = _mb_init(IPMProblem(hd.R.Q, hd.R.B, f, g, 0.0, hd.R.K, hd.R.s), hd.st, hd.symb)
         else
             MBI.reinit!(hd.solver; f = f, g = g)
         end
         return nothing
     end
     info = () -> Dict{String,Any}("package" => "Mumblebee", "path" => pkgdir(Mumblebee),
+                                  "cliquetrees" => Dict("version" => string(pkgversion(CliqueTreesPkg)), "path" => pkgdir(CliqueTreesPkg),
+                                                        "commit" => (c = joinpath(pkgdir(CliqueTreesPkg), "COMMIT"); isfile(c) ? strip(read(c, String)) : "registry release")),
                                   "commit" => isdir(joinpath(pkgdir(Mumblebee), ".git")) ?
                                               git_state(pkgdir(Mumblebee); paths = ["src"]) :
                                               "e78d9b9a3a0a2f4c226bf2eb0cf20f662e7d676b (pinned as in the paper's bench/mpc)",
-                                  "settings" => "feas_tol = gap_tol = eps, max_iter $max_iter, other IPMSettings defaults; ordering per variant",
+                                  "settings" => "feas_tol = gap_tol = eps, max_iter $max_iter, other IPMSettings defaults; elimination ordering AMF",
+                                  "symbolic_reuse" => MB_HAS_SYMB ? "IPMSymbolic built at setup; rebuild strategy reuses it (init(prob, st; symb))" : "none (no IPMSymbolic in this version): rebuild redoes the ordering and symbolic factorization",
                                   "warm_start" => "none (interior point); sequence mode keeps the symbolic analysis through reinit!(f, g), which restarts from Mumblebee's starting point (its iteration count can differ by one from a fresh setup: some internal state survives reinit!), or, strategy rebuild, a fresh IPMProblem + init per QP inside the clock; the harness keeps the strategy with fewer failures, then the faster. Pinned commit defect: reinit! after a high-accuracy solve can end in NUMERICAL_FAILURE at iteration 1")
     readback = function (hd::MBHandle)
         st = hd.solver.settings
@@ -285,6 +294,8 @@ function mumblebee_spec(; max_iter = 200)
     # so the sequence mode is also run with a fresh init per QP (inside the clock)
     return SolverSpec(name = "mumblebee", readback = readback,
                       seq_variants = [Dict{String,Any}("seq" => "reinit"), Dict{String,Any}("seq" => "rebuild")], kind = :ipm, applicable = p -> true,
-                      variants = [Dict{String,Any}("elim" => "amf"), Dict{String,Any}("elim" => "nd")],
+                      # AMF only: METIS ND costs 20-60x more at setup, gives slightly more fill and
+                      # its solve is no faster (measured on the fleet, n = 64)
+                      variants = [Dict{String,Any}("elim" => "amf")],
                       setup = setup, solve! = solve!, update! = update!, warm! = nothing, info = info)
 end

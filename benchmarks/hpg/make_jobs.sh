@@ -39,6 +39,8 @@ OUT=${ROOT}/results/${TIER}_${STAMP}${SUF}
 taskset -c \$CORE julia --startup-file=no -t 1 --project=. run.jl ${TIER} ${ONLY} ${SOLVERS_ARG} --out \$OUT
 BENCH_MUMBLEBEE_NAME=mumblebee_fast taskset -c \$CORE julia --startup-file=no -t 1 --project=envs/mumblebee_fast run.jl ${TIER} \\
   ${ONLY} --solvers mumblebee_fast --out \$OUT/mumblebee_fast
+[ -d envs/mumblebee_fast_ct ] && BENCH_MUMBLEBEE_NAME=mumblebee_fast_ct taskset -c \$CORE julia --startup-file=no -t 1 \\
+  --project=envs/mumblebee_fast_ct run.jl ${TIER} ${ONLY} --solvers mumblebee_fast_ct --out \$OUT/mumblebee_fast_ct
 echo "done \$(date -Is)"
 EOT
   done
