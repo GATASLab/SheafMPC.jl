@@ -282,6 +282,7 @@ end
     include("controller.jl")
     include("distributed.jl")
     include("conic.jl")
+    include("dual.jl")
     include(joinpath(@__DIR__, "kkt.jl"))
 
     if isdir(PAPER)

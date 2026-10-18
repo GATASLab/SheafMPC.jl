@@ -48,6 +48,7 @@ include("termination.jl")
 include("ipm.jl")
 include("solver.jl")
 include("polish.jl")
+include("dual.jl")
 include("rho.jl")
 include("method.jl")
 

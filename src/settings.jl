@@ -105,6 +105,26 @@ Polishing (active-set refinement)
   solve adapted it beyond the tolerance factor (one refactorization);
 * `polish_delta = 1e-6`: regularization of the polish system.
 
+Dense active-set path (small polyhedral problems, see dual.jl)
+* `dual = :auto`: for problems without second-order cones and with at most
+  `dual_max_rows = 400` inequality rows, `setup` also factors the KKT matrix
+  of the equality rows alone (K11) and builds the Schur complement Z of the
+  inequality rows; solves then try primal-dual active-set iterations on the
+  dense Z first (cold: from the equality-only solution; warm: from the last
+  accepted active set, then from the warm iterate's), and ADMM seeds them
+  with its own guess every `dual_interval = 5` iterations, before the sparse
+  polish (`:on` ignores the size limits, `:off` disables the path);
+* `dual_setup_budget = 1e-3`: seconds of K11 solves (by the factor's
+  operation count) allowed in `setup` to build all of Z; beyond it a column of
+  Z is computed when its row first enters an active set, and kept;
+* `dual_iter = 12` iterations per attempt, and `dual_budget = 1.0`: the work
+  of an attempt (dense updates and new columns of Z) is bounded by this many
+  sparse factorizations of K11 plus 20 solves; an attempt that stops (no
+  convergence, a cycle, the budget) costs no factorization, and after two
+  attempts of a solve exceed the budget the solve uses the sparse polish;
+* `dual_delta = 1e-8`: regularization of K11 and of the dense factor
+  (iterative refinement against the exact system removes it).
+
 Linear algebra
 * `linsys = :auto`: the engine (`:qdldl`, simplicial, or `:blockldl`,
   multifrontal) and the elimination order picked by BlockLDL's cost model from
@@ -189,6 +209,13 @@ Base.@kwdef mutable struct Settings
     ipm_reg::Float64 = 1e-8
     ipm_step_fraction::Float64 = 0.99
     ipm_eps_infeas::Float64 = 1e-8
+    dual::Symbol = :auto
+    dual_max_rows::Int = 400
+    dual_setup_budget::Float64 = 1e-3
+    dual_iter::Int = 12
+    dual_interval::Int = 5
+    dual_budget::Float64 = 1.0
+    dual_delta::Float64 = 1e-8
 end
 
 """

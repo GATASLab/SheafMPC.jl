@@ -117,6 +117,8 @@ mutable struct Solver{LS<:LinearSystem}
     # of the automatic method choice (method.jl)
     ipm::Any
     cost::CostModel
+    # the dense active-set path for small polyhedral problems (dual.jl), or nothing
+    dual::Any
 end
 
 function _rowtypes(l, u, kinds)
@@ -214,7 +216,7 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
                zeros(n), zeros(m), zeros(m), false, false,
                soc_idx, zeros(length(p.socs)), zeros(length(p.socs)), zeros(m), 0,
                Anderson(st.anderson, st.anderson > 0 ? n + m : 0), st.rho, NaN, NaN,
-               fill(ACT_NONE, m), false, 0, nothing, CostModel())
+               fill(ACT_NONE, m), false, 0, nothing, CostModel(), nothing)
     # the base rho: from the spectrum of the constraint operator (the ADMM system
     # was factored with the values the estimate needs), or the setting
     if spectral
@@ -224,6 +226,7 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
         _refactor_kkt!(s)
     end
     s.info.linsys = kind
+    s.dual = _dual_setup!(s)
     _cost_setup!(s)
     s.info.setup_time = (time_ns() - t0) / 1e9
     s.info.rho = s.rho0
@@ -464,7 +467,8 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     info = s.info
     s.has_fail = false
     fill!(s.act_prev, Int8(-99))
-    if !(st.warm_start && s.has_iterate)
+    cold = !(st.warm_start && s.has_iterate)
+    if cold
         fill!(s.x, 0.0); fill!(s.z, 0.0); fill!(s.y, 0.0)
         s.warm_pending = false
     end
@@ -472,7 +476,35 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     polished = false
     status = :max_iter
     tlim = st.time_limit
-    if st.polish && st.polish_warm && st.warm_start && s.has_iterate && s.m > 0
+    dw = st.polish && s.m > 0 ? s.dual::Union{Nothing,DualWork} : nothing
+    if dw !== nothing
+        # the dense active-set path (dual.jl): warm solves from the active set of
+        # the last accepted solution, then from the warm iterate's; every solve
+        # from the equality-only solution (after repeated failures, every 4th)
+        dw.xbar_ok = false
+        dw.iters = 0; dw.cols = 0
+        dw.toobig = false; dw.nbig = 0
+        ok = false
+        if !cold && st.polish_warm && s.has_last
+            copyto!(s.act, s.act_last)
+            ok = _try_dual!(s, :act)
+        end
+        if !ok && !cold && st.polish_warm
+            _guess_active!(s, s.z, s.y)
+            ok = _try_dual!(s, :act)
+        end
+        if !ok && (dw.fails == 0 || dw.fails % 4 == 0)
+            ok = _try_dual!(s, :xbar)
+            dw.fails = ok ? 0 : dw.fails + 1
+        elseif !ok
+            dw.fails += 1
+        end
+        if ok
+            polished = true; converged = true; status = :solved
+        end
+    end
+    # the sparse warm polish (also when the dense path found the active sets too large)
+    if !polished && (dw === nothing || dw.toobig) && st.polish && st.polish_warm && st.warm_start && s.has_iterate && s.m > 0
         # skip the warm polish after a failure, retrying every 4th solve (a
         # failure costs a factorization; when the warm start's active set is
         # usually right, as in steady receding horizon, it saves the iterations)
@@ -504,6 +536,8 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     k = 0
     pint = st.polish_interval
     wait = 2 * pint
+    next_dense = 0
+    dwait = st.dual_interval
     next_polish = 0
     next_adapt = st.adaptive_rho_first > 0 ? st.adaptive_rho_first : st.adaptive_rho_interval
     use_aa = st.anderson > 0
@@ -522,7 +556,26 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
             admm_step!(s)
             use_aa && _aa_update!(s.aa, s; extrapolate = !check, safeguard = st.anderson_safeguard)
             info.iter = k
-            if st.polish && pint > 0 && k % pint == 0 && s.m > 0 && k >= next_polish
+            if dw !== nothing && !dw.toobig
+                # dense attempts seeded from the ADMM guess (no factorization:
+                # cheap enough to try often, with a doubling wait after a failure)
+                if k % st.dual_interval == 0 && k >= next_dense
+                    _guess_active!(s, s.z, s.y)
+                    if !(s.has_fail && s.act == s.act_fail)
+                        copyto!(s.act_fail, s.act)
+                        ok = _try_dual!(s, :act)
+                        if ok
+                            polished = true; converged = true; status = :solved
+                            break
+                        end
+                        # a guess too large for the dense path may still be right: the
+                        # sparse polish takes over without remembering it as failed
+                        s.has_fail = !dw.toobig
+                        next_dense = k + dwait
+                        dwait *= 2
+                    end
+                end
+            elseif st.polish && pint > 0 && k % pint == 0 && s.m > 0 && k >= next_polish
                 _guess_active!(s, s.z, s.y, st.polish_soc_band)
                 gate_ok = true
                 if st.polish_gate > 0
@@ -570,7 +623,11 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     info.iter = k
     if converged && st.polish && !polished && s.m > 0
         _guess_active!(s, s.z, s.y)
-        polished = _try_polish!(s; restart = false)      # keep the converged ADMM point if rejected
+        if dw !== nothing && !dw.toobig
+            polished = _try_dual!(s, :act)
+            polished || _guess_active!(s, s.z, s.y)
+        end
+        polished || (polished = _try_polish!(s; restart = false))      # keep the converged ADMM point if rejected
         polished || (info.polish = info.polish == :skipped ? :skipped : :failed)
     end
     s.has_iterate = true
@@ -669,6 +726,7 @@ function update!(s::Solver; q = nothing, l = nothing, u = nothing, b = nothing, 
         if rt != s.rowtype
             s.rowtype = rt
             s.has_last = false
+            s.dual = nothing                 # its rows and Z were built for the old row types
             _set_rho!(s, s.rho)
             _refactor_kkt!(s)
         end
