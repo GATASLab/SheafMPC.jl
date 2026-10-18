@@ -136,9 +136,12 @@ solution of each fiber is kept as an operator of the internal targets, so the
 reduced program's vectors are affine in the data that do change (measured
 states, references, formation targets, drifts), and `update!` recomputes them
 with a few sparse products, without allocating. On the 8 x 8 grid fleet
-(`bench/controller.jl`, H = 10, rows as teams) the construction of a step went
-from about 10 ms (rebuild the program, pushforward with fiber reuse) to about
-0.2 ms, below the warm solve.
+(`bench/controller.jl`, H = 10, 30 closed-loop steps, results in
+`bench/results/controller.txt`) the construction of a step (data, program,
+pushforward, QP vectors) went from 15 to 18 ms with the paper repository's
+per-step pipeline (rebuild, pushforward with fiber reuse, `sheaf_qp`) to 0.2
+to 0.35 ms with `MPCController`, below the warm solve (0.5 to 1 ms); a step
+allocates a constant 48 bytes.
 
 ## Tests
 
