@@ -199,60 +199,40 @@ function _ipm_qdldl(K::SpMat, diag_idx::Vector{Int}, upd_idx::Vector{Int}, n::In
     return QDLDLSystem(K, diag_idx, upd_idx, F, p, zeros(N), ws.Ln, ws.Lp, ws.Li, ws.Lx, ws.Dinv)
 end
 
-"Seconds of one IPM iteration's linear algebra with `S` (a factorization and six solves; min of two)."
-function _ipm_time_system(S::LinearSystem)
-    b = randn(size(S.K, 1))
-    w = copy(b)
-    _ipm_refactor!(S); solve!(S, w)
-    t = Inf
-    for _ in 1:2
-        t1 = time_ns()
-        _ipm_refactor!(S)
-        for _ in 1:6
-            copyto!(w, b); solve!(S, w)
-        end
-        t = min(t, (time_ns() - t1) / 1e9)
-    end
-    return t
-end
-
 """
-The KKT system of the IPM. An IPM iteration is dominated by a numerical
-factorization, an ADMM iteration by a solve, so with `linsys = :auto` the IPM
-chooses its own backend among the kernel's (linsys.jl, src/kkt): the ADMM's
-(sharing its ordering and symbolic factorization), QDLDL with AMD,
-CliqueTrees' supernodal LDLt and BlockLDL with its cost-model ordering, each
-timed on one factorization and six solves (`setup` time). Every candidate
-does its symbolic analysis once; the iterations only refactor numerically.
+The KKT system of the IPM, built on the first crossover (or in `setup` with
+`method = :ipm`). An IPM iteration is dominated by a numerical factorization,
+an ADMM iteration by a solve, so with `linsys = :auto` the IPM asks the
+kernel's cost model (`BlockLDL.choose_system`, src/kkt: elimination
+statistics of the candidate orders, no trial factorization) for the engine and
+order of least cost at one factorization per six solves. The ADMM system's
+symbolic analysis is reused when its own order is within 10% of that choice;
+otherwise the chosen engine (QDLDL or BlockLDL) is set up once. Either way the
+iterations only refactor numerically.
 """
 function _ipm_choose_system(s)
     n = s.n
     K0 = s.kkt.K
-    best = _ipm_system(s.kkt, copy(K0), n)
-    s.settings.linsys == :auto || return best
-    tb = _ipm_time_system(best)
-    upd = copy(s.kkt.diag_idx)
+    s.settings.linsys == :auto || return _ipm_system(s.kkt, copy(K0), n)
+    N = size(K0, 1)
+    nt = s.settings.kkt_threads
+    cm = BlockLDL.CostModel(factors = 1.0, solves = 6.0, nthreads = nt)
+    perm, name, eng, table, tree, nth = BlockLDL.choose_system(K0; cost = cm)
+    perm === nothing && return _ipm_system(s.kkt, copy(K0), n)
+    best = minimum(r.est for r in table)
+    own, owneng = _factor_stats(s.kkt)
+    if BlockLDL.estimate(BlockLDL.CostModel(factors = 1.0, solves = 6.0), own, N, owneng) <= 1.1 * best
+        return _ipm_system(s.kkt, copy(K0), n)
+    end
+    di = s.kkt.diag_idx
+    upd = copy(di)
     for (k, B) in enumerate(s.socs), a2 in 1:length(B), a1 in 1:(a2-1)
         push!(upd, s.soc_idx[k][a1, a2])
     end
-    di = s.kkt.diag_idx
-    cands = Any[]
-    s.kkt isa QDLDLSystem || push!(cands, () -> _ipm_qdldl(copy(K0), di, upd, n, nothing))
-    s.kkt isa ChordalSystem || push!(cands, () -> ChordalSystem(copy(K0), di, n))
-    s.kkt isa BlockLDLSystem || push!(cands, () -> _ipm_system(make_system(:blockldl, copy(K0), di, n; upd_idx = upd,
-                                                                           settings = s.settings), copy(K0), n))
-    for mk in cands
-        S = try
-            mk()
-        catch
-            continue
-        end
-        t = _ipm_time_system(S)
-        if t < tb
-            best = S; tb = t
-        end
-    end
-    return best
+    eng == :simplicial && return _ipm_qdldl(copy(K0), di, upd, n, perm)
+    S = BlockLDLSystem(copy(K0), di, n; settings = s.settings, perm = perm, name = name, tree = tree, threads = nth,
+                       upd_idx = upd)
+    return _ipm_system(S, copy(K0), n)
 end
 
 _ipm_refactor!(S::LinearSystem) = refactor!(S)
