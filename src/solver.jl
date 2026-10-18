@@ -461,7 +461,7 @@ end
 Iterations by which a crossover at iteration `k` is postponed (0: none): when
 the residual merit `m2` (at iteration `k2`; `m1` at `k1` before it) decreases
 linearly fast enough that the iterations it still needs to reach 1 cost less
-than half an IPM solve, ADMM continues for those iterations. The budget alone
+than an IPM solve from scratch, ADMM continues for those iterations. The budget alone
 is the deterministic ski-rental rule, which loses up to the budget on every
 solve that would have converged just after it; the projection keeps the
 solves that are visibly about to converge (an early polish usually ends them
@@ -475,7 +475,7 @@ function _budget_extension(s::Solver, k::Int, m1, k1, m2, k2)
     need = max(need, 1.0)
     c = s.cost
     (isfinite(c.t_ipm) && isfinite(c.t_admm_iter)) || return 0
-    need * c.t_admm_iter <= 0.5 * c.t_ipm || return 0
+    need * c.t_admm_iter <= c.t_ipm || return 0
     ct = s.settings.check_termination
     return ct * cld(ceil(Int, need), ct)
 end
