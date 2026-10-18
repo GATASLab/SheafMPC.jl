@@ -37,7 +37,7 @@ end
 end
 
 "Work (r^2 w) above which a Schur update is split into column blocks over threads."
-const PAR_THRESHOLD = Ref(2_000_000)
+const PAR_THRESHOLD = Ref(500_000)
 
 """
 U -= T L21' (lower part) in `nb` column blocks of about equal work, one task
