@@ -162,8 +162,9 @@ function _dual_setup!(s::Solver)
         w.t_solve = min(w.t_solve, (time_ns() - ts) / 1e9)
     end
     if st.dual == :on || mi * sfma / DUAL_SOLVE_RATE <= st.dual_setup_budget
-        for c in 3:mi
-            _dual_column!(w, c)
+        X = zeros(DUAL_BLOCK, N)
+        for c0 in 3:DUAL_BLOCK:mi
+            _dual_columns!(w, c0:min(c0 + DUAL_BLOCK - 1, mi), X)
         end
     end
     w.t_build = (time_ns() - t1) / 1e9
@@ -181,6 +182,77 @@ function _ldl_fma(S::QDLDLSystem)
         f += c * (c + 1) / 2
     end
     return f, 2.0 * length(S.Lx) + S.Ln
+end
+
+"Right-hand sides per blocked solve when Z is built in `setup`."
+const DUAL_BLOCK = 8
+
+"""
+Columns `cs` of Z (at most `DUAL_BLOCK`) by one blocked solve with K11: the
+right-hand sides are the rows of `X` (`DUAL_BLOCK x N`), so every entry of L
+updates them all with one contiguous multiply-add, about three times faster
+than as many single solves.
+"""
+function _dual_columns!(w::DualWork, cs::AbstractVector{Int}, X::Matrix{Float64})
+    S = w.sys; At = w.At; rv = rowvals(At); nz = nonzeros(At)
+    nb = length(cs)
+    fill!(X, 0.0)
+    ip = S.F.iperm === nothing ? nothing : S.F.iperm
+    p = S.perm
+    # X[b, k] = (P b_col)[k]: the right-hand side of column cs[b] in the permuted order
+    i0 = S.Ln
+    @inbounds for (b, c) in enumerate(cs)
+        for k in nzrange(At, w.rows[c])
+            j = rv[k]
+            pj = ip === nothing ? j : ip[j]
+            X[b, pj] = nz[k]
+            i0 = min(i0, pj)
+        end
+    end
+    Lp = S.Lp; Li = S.Li; Lx = S.Lx; Dinv = S.Dinv; n = S.Ln
+    @inbounds for i in i0:n                       # L y = b (sparse right-hand sides: skip zero rows)
+        nzrow = false
+        for b in 1:DUAL_BLOCK
+            nzrow |= X[b, i] != 0.0
+        end
+        nzrow || continue
+        for t in Lp[i]:(Lp[i+1]-1)
+            r = Li[t]; v = Lx[t]
+            @simd for b in 1:DUAL_BLOCK
+                X[b, r] -= v * X[b, i]
+            end
+        end
+    end
+    @inbounds for i in 1:n                        # D z = y
+        d = Dinv[i]
+        @simd for b in 1:DUAL_BLOCK
+            X[b, i] *= d
+        end
+    end
+    @inbounds for i in n:-1:1                     # L' x = z
+        for t in Lp[i]:(Lp[i+1]-1)
+            r = Li[t]; v = Lx[t]
+            @simd for b in 1:DUAL_BLOCK
+                X[b, i] -= v * X[b, r]
+            end
+        end
+    end
+    # Z[:, c] = A_I x (x in the original order: x[j] = X[b, iperm[j]])
+    Z = w.Z
+    @inbounds for (r, i) in enumerate(w.rows)
+        for b in 1:nb
+            acc = 0.0
+            for k in nzrange(At, i)
+                j = rv[k]
+                acc += nz[k] * X[b, ip === nothing ? j : ip[j]]
+            end
+            Z[r, cs[b]] = acc
+        end
+    end
+    @inbounds for c in cs
+        w.zok[c] = true
+    end
+    return nothing
 end
 
 "Column `c` of Z (one solve with K11)."

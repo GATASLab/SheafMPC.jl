@@ -169,6 +169,13 @@ end
         s = setup(p; eps_abs = 1e-9, eps_rel = 1e-9, dual_setup_budget = 0.0)
         @test !all(s.dual.zok)
         @test relgap(solve!(s).obj, ref) <= 1e-8
+        # the blocked build of Z in setup equals the columns built one by one
+        s1 = setup(p; dual_setup_budget = 1.0)
+        @test all(s1.dual.zok)
+        for c in eachindex(s.dual.zok)
+            SheafMPC._dual_column!(s.dual, c)
+        end
+        @test norm(s1.dual.Z - s.dual.Z, Inf) <= 1e-10 * norm(s.dual.Z, Inf)
         # second-order cones: no dense path
         pc = ConicQP(sparse(1.0I, 3, 3), [1.0, 0.0, 0.0], sparse(1.0I, 3, 3), [1.0, 0.0, 0.0], [(:soc, 3)])
         @test setup(pc).dual === nothing
