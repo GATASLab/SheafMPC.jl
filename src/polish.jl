@@ -284,8 +284,10 @@ function _polish_check(s::Solver)
         end
         sv = max(sv, abs(sy) / max(1.0, smax))
     end
-    ok = pr <= _eps_prim(st, pn) && dr <= _eps_dual(st, dn) && sv <= st.eps_abs + st.eps_rel * ny
-    return ok, pr, dr
+    es = st.eps_abs + st.eps_rel * ny
+    ok = pr <= _eps_prim(st, pn) && dr <= _eps_dual(st, dn) && sv <= es
+    merit = max(pr / _eps_prim(st, pn), dr / _eps_dual(st, dn), sv / es)
+    return ok, pr, dr, merit
 end
 
 "Primal-dual active-set correction from the polished point; returns true if `act` changed."
@@ -328,13 +330,15 @@ function _try_polish!(s::Solver; restart::Bool = true)
     end
     copyto!(s.act_fail, s.act)       # remembered as failed unless accepted below
     ok = false
+    last_merit = Inf
     maxc = has_on ? max(st.polish_corrections, st.polish_soc_newton) : st.polish_corrections
     prev = Inf
     for attempt in 0:maxc
         _polish_factor!(s)
         _polish_solve!(s)
         info.polish_attempts += 1
-        ok, pr, dr = _polish_check(s)
+        ok, pr, dr, merit = _polish_check(s)
+        last_merit = merit
         # Newton on the SOC boundary converges fast near the solution or not at
         # all: give up when a step does not cut the primal residual tenfold
         if !ok && has_on && attempt >= st.polish_corrections
@@ -354,7 +358,13 @@ function _try_polish!(s::Solver; restart::Bool = true)
         changed || break
     end
     s.has_fail = !ok
-    !ok && restart && st.polish_restart && _restart_from_polish!(s)
+    if !ok && restart && st.polish_restart
+        # restart only from a polished point that is closer to optimal than the
+        # current iterate (merit: the larger residual relative to its tolerance)
+        pr0, dr0, pn0, dn0 = _residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty)
+        merit0 = max(pr0 / _eps_prim(st, pn0), dr0 / _eps_dual(st, dn0))
+        last_merit < merit0 && _restart_from_polish!(s)
+    end
     info.polish_time += (time_ns() - t0) / 1e9
     return ok
 end

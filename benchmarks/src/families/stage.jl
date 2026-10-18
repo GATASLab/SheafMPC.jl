@@ -15,6 +15,8 @@ function make_ocp(; N, A, B, Q, R, QN, qx, ru, x0, S = nothing, b = nothing, xlb
     idx(lb, ub) = lb === nothing ? Int[] : [i for i in eachindex(lb) if isfinite(lb[i]) || isfinite(ub[i])]
     ix = idx(xlb, xub); iu = idx(ulb, uub)
     big(v) = [isfinite(t) ? t : copysign(1e20, t) for t in v]
+    xl = xlb === nothing ? Float64[] : big(xlb[ix]); xu = xub === nothing ? Float64[] : big(xub[ix])
+    ul = ulb === nothing ? Float64[] : big(ulb[iu]); uu = uub === nothing ? Float64[] : big(uub[iu])
     ocp = StageOCP(N, fill(nx, N + 1), [fill(nu, N); 0],
                    [Matrix{Float64}(A) for _ in 1:N], [Matrix{Float64}(B) for _ in 1:N], [Vector{Float64}(b) for _ in 1:N],
                    [k == N + 1 ? Matrix{Float64}(QN) : Matrix{Float64}(Q) for k in 1:N+1],
@@ -22,11 +24,11 @@ function make_ocp(; N, A, B, Q, R, QN, qx, ru, x0, S = nothing, b = nothing, xlb
                    [k == N + 1 ? zeros(0, 0) : Matrix{Float64}(R) for k in 1:N+1],
                    [Vector{Float64}(qx[k]) for k in 1:N+1], [k == N + 1 ? Float64[] : Vector{Float64}(ru[k]) for k in 1:N+1],
                    [(k == 1 || (k == N + 1 && !xboundN)) ? Int[] : ix for k in 1:N+1],
-                   [(k == 1 || (k == N + 1 && !xboundN)) ? Float64[] : big(xlb[ix]) for k in 1:N+1],
-                   [(k == 1 || (k == N + 1 && !xboundN)) ? Float64[] : big(xub[ix]) for k in 1:N+1],
+                   [(k == 1 || (k == N + 1 && !xboundN)) ? Float64[] : xl for k in 1:N+1],
+                   [(k == 1 || (k == N + 1 && !xboundN)) ? Float64[] : xu for k in 1:N+1],
                    [k == N + 1 ? Int[] : iu for k in 1:N+1],
-                   [k == N + 1 ? Float64[] : big(ulb[iu]) for k in 1:N+1],
-                   [k == N + 1 ? Float64[] : big(uub[iu]) for k in 1:N+1],
+                   [k == N + 1 ? Float64[] : ul for k in 1:N+1],
+                   [k == N + 1 ? Float64[] : uu for k in 1:N+1],
                    [zeros(0, nx) for _ in 1:N+1], [zeros(0, k == N + 1 ? 0 : nu) for k in 1:N+1],
                    [Float64[] for _ in 1:N+1], [Float64[] for _ in 1:N+1],
                    Vector{Float64}(x0), NTuple{3,Int}[])

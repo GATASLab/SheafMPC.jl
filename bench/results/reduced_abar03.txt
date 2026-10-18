@@ -1,0 +1,16 @@
+grid 8x8, H = 10, fibre basis: structured
+level             vars    rows   push ms  setup ms   ours ms  ours med   clar ms          J     price   vs clar iters/polish
+fine              5120    5760      0.00    408.17    15.694    15.979   100.540   18.76852  0.00e+00   9.7e-11 40/success (qdldl_amd, 38 active SOC)
+teams k=1         4000    5760     22.09    118.39    14.442    14.483    28.366   18.76852  9.46e-15   4.9e-11 90/success (qdldl_amd, 48 active SOC)
+teams k=2         3920    5760     33.17     58.05  1345.628  1350.195    47.153   25.08849  3.37e-01   5.3e-11 9150/success (qdldl_amd, 32 active SOC)
+teams k=4         3880    5760     73.47     97.24    29.404    30.322    41.176   41.32750  1.20e+00   2.3e-11 140/success (qdldl_amd, 8 active SOC)
+fleet (k=8)       3860    5760     71.16    119.69     3.916     4.077    53.274   44.24509  1.36e+00   7.7e-14 20/success (qdldl_amd, 0 active SOC)
+
+receding horizon, 10 steps (fibres reused; SheafMPC warm from the previous solution, factorizations kept)
+level            push med   ours med   ours max   cold med   clar med    iters   max gap
+fine                0.000     30.834     35.074     18.570    100.430     25.0   9.7e-11
+teams k=1          23.136   1554.839   2119.991   1391.576     43.459   9725.0   1.0e-07
+teams k=2           7.881   1383.646   2249.798     55.004     30.158  15100.0   8.7e-10
+teams k=4          12.383     92.691   2119.088     83.818     35.959    600.0   1.6e-06
+fleet (k=8)        17.777     71.880   1561.670     56.831     25.136    575.0   6.3e-06
+wrote /home/itaykadosh/Projects/GATAS/SheafMPC.jl/bench/results/reduced.json

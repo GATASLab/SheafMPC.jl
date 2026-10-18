@@ -105,6 +105,7 @@ mutable struct Solver{LS<:LinearSystem}
     soc_tau::Vector{Float64}
     soc_eta::Vector{Float64}
     soc_u::Vector{Float64}
+    warm_fails::Int
 end
 
 function _rowtypes(l, u, kinds)
@@ -191,7 +192,7 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
                zeros(m), zeros(n + m), zeros(n + m), zeros(n + m), zeros(n), zeros(m), zeros(m), zeros(m),
                zeros(n), zeros(n),
                zeros(n), zeros(m), zeros(m), false, false,
-               soc_idx, zeros(length(p.socs)), zeros(length(p.socs)), zeros(m))
+               soc_idx, zeros(length(p.socs)), zeros(length(p.socs)), zeros(m), 0)
     s.info.setup_time = (time_ns() - t0) / 1e9
     s.info.linsys = kind
     s.info.rho = st.rho
@@ -420,9 +421,19 @@ function solve!(s::Solver)
     status = :max_iter
     tlim = st.time_limit
     if st.polish && st.polish_warm && st.warm_start && s.has_iterate && s.m > 0
-        _guess_active!(s, s.z, s.y)
-        if _try_polish!(s)
-            polished = true; converged = true; status = :solved
+        # skip the warm polish after a failure, retrying every 4th solve (a
+        # failure costs a factorization; when the warm start's active set is
+        # usually right, as in steady receding horizon, it saves the iterations)
+        if s.warm_fails == 0 || s.warm_fails % 4 == 0
+            _guess_active!(s, s.z, s.y)
+            if _try_polish!(s)
+                polished = true; converged = true; status = :solved
+                s.warm_fails = 0
+            else
+                s.warm_fails += 1
+            end
+        else
+            s.warm_fails += 1
         end
     end
     s.warm_pending = false
@@ -603,6 +614,13 @@ function warm_start!(s::Solver; x = nothing, y = nothing)
     _project!(s, s.z)
     s.has_iterate = true
     s.warm_pending = true
+    # start the next solve from the default rho (one refactorization if the
+    # previous solve had adapted it by more than the tolerance factor)
+    st = s.settings
+    if st.warm_reset_rho && (s.rho > st.adaptive_rho_tolerance * st.rho || s.rho < st.rho / st.adaptive_rho_tolerance)
+        _set_rho!(s, st.rho)
+        _refactor_kkt!(s)
+    end
     return s
 end
 

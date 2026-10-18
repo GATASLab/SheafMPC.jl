@@ -1,0 +1,32 @@
+cone   n  b solver           step0 ms     med ms     max ms   med it   max it   max gap  notes
+box    1  1 sheafmpc          147.581      0.101      0.253     20.0       30   6.1e-11  warm polish at it 0: 9/29 steps, polish factorizations 69
+box    1  1 sheafmpc_cold       0.103      0.057      0.319     20.0      120   6.1e-11  
+box    1  1 osqp               97.249      0.222      0.809     50.0      200   6.1e-11  internal solve med 0.175 ms
+box    1  1 osqp_shift          0.357      0.237     76.699     50.0       75   6.1e-11  internal solve med 0.178 ms
+box    1  1 osqp_rho0.03        0.644      0.226      0.780     50.0      200   6.1e-11  internal solve med 0.175 ms
+box    1  1 clarabel            0.374      0.367      0.461      7.0        9   6.1e-09  
+box    4  1 sheafmpc            1.126      1.095      3.234     30.0      100   7.3e-11  warm polish at it 0: 6/29 steps, polish factorizations 108
+box    4  1 sheafmpc_cold       1.112      0.733      1.043     30.0       50   7.3e-11  
+box    4  1 osqp                6.264      3.915      8.434    175.0      300   7.3e-11  internal solve med 3.243 ms
+box    4  1 osqp_shift          5.847      3.381     10.622    125.0      350   7.3e-11  internal solve med 2.470 ms
+box    4  1 osqp_rho0.03        5.395      4.856     10.262    100.0      300   7.3e-11  internal solve med 3.184 ms
+box    4  1 clarabel            4.607      3.310      7.143     10.0       12   7.3e-09  
+box   16  1 sheafmpc            3.148      5.826     10.176     40.0       90   1.8e-10  warm polish at it 0: 0/29 steps, polish factorizations 110
+box   16  1 sheafmpc_cold       4.929      4.317      6.940     40.0       60   1.8e-10  
+box   16  1 osqp               27.050     20.350     46.060    125.0      300   1.8e-10  internal solve med 17.149 ms
+box   16  1 osqp_shift         29.401     22.269     44.565    225.0      400   1.8e-10  internal solve med 19.342 ms
+box   16  1 osqp_rho0.03       13.063     13.729     26.475    125.0      300   1.8e-10  internal solve med 11.448 ms
+box   16  1 clarabel           14.922     21.386     68.564     10.0       12   1.2e-08  
+box   32  1 sheafmpc           18.455     16.671    207.534     40.0      230   2.4e-10  warm polish at it 0: 0/29 steps, polish factorizations 125
+box   32  1 sheafmpc_cold      17.266     17.318     39.049     40.0       60   2.4e-10  
+box   32  1 osqp              114.113     57.891    145.897    225.0      350   2.4e-10  internal solve med 52.076 ms
+box   32  1 osqp_shift         99.083     59.743    226.015    250.0      400   2.4e-10  internal solve med 47.891 ms
+box   32  1 osqp_rho0.03       56.577     29.916    167.307    125.0      400   2.4e-10  internal solve med 24.475 ms
+box   32  1 clarabel           39.289     60.502    109.342     10.0       14   1.5e-08  
+box   64  1 sheafmpc           31.051     49.580    225.047     50.0      420   8.5e-11  warm polish at it 0: 0/29 steps, polish factorizations 130
+box   64  1 sheafmpc_cold      39.109     42.985     77.516     50.0       70   8.5e-11  
+box   64  1 osqp              148.484    113.104    200.871    225.0      350   4.2e-10  internal solve med 100.478 ms
+box   64  1 osqp_shift        167.753    111.748    224.627    225.0      350   1.1e-10  internal solve med 101.342 ms
+box   64  1 osqp_rho0.03      131.173    113.245    199.089    225.0      400   1.5e-10  internal solve med 101.153 ms
+box   64  1 clarabel          140.141     93.023    140.223     11.0       14   1.5e-08  
+wrote /home/itaykadosh/Projects/GATAS/SheafMPC.jl/bench/results/rh_box.json

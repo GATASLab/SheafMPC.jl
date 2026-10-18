@@ -1,0 +1,17 @@
+cone   n  b solver           step0 ms     med ms     max ms   med it   max it   max gap  notes
+soc    1  1 sheafmpc          177.435      0.169      0.421     30.0       90   1.4e-10  warm polish at it 0: 7/29 steps, polish factorizations 75
+soc    1  1 sheafmpc_cold       0.252      0.144      0.460     30.0      100   1.4e-10  
+soc    1  1 clarabel            0.496      0.607      0.808      7.0        8   1.3e-08  
+soc    4  1 sheafmpc            2.342      3.427     32.771     60.0      150   8.6e-10  warm polish at it 0: 3/29 steps, polish factorizations 158
+soc    4  1 sheafmpc_cold       2.257      2.490      5.013     50.0      130   2.4e-09  
+soc    4  1 clarabel            5.558      5.211      7.047      9.0       12   1.0e-08  
+soc   16  1 sheafmpc           15.390     38.102     92.540    160.0      440   4.8e-10  warm polish at it 0: 0/29 steps, polish factorizations 212
+soc   16  1 sheafmpc_cold      18.526     18.404     42.986     70.0      190   2.0e-10  
+soc   16  1 clarabel           36.131     34.963     46.054      9.0       11   1.7e-08  
+soc   32  1 sheafmpc          110.517    100.480    220.737    170.0      430   2.2e-10  warm polish at it 0: 0/29 steps, polish factorizations 207
+soc   32  1 sheafmpc_cold      76.433     55.062     95.394     70.0      200   2.0e-10  
+soc   32  1 clarabel          133.965    113.195    161.737     10.0       12   1.4e-08  
+soc   64  1 sheafmpc          146.819    174.008    300.930    230.0      460   1.4e-10  warm polish at it 0: 0/29 steps, polish factorizations 237
+soc   64  1 sheafmpc_cold     131.925     97.686    188.292     80.0      240   1.4e-10  
+soc   64  1 clarabel          157.510    141.675    186.526     10.0       12   1.7e-08  
+wrote /home/itaykadosh/Projects/GATAS/SheafMPC.jl/bench/results/rh_soc.json

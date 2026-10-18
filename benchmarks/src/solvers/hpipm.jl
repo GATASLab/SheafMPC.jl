@@ -21,7 +21,8 @@
 #   lg_0 - C_0 x0 <= D_0 u_0 <= ug_0 - C_0 x0,
 # and box bounds on x_0 are dropped. Bound indices with both sides infinite
 # are dropped at setup; a one-sided bound keeps its index with the infinite
-# side masked out (mask 0, value +-1e10, the convention acados uses).
+# side masked out (mask 0, value +-1e10, the convention acados uses). A bound
+# with |v| >= 1e19 (the generators' +-1e20) counts as infinite.
 #
 # Library: ENV["HPIPM_LIB_DIR"] if set, else the fastest local build in
 # ~/tools/hpipm-avx (see HPIPM_DEFAULT_BUILD), else acados' libhpipm. The
@@ -33,8 +34,12 @@ const HPIPM_STATUS = (:solved, :max_iter, :min_step, :nan, :inconsistent_eq)
 const HPIPM_INF = 1.0e10
 const HPIPM_ITER_MAX = 1000
 
-# Fastest build found by the library comparison (HPIPM TARGET=AVX against
-# BLASFEO X64_INTEL_HASWELL); see benchmarks/test/test_hpipm.jl for the check.
+# Default build: HPIPM TARGET=AVX against BLASFEO X64_INTEL_HASWELL. On the
+# Zen 5 laptop (nx = 64, nu = 32, N = 24, SPEED, no condensing) it had the best
+# minimum and median-of-minima solve time over six runs against acados'
+# GENERIC build and the X64_INTEL_SKYLAKE_X builds (HPIPM AVX and AVX512),
+# though the spread between runs on the loaded machine (about 6 to 9 ms for
+# every build) was larger than the differences between builds.
 const HPIPM_DEFAULT_BUILD = "X64_INTEL_HASWELL"
 const HPIPM_AVX_ROOT = joinpath(homedir(), "tools", "hpipm-avx")
 const HPIPM_ACADOS_LIB = joinpath(homedir(), "tools", "acados", "lib")
@@ -153,20 +158,19 @@ mutable struct HpipmHandle
     status::Base.RefValue{Cint}; iter::Base.RefValue{Cint}
 end
 
-_ptr(v::Vector{UInt8}) = pointer(v)
-_buf(n) = zeros(UInt8, max(Int(n), 64))
+_hp_buf(n) = zeros(UInt8, max(Int(n), 64))
 
-function _new_ocp(L::_HpipmLib, N::Int, set_dims!::Function)
+function _hp_new_ocp(L::_HpipmLib, N::Int, set_dims!::Function)
     f = L.fn
-    dim_s = _buf(ccall(f[:d_ocp_qp_dim_strsize], Csize_t, ()))
-    dim_m = _buf(ccall(f[:d_ocp_qp_dim_memsize], Csize_t, (Cint,), N))
+    dim_s = _hp_buf(ccall(f[:d_ocp_qp_dim_strsize], Csize_t, ()))
+    dim_m = _hp_buf(ccall(f[:d_ocp_qp_dim_memsize], Csize_t, (Cint,), N))
     ccall(f[:d_ocp_qp_dim_create], Cvoid, (Cint, Ptr{Cvoid}, Ptr{Cvoid}), N, dim_s, dim_m)
     set_dims!(pointer(dim_s))
-    qp_s = _buf(ccall(f[:d_ocp_qp_strsize], Csize_t, ()))
-    qp_m = _buf(ccall(f[:d_ocp_qp_memsize], Csize_t, (Ptr{Cvoid},), dim_s))
+    qp_s = _hp_buf(ccall(f[:d_ocp_qp_strsize], Csize_t, ()))
+    qp_m = _hp_buf(ccall(f[:d_ocp_qp_memsize], Csize_t, (Ptr{Cvoid},), dim_s))
     ccall(f[:d_ocp_qp_create], Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}), dim_s, qp_s, qp_m)
-    sol_s = _buf(ccall(f[:d_ocp_qp_sol_strsize], Csize_t, ()))
-    sol_m = _buf(ccall(f[:d_ocp_qp_sol_memsize], Csize_t, (Ptr{Cvoid},), dim_s))
+    sol_s = _hp_buf(ccall(f[:d_ocp_qp_sol_strsize], Csize_t, ()))
+    sol_m = _hp_buf(ccall(f[:d_ocp_qp_sol_memsize], Csize_t, (Ptr{Cvoid},), dim_s))
     ccall(f[:d_ocp_qp_sol_create], Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}), dim_s, sol_s, sol_m)
     return _HpipmOCP(N, dim_s, dim_m, qp_s, qp_m, sol_s, sol_m)
 end
@@ -184,7 +188,11 @@ function _hpipm_N2(spec, N::Int)
     return clamp(round(Int, N / parse(Int, m[1])), 1, N)
 end
 
-_bounded(l, u) = isfinite(l) || isfinite(u)
+# The family generators store a missing side of a one-sided bound as +-1e20;
+# |v| >= 1e19 counts as infinite (as does Inf).
+const HPIPM_BIG = 1.0e19
+_hp_isinf(v) = !(abs(v) < HPIPM_BIG)
+_hp_bounded(l, u) = !_hp_isinf(l) || !_hp_isinf(u)
 
 function hpipm_setup(qp::QP, eps::Real, variant::AbstractDict)
     st = qp.stage::StageOCP
@@ -196,13 +204,13 @@ function hpipm_setup(qp::QP, eps::Real, variant::AbstractDict)
 
     nx = Cint[k == 0 ? 0 : st.nx[k+1] for k in 0:N]
     nu = Cint[st.nu[k+1] for k in 0:N]
-    kbx = [k == 0 ? Int[] : [j for j in eachindex(st.idxbx[k+1]) if _bounded(st.lbx[k+1][j], st.ubx[k+1][j])] for k in 0:N]
-    kbu = [[j for j in eachindex(st.idxbu[k+1]) if _bounded(st.lbu[k+1][j], st.ubu[k+1][j])] for k in 0:N]
+    kbx = [k == 0 ? Int[] : [j for j in eachindex(st.idxbx[k+1]) if _hp_bounded(st.lbx[k+1][j], st.ubx[k+1][j])] for k in 0:N]
+    kbu = [[j for j in eachindex(st.idxbu[k+1]) if _hp_bounded(st.lbu[k+1][j], st.ubu[k+1][j])] for k in 0:N]
     kg = map(0:N) do k
         i = k + 1
         ngk = length(st.lg[i])
         filter(1:ngk) do j
-            _bounded(st.lg[i][j], st.ug[i][j]) || return false
+            _hp_bounded(st.lg[i][j], st.ug[i][j]) || return false
             # stage 0 rows without u terms are constants once x0 is fixed
             k == 0 && (nu[1] == 0 || all(iszero, view(st.D[1], j, :))) && return false
             true
@@ -216,7 +224,7 @@ function hpipm_setup(qp::QP, eps::Real, variant::AbstractDict)
     setdims!(dp) = ccall(f[:d_ocp_qp_dim_set_all], Cvoid,
                          (Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cvoid}),
                          nx, nu, nbx, nbu, ng, ns, dp)
-    full = _new_ocp(L, N, setdims!)
+    full = _hp_new_ocp(L, N, setdims!)
 
     vz(n) = zeros(Float64, n)
     h = HpipmHandle(L, st, N, N2, mode, nx, nu, nbx, nbu, ng, ns, kbx, kbu, kg,
@@ -261,13 +269,13 @@ function hpipm_setup(qp::QP, eps::Real, variant::AbstractDict)
         bs = h.block_size
         cdims!(dp) = ccall(f[:d_part_cond_qp_compute_dim], Cvoid, (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cvoid}),
                            full.dim_s, bs, dp)
-        h.cond = _new_ocp(L, N2, cdims!)
-        h.pc_arg_s = _buf(64)
-        h.pc_arg_m = _buf(ccall(f[:d_part_cond_qp_arg_memsize], Csize_t, (Cint,), N2))
+        h.cond = _hp_new_ocp(L, N2, cdims!)
+        h.pc_arg_s = _hp_buf(64)
+        h.pc_arg_m = _hp_buf(ccall(f[:d_part_cond_qp_arg_memsize], Csize_t, (Cint,), N2))
         ccall(f[:d_part_cond_qp_arg_create], Cvoid, (Cint, Ptr{Cvoid}, Ptr{Cvoid}), N2, h.pc_arg_s, h.pc_arg_m)
         ccall(f[:d_part_cond_qp_arg_set_default], Cvoid, (Ptr{Cvoid},), h.pc_arg_s)
-        h.pc_ws_s = _buf(64)
-        h.pc_ws_m = _buf(ccall(f[:d_part_cond_qp_ws_memsize], Csize_t, (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cvoid}, Ptr{Cvoid}),
+        h.pc_ws_s = _hp_buf(64)
+        h.pc_ws_m = _hp_buf(ccall(f[:d_part_cond_qp_ws_memsize], Csize_t, (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cvoid}, Ptr{Cvoid}),
                                full.dim_s, bs, h.cond.dim_s, h.pc_arg_s))
         ccall(f[:d_part_cond_qp_ws_create], Cvoid, (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
               full.dim_s, bs, h.cond.dim_s, h.pc_arg_s, h.pc_ws_s, h.pc_ws_m)
@@ -275,8 +283,8 @@ function hpipm_setup(qp::QP, eps::Real, variant::AbstractDict)
     end
 
     # IPM arg: mode defaults, then tolerances, iteration cap, cold start
-    h.arg_s = _buf(ccall(f[:d_ocp_qp_ipm_arg_strsize], Csize_t, ()))
-    h.arg_m = _buf(ccall(f[:d_ocp_qp_ipm_arg_memsize], Csize_t, (Ptr{Cvoid},), ipm_dim))
+    h.arg_s = _hp_buf(ccall(f[:d_ocp_qp_ipm_arg_strsize], Csize_t, ()))
+    h.arg_m = _hp_buf(ccall(f[:d_ocp_qp_ipm_arg_memsize], Csize_t, (Ptr{Cvoid},), ipm_dim))
     ccall(f[:d_ocp_qp_ipm_arg_create], Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}), ipm_dim, h.arg_s, h.arg_m)
     ccall(f[:d_ocp_qp_ipm_arg_set_default], Cvoid, (Cint, Ptr{Cvoid}), HPIPM_MODES[mode], h.arg_s)
     setarg(name, v::Float64) = (r = Ref(v); ccall(f[:d_ocp_qp_ipm_arg_set], Cvoid, (Cstring, Ptr{Cvoid}, Ptr{Cvoid}), name, r, h.arg_s))
@@ -286,8 +294,8 @@ function hpipm_setup(qp::QP, eps::Real, variant::AbstractDict)
     end
     setarg("iter_max", Int(get(variant, "iter_max", HPIPM_ITER_MAX)))
     setarg("warm_start", 0)
-    h.ws_s = _buf(ccall(f[:d_ocp_qp_ipm_ws_strsize], Csize_t, ()))
-    h.ws_m = _buf(ccall(f[:d_ocp_qp_ipm_ws_memsize], Csize_t, (Ptr{Cvoid}, Ptr{Cvoid}), ipm_dim, h.arg_s))
+    h.ws_s = _hp_buf(ccall(f[:d_ocp_qp_ipm_ws_strsize], Csize_t, ()))
+    h.ws_m = _hp_buf(ccall(f[:d_ocp_qp_ipm_ws_memsize], Csize_t, (Ptr{Cvoid}, Ptr{Cvoid}), ipm_dim, h.arg_s))
     ccall(f[:d_ocp_qp_ipm_ws_create], Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}), ipm_dim, h.arg_s, h.ws_s, h.ws_m)
     h.rhs_only = false
     return h
@@ -295,10 +303,10 @@ end
 
 # Fill `val`/`mask` for kept bound positions `keep` of (l, u); sgn = -1 for the
 # lower side, +1 for the upper side.
-@inline function _fill_bound!(val, mask, src, keep, sgn)
+@inline function _hp_fill_bound!(val, mask, src, keep, sgn)
     @inbounds for (t, j) in enumerate(keep)
         v = src[j]
-        if isfinite(v)
+        if !_hp_isinf(v)
             val[t] = v; mask[t] = 1.0
         else
             val[t] = sgn * HPIPM_INF; mask[t] = 0.0
@@ -339,20 +347,20 @@ function _hpipm_set_vectors!(h::HpipmHandle, st::StageOCP)
                 setv(:d_ocp_qp_set_r, k, h.rvec[i])
             end
             if h.nbx[i] > 0
-                _fill_bound!(h.lbx[i], h.mlbx[i], st.lbx[i], h.kbx[i], -1.0)
-                _fill_bound!(h.ubx[i], h.mubx[i], st.ubx[i], h.kbx[i], 1.0)
+                _hp_fill_bound!(h.lbx[i], h.mlbx[i], st.lbx[i], h.kbx[i], -1.0)
+                _hp_fill_bound!(h.ubx[i], h.mubx[i], st.ubx[i], h.kbx[i], 1.0)
                 setv(:d_ocp_qp_set_lbx, k, h.lbx[i]); setv(:d_ocp_qp_set_ubx, k, h.ubx[i])
                 setv(:d_ocp_qp_set_lbx_mask, k, h.mlbx[i]); setv(:d_ocp_qp_set_ubx_mask, k, h.mubx[i])
             end
             if h.nbu[i] > 0
-                _fill_bound!(h.lbu[i], h.mlbu[i], st.lbu[i], h.kbu[i], -1.0)
-                _fill_bound!(h.ubu[i], h.mubu[i], st.ubu[i], h.kbu[i], 1.0)
+                _hp_fill_bound!(h.lbu[i], h.mlbu[i], st.lbu[i], h.kbu[i], -1.0)
+                _hp_fill_bound!(h.ubu[i], h.mubu[i], st.ubu[i], h.kbu[i], 1.0)
                 setv(:d_ocp_qp_set_lbu, k, h.lbu[i]); setv(:d_ocp_qp_set_ubu, k, h.ubu[i])
                 setv(:d_ocp_qp_set_lbu_mask, k, h.mlbu[i]); setv(:d_ocp_qp_set_ubu_mask, k, h.mubu[i])
             end
             if h.ng[i] > 0
-                _fill_bound!(h.lg[i], h.mlg[i], st.lg[i], h.kg[i], -1.0)
-                _fill_bound!(h.ug[i], h.mug[i], st.ug[i], h.kg[i], 1.0)
+                _hp_fill_bound!(h.lg[i], h.mlg[i], st.lg[i], h.kg[i], -1.0)
+                _hp_fill_bound!(h.ug[i], h.mug[i], st.ug[i], h.kg[i], 1.0)
                 if k == 0
                     @inbounds for (t, j) in enumerate(h.kg[1])
                         h.mlg[1][t] != 0.0 && (h.lg[1][t] -= h.cx0[j])
@@ -412,10 +420,10 @@ end
 function _hpipm_check_pattern(h::HpipmHandle, st::StageOCP)
     for k in 0:h.N
         i = k + 1
-        if k > 0 && length(h.kbx[i]) != count(j -> _bounded(st.lbx[i][j], st.ubx[i][j]), eachindex(st.idxbx[i]))
+        if k > 0 && length(h.kbx[i]) != count(j -> _hp_bounded(st.lbx[i][j], st.ubx[i][j]), eachindex(st.idxbx[i]))
             throw(ArgumentError("hpipm update!: state bound pattern changed at stage $k"))
         end
-        if length(h.kbu[i]) != count(j -> _bounded(st.lbu[i][j], st.ubu[i][j]), eachindex(st.idxbu[i]))
+        if length(h.kbu[i]) != count(j -> _hp_bounded(st.lbu[i][j], st.ubu[i][j]), eachindex(st.idxbu[i]))
             throw(ArgumentError("hpipm update!: input bound pattern changed at stage $k"))
         end
     end

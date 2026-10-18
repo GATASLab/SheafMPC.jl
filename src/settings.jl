@@ -42,8 +42,12 @@ Polishing (active-set refinement)
   (0 disables these early attempts); after a failed early attempt the wait
   before the next one doubles, so failed attempts cost a bounded fraction of
   the run;
-* `polish_warm = true`: after `warm_start!`, attempt the polish before the first
-  iteration (the active set of a shifted plan is usually the right one);
+* `polish_warm = true`: when a solve starts warm, attempt the polish before the
+  first iteration (in steady receding horizon the active set of the shifted
+  plan is usually the right one); after a failed warm polish it is tried only
+  every 4th solve until it succeeds again;
+* `warm_reset_rho = true`: `warm_start!` puts rho back to `rho` if the last
+  solve adapted it beyond the tolerance factor (one refactorization);
 * `polish_delta = 1e-6`: regularization of the polish system.
 
 Linear algebra
@@ -82,6 +86,7 @@ Base.@kwdef mutable struct Settings
     polish_delta::Float64 = 1e-6
     polish_refine_iter::Int = 3
     warm_start::Bool = true
+    warm_reset_rho::Bool = true
     linsys::Symbol = :auto
     ordering::Symbol = :amd
     verbose::Bool = false
