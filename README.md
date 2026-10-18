@@ -210,6 +210,22 @@ Clarabel and of sheaf programs).
   (tau/eta) U U'`, symmetric positive definite, so the polish system stays
   quasi-definite on the same pattern (the (2,2) block of each SOC block is
   stored dense).
+* Dense active-set path for small polyhedral problems (`dual`, src/dual.jl).
+  With at most `dual_max_rows` inequality rows and no cones, `setup` also
+  factors the KKT matrix of the equality rows alone and forms the Schur
+  complement `Z = A_I (K11^{-1})_xx A_I'` of the inequality rows (the operator
+  of the spectral rho), built by blocked solves when it fits
+  `dual_setup_budget` and column by column on first use otherwise. An active
+  set then costs a dense Cholesky update of `Z_AA` (rows enter by a triangular
+  solve, leave by a rank-one update) and no sparse factorization, so a solve
+  first runs bounded primal-dual active-set iterations on Z: cold from the
+  equality-only solution, warm from the shifted guess and the last accepted
+  active set, and during ADMM from its guess every `dual_interval`
+  iterations. On the small MPC problems of the benchmark harness this
+  replaces the 20 to 50 ADMM iterations and the polish factorizations of a
+  cold solve by 2 to 6 dense iterations and 3 to 5 sparse solves; problems
+  whose active sets are too large for the dense budget (fleets) keep the
+  sparse polish.
 * Receding horizon: `update!(solver; q, l, u, b)` changes the data without
   refactoring, `warm_start!` / `warm_start_shifted!` move the previous plan,
   and a warm-started `solve!` first tries the polish on the active set of the
@@ -240,7 +256,8 @@ edges first, the row order of the paper's `solve_direct`).
 
     julia --project=. -e 'using Pkg; Pkg.test()'
 
-The tests compare with Clarabel on random QPs and SOCPs, infeasible problems,
+The tests compare with Clarabel on random QPs and SOCPs, box-constrained MPC
+problems on the dense active-set path (cold, warm, degenerate), infeasible problems,
 the fleet QP of the paper repository's `bench/central`, and fine and pushed
 forward sheaf programs of its Resolution module (read only, from
 `SHEAFMPC_PAPER`, default `~/Projects/GATAS/mpc-sheaf-pushforward`).
