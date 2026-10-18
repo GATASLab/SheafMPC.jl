@@ -8,8 +8,9 @@
 # or Project.toml) from `git archive REF src Project.toml`
 # (the package under test, exactly as committed at REF) and `git archive HEAD
 # benchmarks` (the harness at its own commit), records both in PACKAGE_REF and
-# HARNESS_REF, copies the generated data and the reference cache, links the
-# Mumblebee and CliqueTrees variants next to it, resolves the three Julia
+# HARNESS_REF, copies the generated data, the reference cache and the Mumblebee
+# checkout (MUMBLEBEE_DIR, with its .git: the commit is recorded), links the
+# CliqueTrees variant next to it, resolves the three Julia
 # environments on the login node, and writes exclusive-node jobs whose results
 # go to $ROOT/results/<tier>_<sha>_excl.
 set -euo pipefail
@@ -30,7 +31,10 @@ git -C "$PKG" archive HEAD benchmarks | tar -x -C "$TMP"
 echo "$FULL $REF@$TIP" > "$TMP/PACKAGE_REF"
 echo "$HSHA HEAD" > "$TMP/HARNESS_REF"
 DEST="$ROOT/refs/$SHA"
-ssh hpg "mkdir -p $DEST && ln -sfn $ROOT/Mumblebee.jl $DEST/Mumblebee.jl && ln -sfn $ROOT/CliqueTrees-fast-0015e2b $DEST/CliqueTrees-fast-0015e2b"
+MB="${MUMBLEBEE_DIR:-$HOME/Projects/GATAS/Mumblebee.jl}"          # the fast-symbolic checkout, copied per gate
+ssh hpg "mkdir -p $DEST && rm -f $DEST/Mumblebee.jl && ln -sfn $ROOT/CliqueTrees-fast-0015e2b $DEST/CliqueTrees-fast-0015e2b"
+rsync -a --delete "$MB/" "hpg:$DEST/Mumblebee.jl/"
+echo "Mumblebee: $(git -C "$MB" rev-parse --abbrev-ref HEAD) $(git -C "$MB" rev-parse HEAD)"
 rsync -a --delete "$TMP/" "hpg:$DEST/SheafMPC.jl/"
 rm -rf "$TMP"
 rsync -a "$HERE/data/osqprand" "$HERE/data/reduced" "hpg:$DEST/SheafMPC.jl/benchmarks/data/"
