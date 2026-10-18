@@ -1,0 +1,754 @@
+{
+ "cpu": "AMD EPYC 7702 64-Core Processor",
+ "host": "c0701a-s28.ufhpc",
+ "rows": [
+  {
+   "form": "expanded",
+   "graph": "ring",
+   "kkt_dim": 17920,
+   "load": 3.84,
+   "n": 64,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.00103579,
+     "factor_med": 0.0013766045,
+     "flops": 2.260602e6,
+     "model_pick": "nd4",
+     "nnzL": 159802,
+     "order": "amd",
+     "res": 2.93861011537885e-14,
+     "solve": 0.00044865,
+     "solve_med": 0.00053922,
+     "tasks": 64,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.001531179,
+     "factor_med": 0.002053678,
+     "flops": 2.437978e6,
+     "model_pick": "nd4",
+     "nnzL": 179898,
+     "order": "model",
+     "res": 2.8855666114911456e-14,
+     "solve": 0.001454876,
+     "solve_med": 0.001562077,
+     "tasks": 224,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.001248519,
+     "factor_med": 0.0014650854999999998,
+     "flops": 2.492554e6,
+     "model_pick": "nd4",
+     "nnzL": 168538,
+     "order": "nd16",
+     "res": 2.4850881571389736e-14,
+     "solve": 0.001018498,
+     "solve_med": 0.0010952725000000002,
+     "tasks": 152,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.001457471,
+     "factor_med": 0.0018371625,
+     "flops": 2.437978e6,
+     "model_pick": "nd4",
+     "nnzL": 179898,
+     "order": "nd4",
+     "res": 2.8855666114911456e-14,
+     "solve": 0.001286951,
+     "solve_med": 0.001538563,
+     "tasks": 224,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "expanded",
+   "graph": "ring",
+   "kkt_dim": 71680,
+   "load": 3.69,
+   "n": 256,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.007354751,
+     "factor_med": 0.007979612,
+     "flops": 9.407418e6,
+     "model_pick": "nd16",
+     "nnzL": 648730,
+     "order": "amd",
+     "res": 2.460212267254402e-14,
+     "solve": 0.001043826,
+     "solve_med": 0.001174661,
+     "tasks": 130,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.004576595,
+     "factor_med": 0.00731175,
+     "flops": 1.0335226e7,
+     "model_pick": "nd16",
+     "nnzL": 683674,
+     "order": "model",
+     "res": 2.4716551150090737e-14,
+     "solve": 0.001698182,
+     "solve_med": 0.002550479,
+     "tasks": 352,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.005174976,
+     "factor_med": 0.007185764,
+     "flops": 1.0335226e7,
+     "model_pick": "nd16",
+     "nnzL": 683674,
+     "order": "nd16",
+     "res": 2.4716551150090737e-14,
+     "solve": 0.001500572,
+     "solve_med": 0.002447876,
+     "tasks": 352,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.004291231,
+     "factor_med": 0.006790574,
+     "flops": 1.0116922e7,
+     "model_pick": "nd16",
+     "nnzL": 729114,
+     "order": "nd4",
+     "res": 3.120776660364992e-14,
+     "solve": 0.001716266,
+     "solve_med": 0.0019312635,
+     "tasks": 256,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "expanded",
+   "graph": "ring",
+   "kkt_dim": 286720,
+   "load": 3.48,
+   "n": 1024,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.031715498,
+     "factor_med": 0.033629725,
+     "flops": 3.7994682e7,
+     "model_pick": "nd16",
+     "nnzL": 2604442,
+     "order": "amd",
+     "res": 3.183595734175689e-14,
+     "solve": 0.006038264,
+     "solve_med": 0.006300215,
+     "tasks": 508,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.011205286,
+     "factor_med": 0.012724277499999999,
+     "flops": 4.1705914e7,
+     "model_pick": "nd16",
+     "nnzL": 2744218,
+     "order": "model",
+     "res": 3.1311550034057586e-14,
+     "solve": 0.004896114,
+     "solve_med": 0.005270385,
+     "tasks": 256,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.010948124,
+     "factor_med": 0.012125841,
+     "flops": 4.1705914e7,
+     "model_pick": "nd16",
+     "nnzL": 2744218,
+     "order": "nd16",
+     "res": 3.1311550034057586e-14,
+     "solve": 0.004595,
+     "solve_med": 0.005309409,
+     "tasks": 256,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.011265619,
+     "factor_med": 0.012678026,
+     "flops": 4.0832698e7,
+     "model_pick": "nd16",
+     "nnzL": 2925978,
+     "order": "nd4",
+     "res": 4.099856082584415e-14,
+     "solve": 0.005306143,
+     "solve_med": 0.005779529,
+     "tasks": 256,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "condensed",
+   "graph": "ring",
+   "kkt_dim": 6144,
+   "load": 3.36,
+   "n": 64,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.00173454,
+     "factor_med": 0.002063747,
+     "flops": 4.84793e6,
+     "model_pick": "mmd",
+     "nnzL": 176794,
+     "order": "amd",
+     "res": 3.1946122898436123e-15,
+     "solve": 0.000973353,
+     "solve_med": 0.001057782,
+     "tasks": 128,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.001119017,
+     "factor_med": 0.00130222,
+     "flops": 4.84793e6,
+     "model_pick": "mmd",
+     "nnzL": 176794,
+     "order": "model",
+     "res": 2.292907208032915e-15,
+     "solve": 0.00088599,
+     "solve_med": 0.000967764,
+     "tasks": 128,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.001300918,
+     "factor_med": 0.002095917,
+     "flops": 4.850322e6,
+     "model_pick": "mmd",
+     "nnzL": 176978,
+     "order": "nd16",
+     "res": 7.059062640460885e-14,
+     "solve": 0.000963987,
+     "solve_med": 0.001055387,
+     "tasks": 128,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.001071428,
+     "factor_med": 0.001324973,
+     "flops": 4.857498e6,
+     "model_pick": "mmd",
+     "nnzL": 177530,
+     "order": "nd4",
+     "res": 1.0117131017916021e-13,
+     "solve": 0.000889808,
+     "solve_med": 0.0010100324999999999,
+     "tasks": 128,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "condensed",
+   "graph": "ring",
+   "kkt_dim": 24576,
+   "load": 4.37,
+   "n": 256,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.006591831,
+     "factor_med": 0.007918973499999999,
+     "flops": 1.975673e7,
+     "model_pick": "nd16",
+     "nnzL": 716698,
+     "order": "amd",
+     "res": 4.074288737069059e-15,
+     "solve": 0.003699492,
+     "solve_med": 0.004270331,
+     "tasks": 506,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.004352596,
+     "factor_med": 0.004924627,
+     "flops": 1.9766298e7,
+     "model_pick": "nd16",
+     "nnzL": 717434,
+     "order": "model",
+     "res": 8.842307718557984e-14,
+     "solve": 0.003327174,
+     "solve_med": 0.003535435,
+     "tasks": 416,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.004283136,
+     "factor_med": 0.004756813,
+     "flops": 1.9766298e7,
+     "model_pick": "nd16",
+     "nnzL": 717434,
+     "order": "nd16",
+     "res": 8.842307718557984e-14,
+     "solve": 0.003079961,
+     "solve_med": 0.0034975335000000003,
+     "tasks": 416,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.005736619,
+     "factor_med": 0.007068004,
+     "flops": 1.9795002e7,
+     "model_pick": "nd16",
+     "nnzL": 719642,
+     "order": "nd4",
+     "res": 1.2762434179089295e-13,
+     "solve": 0.001727567,
+     "solve_med": 0.001967466,
+     "tasks": 256,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "condensed",
+   "graph": "ring",
+   "kkt_dim": 98304,
+   "load": 3.85,
+   "n": 1024,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.028944426,
+     "factor_med": 0.0328036065,
+     "flops": 7.939193e7,
+     "model_pick": "nd16",
+     "nnzL": 2876314,
+     "order": "amd",
+     "res": 3.5474144313521437e-15,
+     "solve": 0.017342376,
+     "solve_med": 0.0197674295,
+     "tasks": 2018,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.014300956,
+     "factor_med": 0.015658105,
+     "flops": 7.9430202e7,
+     "model_pick": "nd16",
+     "nnzL": 2879258,
+     "order": "model",
+     "res": 1.8656283936776629e-13,
+     "solve": 0.001706618,
+     "solve_med": 0.0019400049999999999,
+     "tasks": 256,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.014128604,
+     "factor_med": 0.015081971,
+     "flops": 7.9430202e7,
+     "model_pick": "nd16",
+     "nnzL": 2879258,
+     "order": "nd16",
+     "res": 1.8656283936776629e-13,
+     "solve": 0.001703722,
+     "solve_med": 0.001905771,
+     "tasks": 256,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.013675134,
+     "factor_med": 0.014857565,
+     "flops": 7.9545018e7,
+     "model_pick": "nd16",
+     "nnzL": 2888090,
+     "order": "nd4",
+     "res": 1.8656283936776629e-13,
+     "solve": 0.001694525,
+     "solve_med": 0.00190004,
+     "tasks": 256,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "expanded",
+   "graph": "grid",
+   "kkt_dim": 17920,
+   "load": 4.91,
+   "n": 64,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.004981354,
+     "factor_med": 0.005641882,
+     "flops": 2.2657336e7,
+     "model_pick": "amf",
+     "nnzL": 341524,
+     "order": "amd",
+     "res": 8.293865137575114e-14,
+     "solve": 0.000502652,
+     "solve_med": 0.000553347,
+     "tasks": 34,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.007509491,
+     "factor_med": 0.008287759,
+     "flops": 1.7297096e7,
+     "model_pick": "amf",
+     "nnzL": 318108,
+     "order": "model",
+     "res": 4.036518884293523e-14,
+     "solve": 0.000884968,
+     "solve_med": 0.001138969,
+     "tasks": 134,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.008363942,
+     "factor_med": 0.009346793,
+     "flops": 2.6368774e7,
+     "model_pick": "amf",
+     "nnzL": 391090,
+     "order": "nd16",
+     "res": 4.3189724957898893e-14,
+     "solve": 0.000555972,
+     "solve_med": 0.0006651215,
+     "tasks": 56,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.004876798,
+     "factor_med": 0.0051817,
+     "flops": 2.3673668e7,
+     "model_pick": "amf",
+     "nnzL": 408724,
+     "order": "nd4",
+     "res": 2.297406548956547e-10,
+     "solve": 0.000695714,
+     "solve_med": 0.000907711,
+     "tasks": 96,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "expanded",
+   "graph": "grid",
+   "kkt_dim": 71680,
+   "load": 5.87,
+   "n": 256,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.037214051,
+     "factor_med": 0.03981225,
+     "flops": 2.53054764e8,
+     "model_pick": "mmd",
+     "nnzL": 2024662,
+     "order": "amd",
+     "res": 4.249479312852689e-14,
+     "solve": 0.002133307,
+     "solve_med": 0.002250567,
+     "tasks": 72,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.030863,
+     "factor_med": 0.0324711485,
+     "flops": 2.13238054e8,
+     "model_pick": "mmd",
+     "nnzL": 1856948,
+     "order": "model",
+     "res": 5.691733725265116e-14,
+     "solve": 0.001881926,
+     "solve_med": 0.002058898,
+     "tasks": 74,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.083650162,
+     "factor_med": 0.08503614400000001,
+     "flops": 3.14531522e8,
+     "model_pick": "mmd",
+     "nnzL": 2422314,
+     "order": "nd16",
+     "res": 5.3771995183028315e-14,
+     "solve": 0.002823681,
+     "solve_med": 0.0031773235,
+     "tasks": 190,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.037246101,
+     "factor_med": 0.040161062,
+     "flops": 2.82024476e8,
+     "model_pick": "mmd",
+     "nnzL": 2541152,
+     "order": "nd4",
+     "res": 4.116602333990344e-10,
+     "solve": 0.002597998,
+     "solve_med": 0.0027830595,
+     "tasks": 248,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "expanded",
+   "graph": "grid",
+   "kkt_dim": 286720,
+   "load": 6.33,
+   "n": 1024,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.217816585,
+     "factor_med": 0.221178665,
+     "flops": 2.755894574e9,
+     "model_pick": "amd",
+     "nnzL": 11568756,
+     "order": "amd",
+     "res": 7.933710942688489e-14,
+     "solve": 0.015881993,
+     "solve_med": 0.0170789755,
+     "tasks": 68,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.22101591,
+     "factor_med": 0.224458591,
+     "flops": 2.755894574e9,
+     "model_pick": "amd",
+     "nnzL": 11568756,
+     "order": "model",
+     "res": 7.933710942688489e-14,
+     "solve": 0.017127527,
+     "solve_med": 0.018530922,
+     "tasks": 68,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.455766785,
+     "factor_med": 0.464678624,
+     "flops": 3.05880259e9,
+     "model_pick": "amd",
+     "nnzL": 13472938,
+     "order": "nd16",
+     "res": 7.30902705095321e-14,
+     "solve": 0.018662493,
+     "solve_med": 0.021263818,
+     "tasks": 528,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.192841031,
+     "factor_med": 0.197306649,
+     "flops": 2.882324592e9,
+     "model_pick": "amd",
+     "nnzL": 13726918,
+     "order": "nd4",
+     "res": 4.1075373282513103e-10,
+     "solve": 0.020358908,
+     "solve_med": 0.022874852,
+     "tasks": 506,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "condensed",
+   "graph": "grid",
+   "kkt_dim": 6144,
+   "load": 7.18,
+   "n": 64,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.004106145,
+     "factor_med": 0.004806211499999999,
+     "flops": 2.2660418e7,
+     "model_pick": "mmd",
+     "nnzL": 351364,
+     "order": "amd",
+     "res": 7.054639628250079e-15,
+     "solve": 0.000950321,
+     "solve_med": 0.001105697,
+     "tasks": 120,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.003697599,
+     "factor_med": 0.004197261,
+     "flops": 2.2684752e7,
+     "model_pick": "mmd",
+     "nnzL": 349248,
+     "order": "model",
+     "res": 7.678944020130617e-15,
+     "solve": 0.000964979,
+     "solve_med": 0.001114098,
+     "tasks": 120,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.00552299,
+     "factor_med": 0.006003019,
+     "flops": 3.504325e7,
+     "model_pick": "mmd",
+     "nnzL": 431542,
+     "order": "nd16",
+     "res": 1.1231236009930879e-13,
+     "solve": 0.000952094,
+     "solve_med": 0.001069124,
+     "tasks": 110,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.004296331,
+     "factor_med": 0.0045263125,
+     "flops": 2.8759466e7,
+     "model_pick": "mmd",
+     "nnzL": 392764,
+     "order": "nd4",
+     "res": 1.1596454079180994e-13,
+     "solve": 0.000988042,
+     "solve_med": 0.001143883,
+     "tasks": 128,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "condensed",
+   "graph": "grid",
+   "kkt_dim": 24576,
+   "load": 7.81,
+   "n": 256,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.034012619,
+     "factor_med": 0.035824714,
+     "flops": 2.62585716e8,
+     "model_pick": "amd",
+     "nnzL": 2161926,
+     "order": "amd",
+     "res": 6.495968736774563e-15,
+     "solve": 0.002093673,
+     "solve_med": 0.0032222285,
+     "tasks": 272,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.033822623,
+     "factor_med": 0.0366013905,
+     "flops": 2.62585716e8,
+     "model_pick": "amd",
+     "nnzL": 2161926,
+     "order": "model",
+     "res": 6.495968736774563e-15,
+     "solve": 0.002274303,
+     "solve_med": 0.00326537,
+     "tasks": 272,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.049815754,
+     "factor_med": 0.0526369955,
+     "flops": 3.48038122e8,
+     "model_pick": "amd",
+     "nnzL": 2583010,
+     "order": "nd16",
+     "res": 1.2933843444195858e-13,
+     "solve": 0.002942845,
+     "solve_med": 0.003963497999999999,
+     "tasks": 280,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.03718822,
+     "factor_med": 0.040014727,
+     "flops": 2.94970636e8,
+     "model_pick": "amd",
+     "nnzL": 2270946,
+     "order": "nd4",
+     "res": 1.4169661886801751e-13,
+     "solve": 0.002066823,
+     "solve_med": 0.003107458,
+     "tasks": 252,
+     "threads": 16
+    }
+   }
+  },
+  {
+   "form": "condensed",
+   "graph": "grid",
+   "kkt_dim": 98304,
+   "load": 8.61,
+   "n": 1024,
+   "set": "threads",
+   "threads": {
+    "16_amd": {
+     "factor": 0.194441991,
+     "factor_med": 0.199067219,
+     "flops": 2.695394266e9,
+     "model_pick": "amd",
+     "nnzL": 12190946,
+     "order": "amd",
+     "res": 1.2721733634033203e-14,
+     "solve": 0.012696733,
+     "solve_med": 0.013548089,
+     "tasks": 502,
+     "threads": 16
+    },
+    "16_model": {
+     "factor": 0.196774993,
+     "factor_med": 0.199146837,
+     "flops": 2.695394266e9,
+     "model_pick": "amd",
+     "nnzL": 12190946,
+     "order": "model",
+     "res": 1.2721733634033203e-14,
+     "solve": 0.013149672,
+     "solve_med": 0.014135099,
+     "tasks": 502,
+     "threads": 16
+    },
+    "16_nd16": {
+     "factor": 0.310548743,
+     "factor_med": 0.321554497,
+     "flops": 3.252883078e9,
+     "model_pick": "amd",
+     "nnzL": 14365872,
+     "order": "nd16",
+     "res": 2.0365287643902738e-13,
+     "solve": 0.015622206,
+     "solve_med": 0.016357424,
+     "tasks": 544,
+     "threads": 16
+    },
+    "16_nd4": {
+     "factor": 0.195202145,
+     "factor_med": 0.202106204,
+     "flops": 2.93155316e9,
+     "model_pick": "amd",
+     "nnzL": 12576104,
+     "order": "nd4",
+     "res": 2.6894375732113166e-13,
+     "solve": 0.013162416,
+     "solve_med": 0.0139050875,
+     "tasks": 518,
+     "threads": 16
+    }
+   }
+  }
+ ],
+ "sets": [
+  "threads"
+ ],
+ "threads": 16
+}

@@ -81,15 +81,11 @@ end
             rc = S.str_ptr[ch+1] - S.str_ptr[ch]
             co = uoffs[ch]
             rb = S.str_ptr[ch] - 1
-            for jj in 1:rc
-                pj = rel[rb+jj]
-                pj > w && break
-                cj = co + (jj - 1) * rc
-                tgt = o + (pj - 1) * h
-                for ii in jj:rc
-                    Lx[tgt+rel[rb+ii]] += U[cj+ii]
-                end
+            j1 = 0
+            while j1 < rc && rel[rb+j1+1] <= w
+                j1 += 1
             end
+            _extend_add!(Lx, U, rel, rb, co, rc, 1, j1, o, h, Ub, ub, r, w, nt)
         end
         nreg = _ldlt_front!(Lx, off, h, w, F.d, f, S.signs, F.delta, T; nt = nt)
         if r > 0 && uo >= 0
@@ -104,21 +100,75 @@ end
                 while j0 <= rc && rel[rb+j0] <= w
                     j0 += 1
                 end
-                for jj in j0:rc
-                    pj = rel[rb+jj]
-                    cj = co + (jj - 1) * rc
-                    tgt = ub + (pj - w - 1) * r - w
-                    for ii in jj:rc
-                        Ub[tgt+rel[rb+ii]] += U[cj+ii]
-                    end
-                end
+                _extend_add!(Lx, U, rel, rb, co, rc, j0, rc, o, h, Ub, ub, r, w, nt)
             end
             if !inplace
-                copyto!(U, uo + 1, W, 1, r * r)
+                _pcopy!(U, uo, W, r * r, nt)
             end
         end
     end
     return nreg
+end
+
+"""
+Extend-add of the columns `j0:j1` of a child's update matrix (at `U[co+1]`,
+r_c x r_c, relative indices `rel[rb+1:rb+rc]`) into the parent's panel (columns
+mapping to positions <= w) or its update matrix `Ub`. Distinct child columns map
+to distinct parent columns, so column ranges go to tasks when large.
+"""
+function _extend_add!(Lx, U, rel, rb, co, rc, j0, j1, o, h, Ub, ub, r, w, nt)
+    j1 < j0 && return nothing
+    function cols!(a, b)
+        @inbounds for jj in a:b
+            pj = rel[rb+jj]
+            cj = co + (jj - 1) * rc
+            if pj <= w
+                tgt = o + (pj - 1) * h
+                for ii in jj:rc
+                    Lx[tgt+rel[rb+ii]] += U[cj+ii]
+                end
+            else
+                tgt = ub + (pj - w - 1) * r - w
+                for ii in jj:rc
+                    Ub[tgt+rel[rb+ii]] += U[cj+ii]
+                end
+            end
+        end
+        return nothing
+    end
+    n = j1 - j0 + 1
+    if nt > 1 && n * (rc - j0) >= 2 * PAR_THRESHOLD[] ÷ 64
+        # chunks of about equal work (column jj carries rc - jj + 1 entries)
+        nb = min(nt, n ÷ 16 + 1)
+        tot = sum(rc - jj + 1 for jj in j0:j1)
+        cuts = [j0]; acc = 0
+        for jj in j0:j1
+            acc += rc - jj + 1
+            length(cuts) < nb && acc >= tot * length(cuts) / nb && push!(cuts, jj + 1)
+        end
+        push!(cuts, j1 + 1)
+        @sync for k in 1:(length(cuts)-1)
+            a = cuts[k]; b = cuts[k+1] - 1
+            b >= a && Threads.@spawn cols!(a, b)
+        end
+    else
+        cols!(j0, j1)
+    end
+    return nothing
+end
+
+"U[uo+1:uo+n] = W[1:n], in chunks over tasks when large."
+function _pcopy!(U, uo, W, n, nt)
+    if nt > 1 && n >= 1 << 18
+        ch = cld(n, nt)
+        @sync for k in 1:nt
+            a = (k - 1) * ch + 1; b = min(k * ch, n)
+            b >= a && Threads.@spawn copyto!(U, uo + a, W, a, b - a + 1)
+        end
+    else
+        copyto!(U, uo + 1, W, 1, n)
+    end
+    return nothing
 end
 
 """

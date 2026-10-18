@@ -96,6 +96,78 @@ function _panel_update_par!(Lx, o, h, kb, ke, w, T, hr, wr, bw, nt)
     return nothing
 end
 
+"Rows below a 32-column block times its width squared above which the block goes through trsm."
+const TRSM_THRESHOLD = Ref(65_536)
+
+# B[1:m, 1:n] = B * inv(L'), L unit lower (n x n)
+@inline function _trsm_unit!(m::Int, n::Int, A::Ptr{Float64}, lda::Int, B::Ptr{Float64}, ldb::Int)
+    _trsm_rlt_unit!(m, n, A, lda, B, ldb)
+end
+
+"""
+One panel block (columns kb:ke) by blocks: LDLt of the diagonal block, then
+the rows below by a triangular solve, T = F21 inv(L11') = L21 D (kept in `T`
+for the trailing update when columns remain) and L21 = T inv(D); the rows are
+split into chunks over tasks when `nt > 1`.
+"""
+function _ldlt_block_trsm!(Lx, o, h, w, kb, ke, d, f, signs, delta, T, nt)
+    nreg = 0
+    @inbounds for k in kb:ke
+        ck = o + (k - 1) * h
+        dk = Lx[ck+k]
+        sg = signs[f+k-1]
+        if !(sg * dk > delta)
+            dk = sg * delta; nreg += 1
+        end
+        d[f+k-1] = dk
+        inv = 1.0 / dk
+        for j in (k+1):ke
+            cj = o + (j - 1) * h
+            c = Lx[ck+j] * inv
+            @simd for i in j:ke
+                Lx[cj+i] = muladd(-Lx[ck+i], c, Lx[cj+i])
+            end
+        end
+        @simd for i in (k+1):ke
+            Lx[ck+i] *= inv
+        end
+    end
+    bw = ke - kb + 1
+    hr = h - ke
+    keep = ke < w
+    chunk = nt > 1 ? max(64, cld(hr, nt)) : hr
+    nch = cld(hr, chunk)
+    function rows!(c)
+        i0 = (c - 1) * chunk + 1; i1 = min(c * chunk, hr)
+        m = i1 - i0 + 1
+        GC.@preserve Lx begin
+            _trsm_unit!(m, bw, pointer(Lx, o + (kb - 1) * h + kb), h, pointer(Lx, o + (kb - 1) * h + ke + i0), h)
+        end
+        @inbounds for k in kb:ke
+            ck = o + (k - 1) * h + ke
+            inv = 1.0 / d[f+k-1]
+            if keep
+                tb = (k - kb) * hr
+                @simd for i in i0:i1
+                    T[tb+i] = Lx[ck+i]
+                end
+            end
+            @simd for i in i0:i1
+                Lx[ck+i] *= inv
+            end
+        end
+        return nothing
+    end
+    if nch > 1
+        @sync for c in 1:nch
+            Threads.@spawn rows!(c)
+        end
+    else
+        rows!(1)
+    end
+    return nreg
+end
+
 "Work (multiply-adds) above which a dense update goes to BLAS rather than loops."
 const BLAS_THRESHOLD = Ref(6_000)
 
@@ -117,6 +189,11 @@ function _ldlt_front!(Lx::Vector{Float64}, off::Int, h::Int, w::Int, d::Vector{F
     kb = 1
     @inbounds while kb <= w
         ke = min(kb + NB - 1, w)
+        bw0 = ke - kb + 1
+        if (h - ke) * bw0 * bw0 >= TRSM_THRESHOLD[]
+            nreg += _ldlt_block_trsm!(Lx, o, h, w, kb, ke, d, f, signs, delta, T, nt)
+            @goto trailing
+        end
         # unblocked on columns kb:ke, rows kb:h
         for k in kb:ke
             ck = o + (k - 1) * h
@@ -147,6 +224,7 @@ function _ldlt_front!(Lx::Vector{Float64}, off::Int, h::Int, w::Int, d::Vector{F
                 Lx[ck+i] *= inv
             end
         end
+        @label trailing
         if ke < w
             # F[i, j] -= sum_k T[i, k] * L[j, k] for j in ke+1:w, i in j:h
             bw = ke - kb + 1
