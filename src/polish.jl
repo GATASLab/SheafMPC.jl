@@ -342,18 +342,24 @@ function _try_polish!(s::Solver; restart::Bool = true)
     last_merit = Inf
     maxc = has_on ? max(st.polish_corrections, st.polish_soc_newton) : st.polish_corrections
     prev = Inf
+    prev_merit = Inf
     for attempt in 0:maxc
         _polish_factor!(s)
         _polish_solve!(s)
         info.polish_attempts += 1
         ok, pr, dr, merit = _polish_check(s)
         last_merit = merit
+        st.verbose && @printf("    polish attempt %d: merit %.2e, %d active rows\n", attempt, merit, count(s.pol_act))
         # Newton on the SOC boundary converges fast near the solution or not at
         # all: give up when a step does not cut the primal residual tenfold
         if !ok && has_on && attempt >= st.polish_corrections
             pr > 0.1 * prev && break
         end
+        # an active-set correction that does not halve the merit will not converge
+        # within the budget: stop paying factorizations for it
+        !ok && attempt >= 1 && merit > 0.5 * prev_merit && break
         prev = pr
+        prev_merit = merit
         if ok
             copyto!(s.x, s.px); copyto!(s.y, s.py); copyto!(s.z, s.pz)
             info.prim_res = pr; info.dual_res = dr
