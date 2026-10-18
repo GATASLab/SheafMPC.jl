@@ -19,7 +19,18 @@ function git_state(dir; paths = ["src", "Project.toml"])
         ""
     end
     root = run_ok(`git -C $d rev-parse --show-toplevel`)
-    isempty(root) && return Dict{String,Any}("sha" => "", "dirty" => false, "diff_sha1" => "", "dirty_files" => String[])
+    if isempty(root)
+        # an archived snapshot (hpg/prepare_ref.sh): the ref is recorded in a file next to it
+        for (dd, f) in ((d, "PACKAGE_REF"), (dirname(d), "PACKAGE_REF"), (d, "HARNESS_REF"), (dirname(d), "HARNESS_REF"))
+            ff = joinpath(dd, f)
+            (paths == ["benchmarks"]) == (f == "HARNESS_REF") || continue
+            isfile(ff) || continue
+            w = split(strip(read(ff, String)))
+            return Dict{String,Any}("sha" => w[1], "ref" => length(w) > 1 ? w[2] : "", "dirty" => false, "diff_sha1" => "",
+                                    "dirty_files" => String[], "source" => "git archive snapshot ($f)")
+        end
+        return Dict{String,Any}("sha" => "", "dirty" => false, "diff_sha1" => "", "dirty_files" => String[])
+    end
     sha = run_ok(`git -C $root rev-parse HEAD`)
     st = run_ok(`git -C $root status --porcelain --untracked-files=no -- $paths`)
     diff = run_ok(`git -C $root diff HEAD -- $paths`)

@@ -7,7 +7,7 @@
 # Options:
 #   --families a,b     restrict to these family keys (see TIER_SPECS)
 #   --solvers a,b      restrict to these solvers
-#   --only NAME        run only the instance whose key contains NAME
+#   --only A,B         run only the instances whose key contains A or B
 #   --out DIR          results directory (default benchmarks/results/<tier>_<date>)
 #   --list             print the instance keys of the tier and exit
 # Environment: BENCH_MAX_LOAD (4), BENCH_MAX_WAIT (7200 s; then the instance is skipped
@@ -188,7 +188,7 @@ end
 function main()
     specs = tier_specs(TIER)
     isempty(FAMS) || filter!(s -> s.fam in FAMS, specs)
-    isempty(ONLY) || filter!(s -> occursin(ONLY, s.key), specs)
+    isempty(ONLY) || filter!(s -> any(o -> occursin(o, s.key), split(ONLY, ",")), specs)
     if "--list" in ARGS
         foreach(s -> println(s.key), specs); return
     end

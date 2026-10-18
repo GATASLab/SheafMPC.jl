@@ -28,9 +28,10 @@ if [ ! -f $T/piqp-install/lib/libpiqpc.so ]; then
 fi
 [ -e $T/piqp-install/lib ] || ln -s lib64 $T/piqp-install/lib          # EL9 cmake installs into lib64
 export JULIA_DEPOT_PATH=/blue/fairbanksj/itaykadosh/julia_depot: JULIA_NUM_THREADS=1
-cd $ROOT/SheafMPC.jl/benchmarks
+cd ${PKGDIR:-$ROOT/SheafMPC.jl}/benchmarks        # PKGDIR: a ref snapshot (prepare_ref.sh)
 julia --project=. -e 'using Pkg; Pkg.precompile()'
 julia --project=envs/mumblebee_fast -e 'using Pkg; Pkg.precompile()'
+[ -d envs/mumblebee_fast_ct ] && julia --project=envs/mumblebee_fast_ct -e 'using Pkg; Pkg.precompile()'
 export HPIPM_LIB_DIR=/blue/fairbanksj/itaykadosh/central_bench/acados/lib PIQP_LIB=$T/piqp-install/lib/libpiqpc.so
 export SHEAFMPC_PAPER=/blue/fairbanksj/itaykadosh/pushforward_bench/mpc-sheaf-pushforward
 julia --project=. test/test_families.jl

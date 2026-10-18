@@ -142,6 +142,35 @@ function main()
             end
             println(io, mode == "warm" ? "\nWarm cells: median (max) ms.\n" : "\nCold cells: median ms of the solve; setup is separate.\n")
         end
+        # iterations: the median over the QPs of each solver's iteration count (ADMM
+        # iterations against interior-point iterations are not comparable work units,
+        # but cold SheafMPC against cold OSQP is the like-for-like count)
+        for mode in MODES
+            println(io, "### $fam, $mode, iterations (median over the QPs; low / medium / high)\n")
+            println(io, "| instance | ", join(fs, " | "), " |")
+            println(io, "|---|", repeat("---:|", length(fs)))
+            for r in RF
+                cells = String[]
+                for s in fs
+                    t = get(r["solvers"], s, nothing)
+                    if t === nothing
+                        push!(cells, "n/a"); continue
+                    end
+                    v = String[]
+                    for tier in TIERNAMES
+                        tt = get(t["tiers"], tier, nothing)
+                        if tt === nothing || tt["status"] != "ran"
+                            push!(v, "--"); continue
+                        end
+                        rows = mode == "warm" ? tt[mode][2:end] : tt[mode]
+                        push!(v, isempty(rows) ? "--" : @sprintf("%g", median([Float64(x["iters"]) for x in rows])))
+                    end
+                    push!(cells, join(v, " / "))
+                end
+                println(io, "| $(r["key"]) | ", join(cells, " | "), " |")
+            end
+            println(io)
+        end
         # setup times
         println(io, "### $fam, setup (ms, median over the cold repeats, medium tier)\n")
         println(io, "| instance | ", join(fs, " | "), " |")
