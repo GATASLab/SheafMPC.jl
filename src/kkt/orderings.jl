@@ -580,6 +580,9 @@ function choose_system(K::SparseMatrixCSC; structure::Union{Nothing,KKTStructure
         for e in engines, nt in unique((1, cost.nthreads))
             (e == :simplicial && nt > 1) && continue
             est = estimate(nt == 1 ? cost1 : cost, s, N, e)
+            # at equal fill, QDLDL runs measurably faster on MMD orders (their
+            # locality: calibration data, solves up to 1.7x on small systems)
+            (e == :simplicial && c == :mmd) && (est *= 0.9)
             push!(table, (name = c, engine = e, threads = nt, nnzL = s.nnzL, flops = s.flops, critical = s.critical,
                           est = est, time = t))
             if est < bestc

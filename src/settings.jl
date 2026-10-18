@@ -51,9 +51,12 @@ Polishing (active-set refinement)
 * `polish_delta = 1e-6`: regularization of the polish system.
 
 Linear algebra
-* `linsys = :auto`: `:qdldl` (simplicial) or `:cliquetrees` (supernodal
-  multifrontal); `:auto` times solves with each (and, for QDLDL, with the
-  orderings AMD, MMD and AMF) in `setup` and keeps the fastest;
+* `linsys = :auto`: the engine (`:qdldl`, simplicial, or `:blockldl`,
+  multifrontal) and the elimination order picked by BlockLDL's cost model from
+  elimination-tree statistics of the candidate orders, factored once (the same
+  as `:model`); `:timed` instead times solves with QDLDL (orders AMD, MMD,
+  AMF) and CliqueTrees in `setup` and keeps the fastest; or one backend:
+  `:qdldl`, `:cliquetrees`, `:blockldl`;
 * `ordering = :amd`: the fill-reducing ordering when `linsys = :qdldl`
   (`:amd`, `:mmd`, `:amf`, `:mf`).
 

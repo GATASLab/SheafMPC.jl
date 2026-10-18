@@ -11,11 +11,11 @@
 # MPC with x0 propagated by the reference controller, update! + shifted warm
 # start + solve! per step, timed end to end.
 #
-# Backends: :auto (the package default: times QDLDL with AMD/MMD/AMF and
-# CliqueTrees in setup and keeps the fastest), :qdldl, :cliquetrees, and
-# :blockldl (cost-model order, the agent/block labels of the program given as
-# `kkt_structure`), with 1 and BENCH_E2E_THREADS threads. OSQP: cold, polished
-# (single), warm shifted (receding horizon).
+# Backends: :timed (the former default: times QDLDL with AMD/MMD/AMF and
+# CliqueTrees in setup and keeps the fastest), :auto (engine and order from
+# BlockLDL's cost model), :qdldl, :cliquetrees, :blockldl, and :auto with the
+# agent/block labels as `kkt_structure`, on 1 and BENCH_E2E_THREADS threads.
+# OSQP: cold, polished (single), warm shifted (receding horizon).
 #
 # Environment: BENCH_N (1,4,16,64,256), BENCH_GRAPHS (ring,grid), BENCH_B (1,24),
 # BENCH_REPS (15), BENCH_EPS (1e-7), BENCH_STEPS (20), BENCH_E2E (single,rh),
@@ -41,11 +41,11 @@ loadavg() = parse(Float64, split(read("/proc/loadavg", String))[1])
 
 function backends(lab)
     st = (agent = lab.var_agent, block = lab.var_block)
-    v = Any[("auto", (linsys = :auto,)), ("qdldl", (linsys = :qdldl,)), ("cliquetrees", (linsys = :cliquetrees,)),
-            ("blockldl", (linsys = :blockldl, kkt_structure = st)), ("model", (linsys = :model,)),
-            ("model_struct", (linsys = :model, kkt_structure = st))]
+    v = Any[("timed", (linsys = :timed,)), ("auto", (linsys = :auto,)), ("qdldl", (linsys = :qdldl,)),
+            ("cliquetrees", (linsys = :cliquetrees,)), ("blockldl", (linsys = :blockldl, kkt_structure = st)),
+            ("auto_struct", (linsys = :auto, kkt_structure = st))]
     ET > 1 && ET <= Threads.nthreads() &&
-        push!(v, ("model_t$(ET)", (linsys = :model, kkt_structure = st, kkt_threads = ET)))
+        push!(v, ("auto_t$(ET)", (linsys = :auto, kkt_structure = st, kkt_threads = ET)))
     return v
 end
 

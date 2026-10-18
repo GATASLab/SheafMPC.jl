@@ -182,3 +182,9 @@ end
 
 "Whether the polish system of the BlockLDL backend uses rank-one updates."
 const POLISH_LOWRANK = Ref(true)
+
+"The backend a system is (for `Info.linsys`)."
+system_kind(::QDLDLSystem) = :qdldl
+system_kind(::ChordalSystem) = :cliquetrees
+system_kind(::BlockLDLSystem) = :blockldl
+system_kind(::LinearSystem) = :other
