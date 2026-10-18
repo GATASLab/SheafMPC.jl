@@ -116,7 +116,10 @@ Dense active-set path (small polyhedral problems, see dual.jl)
   polish (`:on` ignores the size limits, `:off` disables the path);
 * `dual_setup_budget = 1e-3`: seconds of K11 solves (by the factor's
   operation count) allowed in `setup` to build all of Z; beyond it a column of
-  Z is computed when its row first enters an active set, and kept;
+  Z is computed when its row first enters an active set, and kept. Building Z
+  in `setup` moves its cost out of the solves (receding horizon pays it once);
+  for a problem solved once, `dual_setup_budget = 0` (Z always lazy) gives the
+  smaller setup plus solve time;
 * `dual_iter = 12` iterations per attempt, and `dual_budget = 1.0`: the work
   of an attempt (dense updates and new columns of Z, by operation count) is
   bounded by this many sparse factorizations of K11 plus 20 solves, and all

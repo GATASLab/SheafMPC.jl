@@ -227,7 +227,8 @@ Clarabel and of sheaf programs).
   whose active sets are too large for the dense budget (fleets) keep the
   sparse polish.
 * Receding horizon: `update!(solver; q, l, u, b)` changes the data without
-  refactoring, `warm_start!` / `warm_start_shifted!` move the previous plan,
+  refactoring (`update!(solver; P, A)`, new matrix values on the same pattern
+  for time-varying MPC, refactors numerically and keeps the ordering), `warm_start!` / `warm_start_shifted!` move the previous plan,
   and a warm-started `solve!` first tries the polish on the active set of the
   warm start (with the cached polish factorization if it is the same).
 

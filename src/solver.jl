@@ -486,6 +486,14 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
         # after solves in which the dense path failed, it is tried again only
         # after 4, 8, 16, ... more solves (the sparse polish serves the others)
         dw.fails == 0 || (dw.fails >= 4 && ispow2(dw.fails)) || (dw.toobig = true)
+        # new matrix values since the last solve: the sparse paths serve this
+        # solve, the next one refactors K11 (dual.jl, `_dual_update_matrices!`)
+        if dw.stale == 1
+            dw.toobig = true
+            dw.stale = 2
+        elseif dw.stale == 2
+            _dual_refresh!(s, dw)
+        end
     end
     warm = !cold && st.polish && st.polish_warm && s.m > 0
     retry = max(st.polish_warm_retry, 1)
@@ -685,7 +693,7 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    update!(solver; q = nothing, l = nothing, u = nothing, b = nothing, c = nothing)
+    update!(solver; q = nothing, l = nothing, u = nothing, b = nothing, c = nothing, P = nothing, A = nothing)
 
 New linear cost and/or constraint data (unscaled), keeping the factorization,
 and optionally the constant `c` of the objective (it enters the reported
@@ -696,9 +704,18 @@ constant).
 K`): it sets `l = u = b` on equality rows, `u = b` on nonnegative-cone rows and
 the shift of every SOC block. A change that turns rows into equality or free
 rows (or back) changes their rho and costs one refactorization.
+
+`P` and `A` (unscaled, `P` full symmetric or a triangle, as for `ConicQP`)
+replace the values of the matrices on the same sparsity pattern (linear
+time-varying or relinearized MPC): the scaling of `setup` is kept, every
+factorization is recomputed numerically (no ordering or symbolic work), the
+interior-point system is rebuilt on its next use, and the dense active-set
+path (dual.jl) refactors its K11 and turns its Z lazy (each column recomputed
+when its row next enters an active set).
 """
-function update!(s::Solver; q = nothing, l = nothing, u = nothing, b = nothing, c = nothing)
+function update!(s::Solver; q = nothing, l = nothing, u = nothing, b = nothing, c = nothing, P = nothing, A = nothing)
     sc = s.scl
+    (P !== nothing || A !== nothing) && _update_matrices!(s, P, A)
     c === nothing || (s.c0 = Float64(c))
     if q !== nothing
         length(q) == s.n || throw(DimensionMismatch("q must have $(s.n) entries"))
@@ -742,6 +759,65 @@ function update!(s::Solver; q = nothing, l = nothing, u = nothing, b = nothing, 
             _refactor_kkt!(s)
         end
     end
+    return s
+end
+
+"""
+Make the next `refactor!` of `S` read every value of `S.K` (after values off
+the diagonal changed): QDLDL keeps a permuted copy of the matrix, the rank-one
+path of BlockLDL only looks at the diagonal.
+"""
+function _load_values!(S::QDLDLSystem)
+    QDLDL.update_values!(S.F, 1:nnz(S.K), nonzeros(S.K))
+    return S
+end
+_load_values!(S::BlockLDLSystem) = (S.nupd = LOWRANK_BUDGET; S)
+_load_values!(S::LinearSystem) = S
+
+"Refactor `S` with every value of `S.K`."
+_reload!(S::LinearSystem) = refactor!(_load_values!(S))
+
+"New values of `P` and `A` on the pattern of `setup` (see `update!`)."
+function _update_matrices!(s::Solver, P, A)
+    sc = s.scl
+    if P !== nothing
+        Pf = _symmetric_full(P)
+        (Pf.colptr == s.P.colptr && Pf.rowval == s.P.rowval) ||
+            throw(ArgumentError("P must have the sparsity pattern of the problem given to setup"))
+        nzP = nonzeros(s.P); rv = rowvals(Pf); v = nonzeros(Pf)
+        @inbounds for j in 1:s.n, k in nzrange(Pf, j)
+            nzP[k] = sc.c * sc.D[rv[k]] * v[k] * sc.D[j]
+        end
+        @inbounds for j in 1:s.n
+            d = 0.0
+            for k in nzrange(s.P, j)
+                rowvals(s.P)[k] == j && (d = nzP[k])
+            end
+            s.Pdiag[j] = d
+            s.xdiag[j] = d + s.settings.sigma
+        end
+    end
+    if A !== nothing
+        As = SpMat(sparse(A))
+        (size(As) == size(s.A) && As.colptr == s.A.colptr && As.rowval == s.A.rowval) ||
+            throw(ArgumentError("A must have the sparsity pattern of the problem given to setup"))
+        nzA = nonzeros(s.A); rv = rowvals(As); v = nonzeros(As)
+        @inbounds for j in 1:s.n, k in nzrange(As, j)
+            nzA[k] = sc.E[rv[k]] * v[k] * sc.D[j]
+        end
+    end
+    # the KKT values off the diagonal, through the pattern of `setup`
+    K2, = kkt_pattern(s.P, s.A, s.socs)
+    for S in (s.kkt, s.pol)
+        (K2.colptr == S.K.colptr && K2.rowval == S.K.rowval) || error("KKT pattern changed")
+        copyto!(nonzeros(S.K), nonzeros(K2))
+    end
+    set_diagonal!(s.kkt.K, s.kkt.diag_idx, s.xdiag, s.rhoinv)
+    _reload!(s.kkt)
+    _load_values!(s.pol)
+    s.pol_valid = false                  # the polish factorization is redone on its next use
+    s.ipm = nothing                      # and the interior-point system
+    s.dual === nothing || _dual_update_matrices!(s, s.dual::DualWork)
     return s
 end
 

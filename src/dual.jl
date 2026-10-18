@@ -87,6 +87,8 @@ mutable struct DualWork
     last_dense::Bool             # so did the last accepted one (its factor is cached)
     cols::Int                    # factor columns computed in the last solve (statistics)
     lastchg::Int                 # changes of the last active-set iteration of an attempt
+    stale::Int                   # 0; 1: new matrix values since the last solve; 2: K11 to refactor
+    full::Bool                   # Z is built whole (in setup, and again by `_dual_refresh!`)
 end
 
 "Multiply-adds per second of a sparse triangular solve assumed by the setup budget."
@@ -153,7 +155,7 @@ function _dual_setup!(s::Solver)
     w = DualWork(sys, At, rows, zeros(mi, mi), fill(false, mi), zeros(mi, mi), zeros(Int, mi), 0, 0, zeros(Int, mi),
                  fill(false, mi), zeros(Int8, mi), zeros(Int8, mi), zeros(Int8, mi),
                  zeros(mi), zeros(mi), zeros(mi), zeros(mi), zeros(mi),
-                 zeros(N), zeros(N), zeros(N), false, t_fac, Inf, ffma, sfma, 0.0, 0.0, 0.0, 0, 0, false, 0, false, false, false, 0.0, 0)
+                 zeros(N), zeros(N), zeros(N), false, t_fac, Inf, ffma, sfma, 0.0, 0.0, 0.0, 0, 0, false, 0, false, false, false, 0.0, 0, 0, false)
     # Z costs one solve per inequality row: all of them in setup when that fits
     # the budget (`dual_setup_budget` seconds), otherwise each column when its
     # row first enters an active set (kept for later solves)
@@ -164,10 +166,8 @@ function _dual_setup!(s::Solver)
         w.t_solve = min(w.t_solve, (time_ns() - ts) / 1e9)
     end
     if st.dual == :on || mi * sfma / DUAL_SOLVE_RATE <= st.dual_setup_budget
-        X = zeros(DUAL_BLOCK, N)
-        for c0 in 3:DUAL_BLOCK:mi
-            _dual_columns!(w, c0:min(c0 + DUAL_BLOCK - 1, mi), X)
-        end
+        w.full = true
+        _dual_build!(w, 3)
     end
     w.t_build = (time_ns() - t1) / 1e9
     return w
@@ -184,6 +184,16 @@ function _ldl_fma(S::QDLDLSystem)
         f += c * (c + 1) / 2
     end
     return f, 2.0 * length(S.Lx) + S.Ln
+end
+
+"Columns `c0:end` of Z by blocked solves."
+function _dual_build!(w::DualWork, c0::Int = 1)
+    mi = length(w.rows)
+    X = zeros(DUAL_BLOCK, size(w.sys.K, 1))
+    for c in c0:DUAL_BLOCK:mi
+        _dual_columns!(w, c:min(c + DUAL_BLOCK - 1, mi), X)
+    end
+    return w
 end
 
 "Right-hand sides per blocked solve when Z is built in `setup`."
@@ -254,6 +264,36 @@ function _dual_columns!(w::DualWork, cs::AbstractVector{Int}, X::Matrix{Float64}
     @inbounds for c in cs
         w.zok[c] = true
     end
+    return nothing
+end
+
+"""
+After new matrix values (`update!` with `P` or `A`): Z and the dense factor
+are dropped, and the dense path steps aside for the next solve, which the
+sparse paths serve: with matrices that change at every step (linear
+time-varying MPC) a refactorization of K11 and a new Z would cost more than
+they save. The first solve after a step with unchanged matrices refactors K11
+and rebuilds Z (whole if `setup` built it whole, otherwise lazily), and uses
+the dense path again.
+"""
+function _dual_update_matrices!(s::Solver, w::DualWork)
+    fill!(w.zok, false)
+    w.na = 0; w.nfac = 0
+    w.xbar_ok = false
+    w.last_dense = false
+    w.fails = 0
+    w.stale = 1
+    return nothing
+end
+
+"Refactor K11 for the current matrix values (after `_dual_update_matrices!`)."
+function _dual_refresh!(s::Solver, w::DualWork)
+    copyto!(nonzeros(w.sys.K), nonzeros(s.kkt.K))
+    _k11_values!(s, w.sys.K, w.sys.diag_idx)
+    _reload!(w.sys)
+    w.At = SpMat(sparse(transpose(s.A)))
+    w.full && _dual_build!(w)              # whole again, as `setup` built it
+    w.stale = 0
     return nothing
 end
 

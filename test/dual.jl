@@ -204,3 +204,45 @@ end
         @test (@allocated solve!(s)) == 0
     end
 end
+
+@testset "new matrix values (time-varying MPC)" begin
+    # the same pattern with other dynamics and weights: update! with P and A
+    # against a fresh setup, with and without the dense path
+    p0 = mpc_box_qp(; x0 = 1.5 * ones(4), umax = 0.3)
+    for d in (:auto, :off), linsys in (:qdldl, :blockldl)
+        s = setup(p0; eps_abs = 1e-9, eps_rel = 1e-9, dual = d, linsys = linsys)
+        solve!(s)
+        for k in 1:4
+            f = 1 + 0.15 * sin(k)
+            A2 = copy(p0.A); nonzeros(A2) .*= [abs(v) == 1.0 ? 1.0 : f for v in nonzeros(A2)]
+            P2 = copy(p0.P); nonzeros(P2) .*= (1 + 0.1 * k)
+            pk = ConicQP(P2, p0.q, A2, p0.l, p0.u)
+            update!(s; P = P2, A = A2)
+            warm_start!(s; x = s.xsol, y = s.ysol)
+            info = solve!(s)
+            ref, _, st = clarabel_ref(pk)
+            @test info.status == :solved
+            @test relgap(info.obj, ref) <= 1e-7
+            d == :auto && @test s.dual !== nothing
+        end
+    end
+    # after a step with new matrices the dense path steps aside for one solve,
+    # then refactors K11 and serves the next solve with unchanged matrices
+    s = setup(p0; eps_abs = 1e-9, eps_rel = 1e-9)
+    solve!(s)
+    A2 = copy(p0.A); nonzeros(A2) .*= [abs(v) == 1.0 ? 1.0 : 1.1 for v in nonzeros(A2)]
+    p2 = ConicQP(p0.P, p0.q, A2, p0.l, p0.u)
+    update!(s; A = A2)
+    warm_start!(s; x = s.xsol, y = s.ysol)
+    info = solve!(s)
+    @test info.status == :solved && !s.dual.accepted
+    warm_start!(s; x = s.xsol, y = s.ysol)
+    info = solve!(s)                     # the cached polish factorization serves this one
+    @test info.status == :solved && s.dual.stale == 0
+    reset!(s)
+    info = solve!(s)                     # and the refactored K11 a cold solve
+    @test info.status == :solved && s.dual.accepted
+    @test relgap(info.obj, clarabel_ref(p2)[1]) <= 1e-7
+    s = setup(p0)
+    @test_throws ArgumentError update!(s; A = sparse(ones(nrows(p0), nvars(p0))))
+end
