@@ -65,8 +65,9 @@ mutable struct CostModel
     since::Int
     t_admm_solve::Float64
     ncross::Int                  # consecutive crossovers
+    t_factor::Float64            # estimated seconds of a factorization of the ADMM system
 end
-CostModel() = CostModel(NaN, NaN, 0, false, 0, NaN, 0)
+CostModel() = CostModel(NaN, NaN, 0, false, 0, NaN, 0, NaN)
 
 const IPM_FREE = 0x00
 const IPM_EQ = 0x01
