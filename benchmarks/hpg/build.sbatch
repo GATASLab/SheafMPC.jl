@@ -26,6 +26,7 @@ if [ ! -f $T/piqp-install/lib/libpiqpc.so ]; then
     "$(git -C $T/piqp-src rev-parse HEAD 2>/dev/null || echo v0.6.4)" "$(hostname)" "$(lscpu | grep 'Model name' | sed 's/.*: *//')" \
     "$(gcc -dumpfullversion)" "$SLURM_JOB_ID" > $T/piqp-install/BUILD_INFO
 fi
+[ -e $T/piqp-install/lib ] || ln -s lib64 $T/piqp-install/lib          # EL9 cmake installs into lib64
 export JULIA_DEPOT_PATH=/blue/fairbanksj/itaykadosh/julia_depot: JULIA_NUM_THREADS=1
 cd $ROOT/SheafMPC.jl/benchmarks
 julia --project=. -e 'using Pkg; Pkg.precompile()'

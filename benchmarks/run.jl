@@ -10,7 +10,8 @@
 #   --only NAME        run only the instance whose key contains NAME
 #   --out DIR          results directory (default benchmarks/results/<tier>_<date>)
 #   --list             print the instance keys of the tier and exit
-# Environment: BENCH_MAX_LOAD (4), BENCH_MAX_WAIT (7200 s), BENCH_TIME_LIMIT (s per
+# Environment: BENCH_MAX_LOAD (4), BENCH_MAX_WAIT (7200 s; then the instance is skipped
+# unless BENCH_GATE_FORCE=1), BENCH_TIME_LIMIT (s per
 # solve), BENCH_MUMBLEBEE_NAME (rename the Mumblebee solver, for a second variant),
 # BENCH_FLEET_MAXN (largest fleet of the full tier, default 256).
 #
@@ -126,6 +127,10 @@ end
 function run_instance(s, solvers)
     inst = s.f()
     gate = TIER == "smoke" ? Dict{String,Any}("load" => BH.loadavg(), "gate" => "skipped") : BH.wait_for_load()
+    # a busy machine skips the instance (rerun later; finished instances are kept) unless BENCH_GATE_FORCE=1
+    if gate["gate"] == "timed_out" && get(ENV, "BENCH_GATE_FORCE", "0") != "1"
+        println("  load gate timed out (load $(gate["load"][1])): instance skipped"); return nothing
+    end
     res = Dict{String,Any}("tier" => TIER, "key" => s.key, "instance" => instance_summary(inst),
                            "machine" => BH.machine_info(), "load_before" => gate, "time_limit" => TLIM,
                            "protocol" => Dict("reps" => s.reps, "cold_qps" => s.cold, "tiers" => s.tiers,
@@ -188,6 +193,7 @@ function main()
         isfile(file) && (println("skip $(s.key) (done)"); continue)
         println("== $(s.key)  load $(BH.loadavg()[1])"); flush(stdout)
         res = run_instance(s, solvers)
+        res === nothing && continue
         res["harness_git"] = BH.git_state(@__DIR__; paths = ["benchmarks"])
         open(io -> JSON.print(io, jsonable(res)), file, "w")
     end
