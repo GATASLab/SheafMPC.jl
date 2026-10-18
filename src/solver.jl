@@ -458,6 +458,29 @@ end
 # ---------------------------------------------------------------------------
 
 """
+Iterations by which a crossover at iteration `k` is postponed (0: none): when
+the residual merit `m2` (at iteration `k2`; `m1` at `k1` before it) decreases
+linearly fast enough that the iterations it still needs to reach 1 cost less
+than half an IPM solve, ADMM continues for those iterations. The budget alone
+is the deterministic ski-rental rule, which loses up to the budget on every
+solve that would have converged just after it; the projection keeps the
+solves that are visibly about to converge (an early polish usually ends them
+even sooner than the residuals predict).
+"""
+function _budget_extension(s::Solver, k::Int, m1, k1, m2, k2)
+    (isfinite(m1) && isfinite(m2) && k2 > k1 && m2 < m1) || return 0
+    m2 <= 1 && return s.settings.check_termination
+    rate = log(m1 / m2) / (k2 - k1)                  # log decrease per iteration
+    need = log(m2) / rate - (k - k2)
+    need = max(need, 1.0)
+    c = s.cost
+    (isfinite(c.t_ipm) && isfinite(c.t_admm_iter)) || return 0
+    need * c.t_admm_iter <= 0.5 * c.t_ipm || return 0
+    ct = s.settings.check_termination
+    return ct * cld(ceil(Int, need), ct)
+end
+
+"""
     _admm_solve!(solver, t0, budget) -> status
 
 Run ADMM from the current iterate (a warm start if `settings.warm_start` and
@@ -559,10 +582,19 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     next_adapt = st.adaptive_rho_first > 0 ? st.adaptive_rho_first : st.adaptive_rho_interval
     use_aa = st.anderson > 0
     use_aa && reset!(s.aa)
+    # residual merits (larger residual over its tolerance) at the last two checks,
+    # for the budget extension
+    m1 = Inf; k1 = 0; m2 = Inf; k2 = 0
+    extended = false
     if !polished
         while k < st.max_iter
             if k >= budget
-                status = :budget; break
+                ext = extended ? 0 : _budget_extension(s, k, m1, k1, m2, k2)
+                if ext > 0
+                    budget = k + ext; extended = true
+                else
+                    status = :budget; break
+                end
             end
             k += 1
             check = k % st.check_termination == 0 || k == st.max_iter || (st.adaptive_rho && k == st.adaptive_rho_first)
@@ -620,6 +652,8 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
             if check
                 pr, dr, pn, dn = _residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty)
                 info.prim_res = pr; info.dual_res = dr
+                m1 = m2; k1 = k2
+                m2 = max(pr / _eps_prim(st, pn), dr / _eps_dual(st, dn)); k2 = k
                 st.verbose && @printf("  it %4d  prim %.2e (tol %.1e)  dual %.2e (tol %.1e)  rho %.2e\n", k, pr, _eps_prim(st, pn), dr, _eps_dual(st, dn), s.rho)
                 if pr <= _eps_prim(st, pn) && dr <= _eps_dual(st, dn) && _gap_ok(s, s.x, s.z, s.y, s.Px) && _violation_ok(s, s.Ax)
                     converged = true; status = :solved
