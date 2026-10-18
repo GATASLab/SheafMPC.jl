@@ -329,7 +329,7 @@ function _correct_soc!(s::Solver)
     return changed
 end
 
-function _try_polish!(s::Solver; restart::Bool = true)
+function _try_polish!(s::Solver; restart::Bool = true, corrections::Int = s.settings.polish_corrections)
     t0 = time_ns()
     info = s.info
     st = s.settings
@@ -340,7 +340,7 @@ function _try_polish!(s::Solver; restart::Bool = true)
     copyto!(s.act_fail, s.act)       # remembered as failed unless accepted below
     ok = false
     last_merit = Inf
-    maxc = has_on ? max(st.polish_corrections, st.polish_soc_newton) : st.polish_corrections
+    maxc = has_on ? max(corrections, st.polish_soc_newton) : corrections
     prev = Inf
     prev_merit = Inf
     for attempt in 0:maxc
@@ -352,7 +352,7 @@ function _try_polish!(s::Solver; restart::Bool = true)
         st.verbose && @printf("    polish attempt %d: merit %.2e, %d active rows\n", attempt, merit, count(s.pol_act))
         # Newton on the SOC boundary converges fast near the solution or not at
         # all: give up when a step does not cut the primal residual tenfold
-        if !ok && has_on && attempt >= st.polish_corrections
+        if !ok && has_on && attempt >= corrections
             pr > 0.1 * prev && break
         end
         # an active-set correction that does not halve the merit will not converge
@@ -369,7 +369,7 @@ function _try_polish!(s::Solver; restart::Bool = true)
         end
         attempt == maxc && break
         changed = isempty(s.socs) ? false : _correct_soc!(s)
-        attempt < st.polish_corrections && (changed |= _correct_active!(s))
+        attempt < corrections && (changed |= _correct_active!(s))
         changed || break
     end
     s.has_fail = !ok

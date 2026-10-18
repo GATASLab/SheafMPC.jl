@@ -255,6 +255,23 @@ end
         @test relgap(info.obj, ref) <= 1e-8
         reset!(s)
         @test relgap(solve!(s).obj, ref) <= 1e-8
+        # a sequence of perturbed QPs warm started from the previous solution:
+        # every solve is accurate, and the warm polish (with its active-set
+        # corrections) accepts some of them before any iteration
+        s = setup(p; eps_abs = 1e-7, eps_rel = 1e-7, polish_warm_retry = 1)
+        solve!(s)
+        nwarm = 0
+        for k in 1:8
+            qk = p.q + 0.05 * k * randn(rng, length(p.q))
+            pk = ConicQP(p.P, qk, p.A, p.l, p.u; c = p.c)
+            update!(s; q = qk)
+            warm_start!(s; x = s.xsol, y = s.ysol)
+            info = solve!(s)
+            nwarm += info.polish == :success && info.polish_iter == 0
+            @test info.status == :solved
+            @test relgap(info.obj, clarabel_ref(pk)[1]) <= 1e-8
+        end
+        @test nwarm >= 2
     end
 
     include("structured_basis.jl")

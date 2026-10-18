@@ -110,6 +110,9 @@ mutable struct Solver{LS<:LinearSystem}
     rho0::Float64                 # base rho (spectral estimate or settings.rho)
     lam_min::Float64              # Lanczos estimates of the constraint operator spectrum
     lam_max::Float64
+    act_last::Vector{Int8}        # active set of the last accepted polish
+    has_last::Bool
+    last_fails::Int               # consecutive warm solves whose last-active-set polish failed or was skipped
 end
 
 function _rowtypes(l, u, kinds)
@@ -202,7 +205,8 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
                zeros(n), zeros(n),
                zeros(n), zeros(m), zeros(m), false, false,
                soc_idx, zeros(length(p.socs)), zeros(length(p.socs)), zeros(m), 0,
-               Anderson(st.anderson, st.anderson > 0 ? n + m : 0), st.rho, NaN, NaN)
+               Anderson(st.anderson, st.anderson > 0 ? n + m : 0), st.rho, NaN, NaN,
+               fill(ACT_NONE, m), false, 0)
     # the base rho: from the spectrum of the constraint operator, or the setting
     if st.rho_spectral
         r = spectral_rho!(s)
@@ -467,16 +471,26 @@ function solve!(s::Solver)
         # skip the warm polish after a failure, retrying every 4th solve (a
         # failure costs a factorization; when the warm start's active set is
         # usually right, as in steady receding horizon, it saves the iterations)
-        if s.warm_fails == 0 || s.warm_fails % max(st.polish_warm_retry, 1) == 0
+        ok = false
+        if st.polish_warm_last >= 0 && s.has_last && (s.last_fails == 0 || s.last_fails % max(st.polish_warm_retry, 1) == 0)
+            # first the active set of the last accepted polish, unshifted: in
+            # steady tracking the active set stays put in index space, and its
+            # polish factorization is still cached (no factorization at all)
+            copyto!(s.act, s.act_last)
+            ok = _try_polish!(s; restart = false, corrections = st.polish_warm_last)
+            s.last_fails = ok ? 0 : s.last_fails + 1
+        elseif s.has_last
+            s.last_fails += 1
+            st.verbose && @printf("  warm polish (last active set) %s\n", ok ? "accepted" : "rejected")
+        end
+        if !ok && (s.warm_fails == 0 || s.warm_fails % max(st.polish_warm_retry, 1) == 0)
             _guess_active!(s, s.z, s.y)
             ok = _try_polish!(s)
             st.verbose && @printf("  warm polish %s\n", ok ? "accepted" : "rejected")
-            if ok
-                polished = true; converged = true; status = :solved
-                s.warm_fails = 0
-            else
-                s.warm_fails += 1
-            end
+        end
+        if ok
+            polished = true; converged = true; status = :solved
+            s.warm_fails = 0
         else
             s.warm_fails += 1
         end
@@ -552,6 +566,10 @@ function solve!(s::Solver)
         polished || (info.polish = info.polish == :skipped ? :skipped : :failed)
     end
     s.has_iterate = true
+    if info.polish == :success
+        copyto!(s.act_last, s.act)
+        s.has_last = true
+    end
     _finalize!(s, status)
     info.solve_time = (time_ns() - t0) / 1e9
     return info
@@ -636,6 +654,7 @@ function update!(s::Solver; q = nothing, l = nothing, u = nothing, b = nothing)
         rt = _rowtypes(s.l, s.u, s.kinds)
         if rt != s.rowtype
             s.rowtype = rt
+            s.has_last = false
             _set_rho!(s, s.rho)
             _refactor_kkt!(s)
         end
@@ -715,6 +734,7 @@ function reset!(s::Solver)
     s.warm_pending = false
     s.pol_valid = false
     s.has_fail = false
+    s.has_last = false
     if s.rho != s.rho0
         _set_rho!(s, s.rho0)
         _refactor_kkt!(s)
