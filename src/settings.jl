@@ -151,8 +151,11 @@ without trial factorizations)
   `:nd16` (nested dissection of the agent graph, leaves of that many agents);
 * `kkt_threads = 1`: threads for the factorization and the solves (subtrees
   of the elimination tree in parallel);
-* `kkt_relax = :exact`: supernode relaxation (`:exact` no explicit zeros,
-  `:light`, `:cholmod`);
+* `kkt_relax = :light`: supernode relaxation (`:exact` no explicit zeros,
+  `:light` a few, `:cholmod` CHOLMOD's rules); the KKT matrices of fleets have
+  mostly one-column fundamental supernodes, and merging them halves the
+  supernode count and the time of a factorization for a few percent more
+  entries of L;
 * `kkt_structure = nothing`: `(agent = ..., block = ...)` labels of the
   variables (agent index, time instant or block).
 """
@@ -200,7 +203,7 @@ Base.@kwdef mutable struct Settings
     ordering::Symbol = :amd
     kkt_ordering::Symbol = :auto
     kkt_threads::Int = 1
-    kkt_relax::Symbol = :exact
+    kkt_relax::Symbol = :light
     kkt_structure::Any = nothing
     verbose::Bool = false
     method::Symbol = :auto
