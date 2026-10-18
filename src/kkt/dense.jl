@@ -36,6 +36,35 @@ end
     return nothing
 end
 
+"""
+Column block width of `_lower_gemm!`. BLAS gemmt (lower triangle of a
+product) runs at about half the rate of gemm in OpenBLAS, so the lower
+trapezoid is updated by gemm on column blocks instead: the diagonal blocks are
+computed whole (their few entries above the diagonal land in storage that is
+never read), at an extra cost of `LOWER_NB / (2m)` of the work (0: gemmt).
+"""
+const LOWER_NB = Ref(16)
+
+# lower trapezoid of C[1:m, 1:n] (m >= n) = alpha * A * B' + beta * C, with
+# A m x k and B n x k (no transposes): one gemm per column block
+@inline function _lower_gemm!(m::Int, n::Int, k::Int, alpha::Float64, A::Ptr{Float64}, lda::Int,
+                              B::Ptr{Float64}, ldb::Int, beta::Float64, C::Ptr{Float64}, ldc::Int)
+    nb = LOWER_NB[]
+    if nb <= 0                                    # BLAS gemmt (comparison)
+        _gemmt!(UInt8('N'), UInt8('T'), n, k, alpha, A, lda, B, ldb, beta, C, ldc)
+        m > n && _gemm!(UInt8('N'), UInt8('T'), m - n, n, k, alpha, A + 8 * n, lda, B, ldb, beta, C + 8 * n, ldc)
+        return nothing
+    end
+    j0 = 1
+    while j0 <= n
+        j1 = min(j0 + nb - 1, n)
+        _gemm!(UInt8('N'), UInt8('T'), m - j0 + 1, j1 - j0 + 1, k, alpha, A + 8 * (j0 - 1), lda,
+               B + 8 * (j0 - 1), ldb, beta, C + 8 * ((j0 - 1) * ldc + j0 - 1), ldc)
+        j0 = j1 + 1
+    end
+    return nothing
+end
+
 "Work (r^2 w) above which a Schur update is split into column blocks over threads."
 const PAR_THRESHOLD = Ref(500_000)
 
@@ -237,11 +266,7 @@ function _ldlt_front!(Lx::Vector{Float64}, off::Int, h::Int, w::Int, d::Vector{F
                     pL = pointer(Lx, o + (kb - 1) * h + ke + 1)      # L[ke+1, kb]
                     pC = pointer(Lx, o + ke * h + ke + 1)            # F[ke+1, ke+1]
                     pT = pointer(T)
-                    _gemmt!(UInt8('N'), UInt8('T'), wr, bw, -1.0, pT, hr, pL, h, 1.0, pC, h)
-                    if hr > wr
-                        _gemm!(UInt8('N'), UInt8('T'), hr - wr, wr, bw, -1.0, pT + 8 * wr, hr, pL, h, 1.0,
-                               pC + 8 * wr, h)
-                    end
+                    _lower_gemm!(hr, wr, bw, -1.0, pT, hr, pL, h, 1.0, pC, h)
                 end
             else
                 for j in (ke+1):w
@@ -287,8 +312,7 @@ function _front_update!(U::Vector{Float64}, uo::Int, r::Int, Lx::Vector{Float64}
             _front_update_par!(U, uo, r, Lx, o, h, w, T, beta, nt)
         else
             GC.@preserve U Lx T begin
-                _gemmt!(UInt8('N'), UInt8('T'), r, w, -1.0, pointer(T), r, pointer(Lx, o + 1), h, beta,
-                        pointer(U, uo + 1), r)
+                _lower_gemm!(r, r, w, -1.0, pointer(T), r, pointer(Lx, o + 1), h, beta, pointer(U, uo + 1), r)
             end
         end
     else
