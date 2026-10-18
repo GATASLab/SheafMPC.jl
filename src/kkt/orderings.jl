@@ -472,6 +472,7 @@ Base.@kwdef struct CostModel
     nthreads::Int = 1
     q::NTuple{4,Float64} = (QCOEF[1], QCOEF[2], QCOEF[3], QCOEF[4])
     b::NTuple{4,Float64} = (BCOEF[1], BCOEF[2], BCOEF[3], BCOEF[4])
+    par_overhead::NTuple{2,Float64} = (4e-5, 2e-5)     # task spawning per threaded factor / solve (s)
 end
 
 # fitted coefficients (seconds per column, per flop, per column, per entry of L)
@@ -489,6 +490,9 @@ function estimate(cm::CostModel, s, N::Int, engine::Symbol)
         par = nt > 1 ? max(1 / nt, s.critical / max(s.flops, 1.0)) : 1.0
         tf = c[1] * N * (nt > 1 ? par : 1.0) + c[2] * s.flops * par
         ts = (c[3] * N + c[4] * s.nnzL) * (nt > 1 ? par : 1.0)
+        if nt > 1
+            tf += cm.par_overhead[1]; ts += cm.par_overhead[2]
+        end
     end
     return cm.factors * tf + cm.solves * ts
 end
@@ -530,12 +534,16 @@ list among `:amd, :amf, :mmd, :metis, :stage, :chain, :nd2, :nd4, :nd8, :nd16`.
 """
 function choose_ordering(K::SparseMatrixCSC; structure::Union{Nothing,KKTStructure} = nothing,
                          candidates = :auto, cost::CostModel = CostModel(), engines = (:multifrontal,))
-    best, name, _, table, _ = choose_system(K; structure = structure, candidates = candidates, cost = cost, engines = engines)
+    best, name, _, table, _, _ = choose_system(K; structure = structure, candidates = candidates, cost = cost, engines = engines)
     return best, name, table
 end
 
 """
-    choose_system(K; structure, candidates, cost, engines) -> (perm, ordering, engine, table, tree)
+    choose_system(K; structure, candidates, cost, engines) -> (perm, ordering, engine, table, tree, threads)
+
+With `cost.nthreads > 1` every candidate is also estimated on one thread
+(thread start-up costs more than it saves on small systems); `threads` is the
+count to use.
 
 The order and the engine (`:simplicial` or `:multifrontal`) of least estimated
 cost. Generic candidates `:amd, :amf, :mmd` (`:metis` on request, with Metis.jl loaded),
@@ -562,22 +570,24 @@ function choose_system(K::SparseMatrixCSC; structure::Union{Nothing,KKTStructure
     else
         cands = collect(candidates)
     end
-    best = nothing; bestc = Inf; name = :none; eng = :multifrontal; besttree = nothing
+    best = nothing; bestc = Inf; name = :none; eng = :multifrontal; besttree = nothing; bestnt = 1
     table = Any[]
+    cost1 = CostModel(cost.factors, cost.solves, 1, cost.q, cost.b, cost.par_overhead)
     for c in cands
         t = @elapsed p = make_ordering(K, c; structure = structure)
         p === nothing && continue
         s = order_stats(K, p; nthreads = cost.nthreads)
-        for e in engines
-            (e == :simplicial && cost.nthreads > 1) && continue
-            est = estimate(cost, s, N, e)
-            push!(table, (name = c, engine = e, nnzL = s.nnzL, flops = s.flops, critical = s.critical, est = est, time = t))
+        for e in engines, nt in unique((1, cost.nthreads))
+            (e == :simplicial && nt > 1) && continue
+            est = estimate(nt == 1 ? cost1 : cost, s, N, e)
+            push!(table, (name = c, engine = e, threads = nt, nnzL = s.nnzL, flops = s.flops, critical = s.critical,
+                          est = est, time = t))
             if est < bestc
-                bestc = est; best = p; name = c; eng = e; besttree = s.tree
+                bestc = est; best = p; name = c; eng = e; besttree = s.tree; bestnt = nt
             end
         end
     end
-    return best, name, eng, table, besttree
+    return best, name, eng, table, besttree, bestnt
 end
 
 function make_ordering(K::SparseMatrixCSC, c::Symbol; structure::Union{Nothing,KKTStructure} = nothing)
