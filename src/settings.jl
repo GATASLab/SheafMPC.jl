@@ -51,11 +51,29 @@ Polishing (active-set refinement)
 * `polish_delta = 1e-6`: regularization of the polish system.
 
 Linear algebra
-* `linsys = :auto`: `:qdldl` (simplicial) or `:cliquetrees` (supernodal
-  multifrontal); `:auto` times solves with each (and, for QDLDL, with the
-  orderings AMD, MMD and AMF) in `setup` and keeps the fastest;
+* `linsys = :auto`: the engine (`:qdldl`, simplicial, or `:blockldl`,
+  multifrontal) and the elimination order picked by BlockLDL's cost model from
+  elimination-tree statistics of the candidate orders, factored once (the same
+  as `:model`); `:timed` instead times solves with QDLDL (orders AMD, MMD,
+  AMF) and CliqueTrees in `setup` and keeps the fastest; or one backend:
+  `:qdldl`, `:cliquetrees`, `:blockldl`;
 * `ordering = :amd`: the fill-reducing ordering when `linsys = :qdldl`
   (`:amd`, `:mmd`, `:amf`, `:mf`).
+
+Structured KKT kernel (`linsys = :blockldl`, see `BlockLDL`; `linsys = :model`
+picks the engine, QDLDL or BlockLDL, and the order by BlockLDL's cost model
+without trial factorizations)
+* `kkt_ordering = :auto`: picked by the cost model among `:amd`, `:amf`,
+  `:metis` (with Metis.jl loaded) and, given `kkt_structure`, the
+  structure-given `:stage` (time-major, Riccati-like), `:chain` (per-agent
+  chain condensing, then the agent coupling) and `:nd2`, `:nd4`, `:nd8`,
+  `:nd16` (nested dissection of the agent graph, leaves of that many agents);
+* `kkt_threads = 1`: threads for the factorization and the solves (subtrees
+  of the elimination tree in parallel);
+* `kkt_relax = :exact`: supernode relaxation (`:exact` no explicit zeros,
+  `:light`, `:cholmod`);
+* `kkt_structure = nothing`: `(agent = ..., block = ...)` labels of the
+  variables (agent index, time instant or block).
 """
 Base.@kwdef mutable struct Settings
     rho::Float64 = 0.03
@@ -89,6 +107,10 @@ Base.@kwdef mutable struct Settings
     warm_reset_rho::Bool = true
     linsys::Symbol = :auto
     ordering::Symbol = :amd
+    kkt_ordering::Symbol = :auto
+    kkt_threads::Int = 1
+    kkt_relax::Symbol = :exact
+    kkt_structure::Any = nothing
     verbose::Bool = false
 end
 

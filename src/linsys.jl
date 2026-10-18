@@ -26,10 +26,15 @@
 # second system with the same pattern, sharing the ordering and, when the
 # backend can, the symbolic factorization).
 #
-# Two backends with the same interface:
+# Three backends with the same interface:
 #   QDLDLSystem    simplicial LDLt (QDLDL, the factorization of OSQP), AMD order
 #   ChordalSystem  supernodal multifrontal LDLt (CliqueTrees.Multifrontal)
-# `setup` times both on the problem and keeps the faster one (`linsys = :auto`).
+#   BlockLDLSystem the structured multifrontal kernel of src/kkt (BlockLDL);
+#                  a refactorization reads every stored value of K, so all
+#                  `upd_idx` changes are picked up
+# `linsys = :auto` picks QDLDL or BlockLDL and the order by BlockLDL's cost
+# model (no trial factorizations); `:timed` times QDLDL and CliqueTrees in
+# `setup` and keeps the faster one.
 
 abstract type LinearSystem end
 
@@ -249,13 +254,15 @@ or one of CliqueTrees' `:mmd` (multiple minimum degree), `:amf` (approximate
 minimum fill), `:mf` (minimum fill).
 """
 function make_system(kind::Symbol, K::SpMat, diag_idx::Vector{Int}, n::Int; ordering::Symbol = :amd,
-                     upd_idx::Vector{Int} = diag_idx)
+                     upd_idx::Vector{Int} = diag_idx, settings = nothing)
+    kind == :blockldl && return BlockLDLSystem(K, diag_idx, n; settings = settings, upd_idx = upd_idx)
+    kind == :model && return model_system(K, diag_idx, n; upd_idx = upd_idx, settings = settings)
     if kind == :qdldl
         ordering == :amd && return QDLDLSystem(K, diag_idx, upd_idx)
         return QDLDLSystem(K, diag_idx, upd_idx; perm = fill_ordering(K, ordering))
     end
     kind == :cliquetrees && return ChordalSystem(K, diag_idx, n)
-    throw(ArgumentError("unknown linear system backend $kind (use :qdldl or :cliquetrees)"))
+    throw(ArgumentError("unknown linear system backend $kind (use :qdldl, :cliquetrees or :blockldl)"))
 end
 
 "A fill-reducing permutation of the symmetric matrix with upper triangle `K`."

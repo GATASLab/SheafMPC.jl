@@ -171,6 +171,10 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
     kind = st.linsys
     kkt = nothing
     if kind == :auto
+        # engine and order from BlockLDL's cost model (no trial factorizations)
+        kkt = make_system(:model, copy(K), diag_idx, n; upd_idx = upd_idx, settings = st)
+        kind = system_kind(kkt)
+    elseif kind == :timed
         # time a few backends and orderings on this matrix, keep the fastest solve
         best = Inf
         for (k, o) in ((:qdldl, :amd), (:qdldl, :mmd), (:qdldl, :amf), (:cliquetrees, :default))
@@ -181,7 +185,7 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
             end
         end
     else
-        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering, upd_idx = upd_idx)
+        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering, upd_idx = upd_idx, settings = st)
     end
     pol = _polish_system(kkt, copy(K), n)
     s = Solver(st, Info(), n, m, P, q, A, l, u, socb, copy(p.socs), copy(p.kinds), rowtype, p.c, scl, Pdiag,
