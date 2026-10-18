@@ -19,7 +19,7 @@ const SHIFT = 1e-4
 # the solver of the "equal or faster" gate: Mumblebee fast-symbolic with AMF
 const GATE = get(ENV, "BENCH_GATE", "mumblebee_fast")
 const MODES = ["cold", "warm"]
-const TIERNAMES = ["low", "medium", "high"]
+const TIERNAMES = ["low", "medium", "e8", "high"]   # e8 (1e-8): cone families only
 
 num(x) = x isa Number ? Float64(x) : x == "NaN" ? NaN : x == "Inf" ? Inf : x == "-Inf" ? -Inf : NaN
 
@@ -110,7 +110,9 @@ function main()
         RF = sort(filter(r -> r["instance"]["family"] == fam, R); by = r -> (num(r["instance"]["params"]["size"]), r["key"]))
         fs = filter(s -> any(r -> haskey(r["solvers"], s), RF), solvers)
         println(io, "## $fam\n")
+        hastier(tier) = any(r -> any(s -> haskey(s["tiers"], tier), values(r["solvers"])), RF)
         for mode in MODES, tier in TIERNAMES
+            hastier(tier) || continue
             println(io, "### $fam, $mode, $tier\n")
             gate = GATE in fs
             println(io, "| instance | vars | ", join(fs, " | "), " | sheafmpc / best other |", gate ? " sheafmpc / $GATE |" : "")
@@ -205,6 +207,8 @@ function main()
         allratios = Dict(s => Float64[] for s in solvers)
         for fam in [fams; "all"]
             RF = fam == "all" ? R : filter(r -> r["instance"]["family"] == fam, R)
+            RF = filter(r -> any(s -> haskey(s["tiers"], tier), values(r["solvers"])), RF)
+            isempty(RF) && continue
             fs = filter(s -> all(r -> haskey(r["solvers"], s), RF), solvers)   # solvers applicable to the whole family
             T = Dict(s => Float64[] for s in fs); tls = Float64[]
             ratios = Dict(s => Float64[] for s in fs)

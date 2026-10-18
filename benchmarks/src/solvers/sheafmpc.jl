@@ -2,12 +2,14 @@
 # of the harness that touches SheafMPC's API; if the API changes, adapt here.
 #
 # API used: ConicQP(P, q, A, l, u; c, socs, socb, kinds), setup(qp; kwargs...),
-# solve!(s) -> Info, update!(s; q, l, u, b), warm_start!(s; x, y), s.xsol,
+# solve!(s) -> Info, update!(s; q, l, u, b[, c]), warm_start!(s; x, y), s.xsol,
 # s.ysol, Info fields status, iter, solve_time, polish.
 
 import SheafMPC
 
 const SHEAFMPC_DIR = normpath(joinpath(pkgdir(SheafMPC)))
+# newer versions take the objective constant in update! (receding horizon: c changes with x0)
+const SHEAFMPC_UPDATE_C = any(m -> :c in Base.kwarg_decl(m), methods(SheafMPC.update!))
 
 mutable struct SheafMPCHandle
     s::Any
@@ -42,7 +44,8 @@ function sheafmpc_spec(; time_limit = Inf, max_iter = 100_000)
     end
     update! = function (h::SheafMPCHandle, p::QP)
         if !h.hassoc
-            SheafMPC.update!(h.s; q = p.q, l = p.l, u = p.u)
+            SHEAFMPC_UPDATE_C ? SheafMPC.update!(h.s; q = p.q, l = p.l, u = p.u, c = p.c) :
+                                SheafMPC.update!(h.s; q = p.q, l = p.l, u = p.u)
         else
             # the right-hand side form: b = u on equality rows, socb on cone rows (the
             # package rejects b on interval rows, so mixed problems are not updatable)
@@ -50,7 +53,7 @@ function sheafmpc_spec(; time_limit = Inf, max_iter = 100_000)
             for i in eachindex(h.b)
                 h.b[i] = h.eqrows[i] ? p.u[i] : p.socb[i]
             end
-            SheafMPC.update!(h.s; q = p.q, b = h.b)
+            SHEAFMPC_UPDATE_C ? SheafMPC.update!(h.s; q = p.q, b = h.b, c = p.c) : SheafMPC.update!(h.s; q = p.q, b = h.b)
         end
         return nothing
     end
@@ -60,7 +63,7 @@ function sheafmpc_spec(; time_limit = Inf, max_iter = 100_000)
     end
     info = () -> Dict{String,Any}("package" => "SheafMPC", "path" => SHEAFMPC_DIR, "git" => git_state(SHEAFMPC_DIR),
                                   "settings" => "package defaults (SheafMPC.Settings()), eps_abs = eps_rel = eps, max_iter $max_iter",
-                                  "warm_start" => "update! (factorization kept) + warm_start!(x, y) from the shifted previous solution")
+                                  "warm_start" => "update! (factorization kept" * (SHEAFMPC_UPDATE_C ? ", objective constant c passed" : "") * ") + warm_start!(x, y) from the shifted previous solution")
     readback = function (h::SheafMPCHandle)
         st = h.s.settings
         d = Dict{String,Any}(string(f) => getfield(st, f) for f in fieldnames(typeof(st)))

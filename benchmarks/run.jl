@@ -35,6 +35,10 @@ const SOLV = split(argval("--solvers", ""), ",", keepempty = false)
 const OUT = argval("--out", joinpath(@__DIR__, "results", TIER * "_" * Dates.format(now(), "yyyymmdd_HHMM")))
 const TLIM = parse(Float64, get(ENV, "BENCH_TIME_LIMIT", TIER == "hpg" ? "600" : "60"))
 
+# the cone families (second-order cones: SOC fleets, double integrator with input
+# balls, the reduced fleets) also run at 1e-8, where an interior-point method matters
+const CONE_TIERS = ["low", "medium", "e8", "high"]
+
 # instance specs per tier: (key, family key, constructor, reps, cold_qps, accuracy tiers)
 spec(key, fam, f; reps = 3, cold = 5, tiers = ["low", "medium", "high"]) = (key = key, fam = fam, f = f, reps = reps, cold = cold, tiers = tiers)
 
@@ -53,13 +57,13 @@ function tier_specs(t)
         for n in (1, 4, 16)
             push!(S, spec("fleet_ring_box_n$n", "fleet", () -> BH.fleet_instance(n = n, L = 6)))
         end
-        push!(S, spec("fleet_ring_soc_n4", "fleet", () -> BH.fleet_instance(n = 4, cone = :soc, L = 6)))
+        push!(S, spec("fleet_ring_soc_n4", "fleet", () -> BH.fleet_instance(n = 4, cone = :soc, L = 6); tiers = CONE_TIERS))
         push!(S, spec("fleet_ring_box_b4_n4", "fleet", () -> BH.fleet_instance(n = 4, b = 4, L = 6)))
         push!(S, spec("di_box_N20", "single", () -> BH.single_instance(model = :di, N = 20, L = 6)))
         push!(S, spec("quad_N20", "single", () -> BH.single_instance(model = :quad, N = 20, L = 6)))
         push!(S, spec("chain_M4", "chain", () -> BH.chain_instance(M = 4, L = 6)))
         push!(S, spec("osqprand_nx20_s1", "osqprand", () -> BH.osqprand_instance(nx = 20, L = 6)))
-        push!(S, spec("reduced_k8", "reduced", () -> BH.reduced_instance(k = 8, L = 6)))
+        push!(S, spec("reduced_k8", "reduced", () -> BH.reduced_instance(k = 8, L = 6); tiers = CONE_TIERS))
     elseif t == "full" || t == "hpg"
         big = t == "hpg"
         ns = big ? (256, 1024) : filter(<=(parse(Int, get(ENV, "BENCH_FLEET_MAXN", "256"))), (1, 4, 16, 64, 256))
@@ -67,12 +71,14 @@ function tier_specs(t)
             L = n >= 1024 ? 6 : n >= 256 ? 8 : 12
             reps = n >= 256 ? 3 : 5
             push!(S, spec("fleet_$(graph)_$(cone)" * (b == 1 ? "" : "_b$b") * "_n$n", "fleet",
-                          () -> BH.fleet_instance(n = n, graph = graph, cone = cone, b = b, L = L); reps = reps, cold = min(L, 6)))
+                          () -> BH.fleet_instance(n = n, graph = graph, cone = cone, b = b, L = L); reps = reps, cold = min(L, 6),
+                          tiers = cone == :soc ? CONE_TIERS : ["low", "medium", "high"]))
         end
         if !big
             for N in (10, 25, 50, 100)
                 push!(S, spec("di_box_N$N", "single", () -> BH.single_instance(model = :di, N = N, L = 12); reps = 5))
-                push!(S, spec("di_soc_N$N", "single", () -> BH.single_instance(model = :di, N = N, cone = :soc, L = 12); reps = 5))
+                push!(S, spec("di_soc_N$N", "single", () -> BH.single_instance(model = :di, N = N, cone = :soc, L = 12); reps = 5,
+                              tiers = CONE_TIERS))
                 push!(S, spec("quad_N$N", "single", () -> BH.single_instance(model = :quad, N = N, L = 12); reps = 5))
             end
             for M in (3, 4, 6, 8, 10)
@@ -82,7 +88,7 @@ function tier_specs(t)
                 push!(S, spec("osqprand_nx$(nx)_s$s", "osqprand", () -> BH.osqprand_instance(nx = nx, seed = s, L = 12); reps = 5))
             end
             for k in (0, 2, 4, 8)
-                push!(S, spec("reduced_k$k", "reduced", () -> BH.reduced_instance(k = k, L = 12); reps = 5))
+                push!(S, spec("reduced_k$k", "reduced", () -> BH.reduced_instance(k = k, L = 12); reps = 5, tiers = CONE_TIERS))
             end
         end
     else

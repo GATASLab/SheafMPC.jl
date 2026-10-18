@@ -28,7 +28,7 @@
 
 using Statistics
 
-const TIERS = [("low", 1e-3), ("medium", 1e-6), ("high", 1e-9)]
+const TIERS = [("low", 1e-3), ("medium", 1e-6), ("e8", 1e-8), ("high", 1e-9)]   # e8: cone families only
 
 struct Instance
     family::String
