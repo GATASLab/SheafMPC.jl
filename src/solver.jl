@@ -175,11 +175,16 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
         rhovec[i] = r; rhoinv[i] = 1 / r
     end
     set_diagonal!(K, diag_idx, xdiag, rhoinv)
+    # with the spectral rho, the first numerical factorization is the one the
+    # Lanczos steps need (see rho.jl); the ADMM values follow once rho is known
+    spectral = st.rho_spectral && any(t -> t == ROWT_INEQ || t == ROWT_SOC, rowtype)
+    spectral && set_diagonal!(K, diag_idx, Pdiag .+ st.polish_delta,
+                              [t == ROWT_EQ ? st.polish_delta : 1 / st.polish_delta for t in rowtype])
     kind = st.linsys
     kkt = nothing
     if kind == :auto
         # engine and order from BlockLDL's cost model (no trial factorizations)
-        kkt = make_system(:model, copy(K), diag_idx, n; upd_idx = upd_idx, settings = st, logical = true)
+        kkt = make_system(:model, copy(K), diag_idx, n; upd_idx = upd_idx, settings = st)
         kind = system_kind(kkt)
     elseif kind == :timed
         # time a few backends and orderings on this matrix, keep the fastest solve
@@ -192,8 +197,7 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
             end
         end
     else
-        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering, upd_idx = upd_idx, settings = st,
-                          logical = true)
+        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering, upd_idx = upd_idx, settings = st)
     end
     pol = _polish_system(kkt, copy(K), n)
     s = Solver(st, Info(), n, m, P, q, A, l, u, socb, copy(p.socs), copy(p.kinds), rowtype, p.c, scl, Pdiag,
@@ -207,15 +211,11 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
                soc_idx, zeros(length(p.socs)), zeros(length(p.socs)), zeros(m), 0,
                Anderson(st.anderson, st.anderson > 0 ? n + m : 0), st.rho, NaN, NaN,
                fill(ACT_NONE, m), false, 0)
-    # the base rho: from the spectrum of the constraint operator, or the setting
-    if st.rho_spectral
-        r = spectral_rho!(s)
+    # the base rho: from the spectrum of the constraint operator (the ADMM system
+    # was factored with the values the estimate needs), or the setting
+    if spectral
+        r = spectral_rho!(s; S = s.kkt, factored = true)
         r === nothing || (s.rho0 = r)
-    end
-    # the numerical factorization of the ADMM system for the base rho (QDLDL was
-    # built with the symbolic factorization only; the other backends factor in
-    # their constructor, at settings.rho)
-    if s.rho0 != st.rho || (kkt isa QDLDLSystem && kkt.F.logical[])
         _set_rho!(s, s.rho0)
         _refactor_kkt!(s)
     end

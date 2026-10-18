@@ -12,16 +12,16 @@
 # MPC family the best fixed rho is within a factor of two of rho* over
 # horizon blockings that move rho* by a factor of five.
 #
-# M is applied with the polish system (same pattern and symbolic analysis as
-# the ADMM system) factored with the equality rows active and every other row
-# inactive: solving
+# M is applied with a matrix of the KKT pattern (in `setup`, the first
+# numerical factorization of the ADMM system itself, before its rho is known)
+# with the equality rows active and every other row inactive: solving
 #
 #     [ P + delta I     A'                        ] [ x  ]   [ A_I' v ]
 #     [ A           -diag(delta on A_E, 1/delta)  ] [ nu ] = [ 0      ]
 #
 # gives x = (P on null(A_E))^{-1} A_I' v up to O(delta), and M v = A_I x. A
 # few Lanczos steps (no reorthogonalization: only the extreme Ritz values are
-# used) estimate lmin and lmax; the polish factorization is then marked stale.
+# used) estimate lmin and lmax; the ADMM system is then refactored for rho.
 
 """
     spectral_rho!(s::Solver) -> rho or nothing
@@ -29,10 +29,11 @@
 The spectral penalty `settings.rho_spectral_scale / sqrt(lmin lmax)` (scaled
 problem) from `settings.rho_spectral_iter` Lanczos steps on M (see the file
 header); `nothing` if there are no inequality or cone rows. Stores the
-estimates in `s.lam_min`, `s.lam_max`. One numerical factorization of the
-polish system.
+estimates in `s.lam_min`, `s.lam_max`. Solves with `S` (default the polish
+system, which is first factored with the values above; `factored = true`
+when `S` already holds them, as the ADMM system does in `setup`).
 """
-function spectral_rho!(s::Solver)
+function spectral_rho!(s::Solver; S::LinearSystem = s.pol, factored::Bool = false)
     st = s.settings
     n, m = s.n, s.m
     # inequality and cone rows with a nonzero row of A (an empty row, such as the
@@ -55,9 +56,11 @@ function spectral_rho!(s::Solver)
     @inbounds for i in 1:m
         s.pdiag[i] = s.rowtype[i] == ROWT_EQ ? del : 1.0 / del
     end
-    set_diagonal!(s.pol.K, s.pol.diag_idx, s.tn, s.pdiag)
-    refactor!(s.pol)
-    s.pol_valid = false
+    if !factored
+        set_diagonal!(S.K, S.diag_idx, s.tn, s.pdiag)
+        refactor!(S)
+        S === s.pol && (s.pol_valid = false)
+    end
     # (not capped at mI: without reorthogonalization, copies of converged Ritz
     # values take up dimensions, and the extra steps still sharpen the extremes)
     K = st.rho_spectral_iter
@@ -71,7 +74,7 @@ function spectral_rho!(s::Solver)
         end
         fill!(rhs, 0.0)
         mul!(xv, transpose(s.A), full)
-        solve!(s.pol, rhs)
+        solve!(S, rhs)
         mul!(Ax, s.A, xv)
         @inbounds for (k, i) in enumerate(rows)
             w[k] = Ax[i]
