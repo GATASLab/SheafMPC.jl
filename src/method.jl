@@ -32,18 +32,53 @@
 # warm started from that iterate. With `ipm_polish` its solution is polished
 # on the active set it identifies (exact, at the price of a few factorizations).
 
-"Time the ADMM solves and, unless the method is `:admm`, make and time the IPM system."
+"""
+The cost model at setup, with no timing and no factorization: seconds per ADMM
+iteration and per IPM solve estimated by the kernel's cost model (src/kkt)
+from the statistics of the ADMM system's own factor (nnz(L) and flops of its
+ordering), an IPM solve as about 12 iterations of one factorization and six
+solves, 30% outside the linear algebra. Both estimates are replaced by
+measured times as solves run. The IPM system itself is built on the first
+crossover (`_run_ipm!`); `method = :ipm` builds it here, since every solve
+needs it.
+"""
 function _cost_setup!(s)
     st = s.settings
-    s.m == 0 && return nothing
-    ts = time_solves(s.kkt, 10)
-    s.cost.t_admm_iter = 1.5 * ts + 1e-7
-    if st.method == :ipm || (st.method == :auto && st.crossover > 0) || (st.method == :auto && !isempty(s.socs))
-        w = _ipm_work(s)
-        s.ipm = w
-        s.cost.t_ipm = 12 * 1.3 * _ipm_time_system(w.sys)      # ~12 iterations, 30% outside the linear algebra
-    end
+    (s.m == 0 || st.method == :admm) && return nothing
+    st.method == :ipm && (s.ipm = _ipm_work(s))
+    t_ipm, t_it = _ipm_cost_estimate(s)
+    s.cost.t_ipm = t_ipm
+    s.cost.t_admm_iter = t_it
     return nothing
+end
+
+"Elimination statistics (nnz(L), flops) and engine of a factored system, in the kernel's cost-model terms."
+function _factor_stats(S::QDLDLSystem)
+    fl = 0.0; nl = S.Ln
+    @inbounds for j in 1:S.Ln
+        c = S.Lp[j+1] - S.Lp[j]
+        fl += c * (c + 1) / 2 + 1
+        nl += c
+    end
+    return (nnzL = nl, flops = fl, critical = fl), :simplicial
+end
+function _factor_stats(S::BlockLDLSystem)
+    st = BlockLDL.order_stats(S.K, S.F.S.perm)
+    return (nnzL = st.nnzL, flops = st.flops, critical = st.critical), :multifrontal
+end
+function _factor_stats(S::LinearSystem)
+    st = BlockLDL.order_stats(S.K, S.perm)
+    return (nnzL = st.nnzL, flops = st.flops, critical = st.critical), :multifrontal
+end
+
+"Estimated seconds of an IPM solve and of an ADMM iteration (the kernel's cost model)."
+function _ipm_cost_estimate(s)
+    S = s.kkt
+    N = size(S.K, 1)
+    stats, eng = _factor_stats(S)
+    t_lin = BlockLDL.estimate(BlockLDL.CostModel(factors = 1.0, solves = 6.0), stats, N, eng)
+    t_solve = BlockLDL.estimate(BlockLDL.CostModel(factors = 0.0, solves = 1.0), stats, N, eng)
+    return 12 * 1.3 * t_lin, 1.5 * t_solve + 1e-7
 end
 
 _has_warm(s) = s.settings.warm_start && s.has_iterate
@@ -84,6 +119,9 @@ end
 function _run_ipm!(s, t0::UInt64)
     st = s.settings
     info = s.info
+    # the IPM system is built on first use; its construction is not part of
+    # the IPM's cost (nor of the ADMM's: the ADMM time was taken before)
+    s.ipm === nothing && (s.ipm = _ipm_work(s))
     t1 = time_ns()
     status = _ipm_solve!(s, t0)
     info.ipm_iter = s.ipm.iter

@@ -139,6 +139,23 @@
         end
     end
 
+    @testset "the IPM system is built lazily" begin
+        rng = Xoshiro(43)
+        for p in (random_socp(rng, 25, 5, 4), random_qp(rng, 30, 25))
+            s = setup(p)                                       # :auto
+            @test s.ipm === nothing
+            @test isfinite(s.cost.t_ipm) && isfinite(s.cost.t_admm_iter)
+            @test setup(p; method = :admm).ipm === nothing
+            @test setup(p; method = :ipm).ipm !== nothing
+            # a crossover builds it, and the solve still meets the tolerance
+            ref, _, _ = clarabel_ref(p)
+            s = setup(p; eps_abs = 1e-8, eps_rel = 1e-8, crossover = 1e-6, polish_interval = 0)
+            info = solve!(s)
+            info.method == :admm_ipm && @test s.ipm !== nothing
+            @test info.status == :solved && relgap(info.obj, ref) <= 1e-7
+        end
+    end
+
     @testset "crossover and the constant in update!" begin
         rng = Xoshiro(41)
         p = random_socp(rng, 25, 5, 4)
