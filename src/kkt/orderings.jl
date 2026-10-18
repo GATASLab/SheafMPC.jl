@@ -518,7 +518,7 @@ function order_stats(K::SparseMatrixCSC, perm::AbstractVector{<:Integer}; nthrea
     @inbounds for j in 1:N
         parent[j] == 0 && (crit = max(crit, cp[j]))
     end
-    return (nnzL = N + sum(cc), flops = fl, critical = crit)
+    return (nnzL = N + sum(cc), flops = fl, critical = crit, tree = (iperm = iperm, parent = parent, cc = cc))
 end
 
 """
@@ -530,12 +530,12 @@ list among `:amd, :amf, :mmd, :metis, :stage, :chain, :nd2, :nd4, :nd8, :nd16`.
 """
 function choose_ordering(K::SparseMatrixCSC; structure::Union{Nothing,KKTStructure} = nothing,
                          candidates = :auto, cost::CostModel = CostModel(), engines = (:multifrontal,))
-    best, name, _, table = choose_system(K; structure = structure, candidates = candidates, cost = cost, engines = engines)
+    best, name, _, table, _ = choose_system(K; structure = structure, candidates = candidates, cost = cost, engines = engines)
     return best, name, table
 end
 
 """
-    choose_system(K; structure, candidates, cost, engines) -> (perm, ordering, engine, table)
+    choose_system(K; structure, candidates, cost, engines) -> (perm, ordering, engine, table, tree)
 
 The order and the engine (`:simplicial` or `:multifrontal`) of least estimated
 cost. Generic candidates `:amd, :amf, :mmd` (`:metis` on request, with Metis.jl loaded),
@@ -546,19 +546,23 @@ function choose_system(K::SparseMatrixCSC; structure::Union{Nothing,KKTStructure
                        candidates = :auto, cost::CostModel = CostModel(), engines = (:simplicial, :multifrontal))
     N = size(K, 1)
     if candidates === :auto
-        cands = [:amd, :amf, :mmd]
+        # MMD only at moderate sizes (its time grows faster than AMD's)
+        cands = nnz(K) <= 200_000 ? [:amd, :amf, :mmd] : [:amd, :amf]
         # METIS is not a default candidate: on these KKTs it pivots on primal
         # variables with only sigma on the diagonal before their dynamics rows
         # (residuals 1e-10 before refinement, against 1e-14 for AMD)
-        if structure !== nothing
+        # structure-given orders when threads can use their balanced trees
+        # (one thread: they are within a few percent of AMD in fill, and cost
+        # more to compute)
+        if structure !== nothing && cost.nthreads > 1
             na = maximum(structure.agent)
-            na <= 8 && push!(cands, :stage, :chain)
-            na > 1 && push!(cands, :nd2, :nd4, :nd8, :nd16)
+            na <= 8 && push!(cands, :stage)
+            na > 1 && push!(cands, :nd4, :nd16)
         end
     else
         cands = collect(candidates)
     end
-    best = nothing; bestc = Inf; name = :none; eng = :multifrontal
+    best = nothing; bestc = Inf; name = :none; eng = :multifrontal; besttree = nothing
     table = Any[]
     for c in cands
         t = @elapsed p = make_ordering(K, c; structure = structure)
@@ -569,11 +573,11 @@ function choose_system(K::SparseMatrixCSC; structure::Union{Nothing,KKTStructure
             est = estimate(cost, s, N, e)
             push!(table, (name = c, engine = e, nnzL = s.nnzL, flops = s.flops, critical = s.critical, est = est, time = t))
             if est < bestc
-                bestc = est; best = p; name = c; eng = e
+                bestc = est; best = p; name = c; eng = e; besttree = s.tree
             end
         end
     end
-    return best, name, eng, table
+    return best, name, eng, table, besttree
 end
 
 function make_ordering(K::SparseMatrixCSC, c::Symbol; structure::Union{Nothing,KKTStructure} = nothing)

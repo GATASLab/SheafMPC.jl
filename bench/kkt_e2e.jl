@@ -42,9 +42,10 @@ loadavg() = parse(Float64, split(read("/proc/loadavg", String))[1])
 function backends(lab)
     st = (agent = lab.var_agent, block = lab.var_block)
     v = Any[("auto", (linsys = :auto,)), ("qdldl", (linsys = :qdldl,)), ("cliquetrees", (linsys = :cliquetrees,)),
-            ("blockldl", (linsys = :blockldl, kkt_structure = st))]
+            ("blockldl", (linsys = :blockldl, kkt_structure = st)), ("model", (linsys = :model,)),
+            ("model_struct", (linsys = :model, kkt_structure = st))]
     ET > 1 && ET <= Threads.nthreads() &&
-        push!(v, ("blockldl_t$(ET)", (linsys = :blockldl, kkt_structure = st, kkt_threads = ET)))
+        push!(v, ("model_t$(ET)", (linsys = :model, kkt_structure = st, kkt_threads = ET)))
     return v
 end
 
@@ -64,7 +65,8 @@ function run_backend(p, kw)
     return (obj = info.obj, x = copy(s.xsol), status = string(info.status), iters = info.iter, t_setup = minimum(tsetup),
             t = minimum(ts), tmed = median(ts), polish = string(info.polish), rho_updates = info.rho_updates,
             linsys = string(info.linsys), nnzL = SheafMPC.factor_nnz(s.kkt),
-            ordering = s.kkt isa SheafMPC.BlockLDLSystem ? string(s.kkt.ordering) : "")
+            ordering = s.kkt isa SheafMPC.BlockLDLSystem ? "blockldl " * string(s.kkt.ordering) : string(nameof(typeof(s.kkt))),
+            polish_factorizations = info.polish_factorizations)
 end
 
 function run_osqp_single(p)

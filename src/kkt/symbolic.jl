@@ -264,6 +264,16 @@ end
 # the full symbolic factorization
 # ---------------------------------------------------------------------------
 
+"Elimination tree and column counts of an order: `(iperm, parent, cc)` (reused by `symbolic` from the cost model)."
+function etree_counts(K::SparseMatrixCSC, perm::AbstractVector{<:Integer})
+    N = size(K, 1)
+    iperm = invperm(perm)
+    colptr, rowval, _ = _permuted_upper(K, iperm)
+    parent = _etree(N, colptr, rowval)
+    cc = _colcounts(N, parent, colptr, rowval)
+    return (iperm = iperm, parent = parent, cc = cc)
+end
+
 """
     symbolic(K, perm, signs_old; relax = Relax()) -> Symbolic
 
@@ -273,37 +283,44 @@ old), postordered. `signs_old[i]` is the sign the pivot of row `i` must have
 (+1 or -1; quasi-definite matrices have known pivot signs).
 """
 function symbolic(K::SparseMatrixCSC, perm0::AbstractVector{<:Integer}, signs_old::AbstractVector{<:Real};
-                  relax::Relax = Relax(), leaves::Bool = true)
+                  relax::Relax = Relax(), leaves::Bool = true, tree = nothing)
     N = size(K, 1)
     perm1 = Vector{Int}(perm0)
-    iperm1 = invperm(perm1)
-    colptr1, rowval1, _ = _permuted_upper(K, iperm1)
-    post = _postorder(_etree(N, colptr1, rowval1))
-    perm2 = perm1[post]
-    iperm2 = invperm(perm2)
-    colptr2, rowval2, _ = _permuted_upper(K, iperm2)
-    parent2 = _etree(N, colptr2, rowval2)
+    tr = tree === nothing ? etree_counts(K, perm1) : tree
+    parent1 = tr.parent; cc1 = tr.cc
+    # the postorder, with the leaf pivots (one neighbour in the graph: a column
+    # of L with one off-diagonal entry and no children) moved first, is a
+    # topological order of the same elimination tree: the tree and the column
+    # counts are relabelled, not recomputed, and neither the fill nor the
+    # factor changes; the leaves are then handled by a vectorized pass
+    post = _postorder(parent1)
     nleaf = 0
     if leaves
-        # leaf pivots: one neighbour in the graph (a column of L with one
-        # off-diagonal entry and no children); eliminated first, which changes
-        # neither the fill nor the factor, and handled by a vectorized pass
-        cc2 = _colcounts(N, parent2, colptr2, rowval2)
         haschild = falses(N)
         @inbounds for j in 1:N
-            parent2[j] > 0 && (haschild[parent2[j]] = true)
+            parent1[j] > 0 && (haschild[parent1[j]] = true)
         end
-        isleaf = [cc2[j] == 1 && !haschild[j] for j in 1:N]
-        nleaf = count(isleaf)
-        order = [findall(isleaf); findall(!, isleaf)]
-        perm = perm2[order]
+        order = Vector{Int}(undef, N)
+        @inbounds for j in post
+            (cc1[j] == 1 && !haschild[j]) && (nleaf += 1; order[nleaf] = j)
+        end
+        k = nleaf
+        @inbounds for j in post
+            (cc1[j] == 1 && !haschild[j]) || (k += 1; order[k] = j)
+        end
     else
-        perm = perm2
+        order = post
     end
+    newidx = invperm(order)                 # old (perm1) position -> new position
+    perm = perm1[order]
     iperm = invperm(perm)
-    colptr, rowval, _ = _permuted_upper(K, iperm)
-    parent = _etree(N, colptr, rowval)
-    cc = _colcounts(N, parent, colptr, rowval)
+    parent = zeros(Int, N); cc = Vector{Int}(undef, N)
+    @inbounds for j in 1:N
+        nj = newidx[j]
+        parent[nj] = parent1[j] == 0 ? 0 : newidx[parent1[j]]
+        cc[nj] = cc1[j]
+    end
+    colptr, rowval, nzsrc = _permuted_upper(K, iperm)
     nnzL_exact = N + sum(cc)
     starts = _supernodes(N, parent, cc, relax, nleaf)
     ns = length(starts) - 1
@@ -339,11 +356,12 @@ function symbolic(K::SparseMatrixCSC, perm0::AbstractVector{<:Integer}, signs_ol
         lcnt[j+1] += lcnt[j]
     end
     lrow = Vector{Int}(undef, lcnt[end] - 1)
+    lsrc = Vector{Int}(undef, lcnt[end] - 1)
     lnext = lcnt[1:N]
     @inbounds for j in 1:N, p in colptr[j]:(colptr[j+1]-1)
         i = rowval[p]                   # entry (j, i) of the lower triangle, j > i
         q = lnext[i]; lnext[i] = q + 1
-        lrow[q] = j
+        lrow[q] = j; lsrc[q] = nzsrc[p]
     end
     # row structures (postorder: children first)
     str_ptr = Vector{Int}(undef, ns + 1)
@@ -436,23 +454,28 @@ function symbolic(K::SparseMatrixCSC, perm0::AbstractVector{<:Integer}, signs_ol
         end
         peak = max(peak, top)
     end
-    # assembly map of the stored entries of K (upper triangle, old indices)
+    # assembly map of the stored entries of K: the diagonal directly, the
+    # entries below it supernode by supernode through a scatter of positions
     amap = zeros(Int, nnz(K))
     rv = rowvals(K)
     @inbounds for c in 1:N, k in nzrange(K, c)
-        a = iperm[rv[k]]; b = iperm[c]
-        col = min(a, b); row = max(a, b)
-        s = sof[col]
+        if rv[k] == c
+            jn = iperm[c]; s = sof[jn]; f = starts[s]
+            h = (starts[s+1] - f) + (str_ptr[s+1] - str_ptr[s])
+            amap[k] = lx_ptr[s] + (jn - f) * h + (jn - f)
+        end
+    end
+    @inbounds for s in 1:ns
         f = starts[s]; l = starts[s+1] - 1
         w = l - f + 1; h = w + str_ptr[s+1] - str_ptr[s]
-        if row <= l
-            ir = row - f + 1
-        else
-            lo = str_ptr[s]; hi = str_ptr[s+1] - 1
-            q = searchsortedfirst(view(str_idx, lo:hi), row)
-            ir = w + q
+        for (kq, q) in enumerate(str_ptr[s]:(str_ptr[s+1]-1))
+            pos[str_idx[q]] = w + kq
         end
-        amap[k] = lx_ptr[s] + (col - f) * h + ir - 1
+        for j in f:l, p in lcnt[j]:(lcnt[j+1]-1)
+            i = lrow[p]
+            ir = i <= l ? i - f + 1 : pos[i]
+            amap[lsrc[p]] = lx_ptr[s] + (j - f) * h + ir - 1
+        end
     end
     signs = Vector{Float64}(undef, N)
     @inbounds for i in 1:N

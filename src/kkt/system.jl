@@ -54,14 +54,14 @@ _kkt_relax(settings) = settings === nothing ? BlockLDL.EXACT : (settings.kkt_rel
                        settings.kkt_relax == :light ? BlockLDL.LIGHT : BlockLDL.Relax())
 
 function BlockLDLSystem(K::SpMat, diag_idx::Vector{Int}, n::Int; settings = nothing, perm = nothing,
-                        name::Symbol = :given, table = Any[])
+                        name::Symbol = :given, table = Any[], tree = nothing)
     threads = _kkt_threads(settings)
     if perm === nothing
         ordering = settings === nothing ? :auto : settings.kkt_ordering
         structure = settings === nothing ? nothing : _kkt_structure(K, n, settings.kkt_structure)
         if ordering == :auto
-            perm, name, table = BlockLDL.choose_ordering(K; structure = structure,
-                                                         cost = BlockLDL.CostModel(nthreads = threads))
+            perm, name, _, table, tree = BlockLDL.choose_system(K; structure = structure, engines = (:multifrontal,),
+                                                                cost = BlockLDL.CostModel(nthreads = threads))
         else
             perm = BlockLDL.make_ordering(K, ordering; structure = structure)
             perm === nothing && throw(ArgumentError("ordering $ordering is not available (structure or Metis missing)"))
@@ -70,7 +70,7 @@ function BlockLDLSystem(K::SpMat, diag_idx::Vector{Int}, n::Int; settings = noth
     end
     N = size(K, 1)
     signs = [i <= n ? 1.0 : -1.0 for i in 1:N]
-    S = BlockLDL.symbolic(K, perm, signs; relax = _kkt_relax(settings))
+    S = BlockLDL.symbolic(K, perm, signs; relax = _kkt_relax(settings), tree = tree)
     F = BlockLDL.Factor(S; nthreads = threads)
     BlockLDL.factor!(F, K)
     return BlockLDLSystem(K, diag_idx, F, zeros(N), name, table)
@@ -87,10 +87,10 @@ factorizations), factored once.
 function model_system(K::SpMat, diag_idx::Vector{Int}, n::Int; upd_idx::Vector{Int} = diag_idx, settings = nothing)
     threads = _kkt_threads(settings)
     structure = settings === nothing ? nothing : _kkt_structure(K, n, settings.kkt_structure)
-    perm, name, eng, table = BlockLDL.choose_system(K; structure = structure,
-                                                    cost = BlockLDL.CostModel(nthreads = threads))
+    perm, name, eng, table, tree = BlockLDL.choose_system(K; structure = structure,
+                                                          cost = BlockLDL.CostModel(nthreads = threads))
     eng == :simplicial && return QDLDLSystem(K, diag_idx, upd_idx; perm = perm)
-    return BlockLDLSystem(K, diag_idx, n; settings = settings, perm = perm, name = name, table = table)
+    return BlockLDLSystem(K, diag_idx, n; settings = settings, perm = perm, name = name, table = table, tree = tree)
 end
 
 refactor!(S::BlockLDLSystem) = (BlockLDL.factor!(S.F, S.K); S)
