@@ -197,7 +197,9 @@ end
         SheafMPC._try_dual!(s, :xbar)
         s.dual.xbar_ok = false
         @test (@allocated SheafMPC._try_dual!(s, :xbar)) == 0
-        reset!(s); solve!(s)
+        for _ in 1:3
+            reset!(s); solve!(s)
+        end
         reset!(s)
         @test (@allocated solve!(s)) == 0
     end

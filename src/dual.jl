@@ -80,9 +80,10 @@ mutable struct DualWork
     t_build::Float64             # seconds spent building Z in setup
     iters::Int                   # active-set iterations of the last solve
     fails::Int                   # consecutive failed attempts seeded from xbar
-    toobig::Bool                 # two attempts of this solve hit the size budget: use the sparse polish
-    nbig::Int                    # attempts of this solve that hit it
+    toobig::Bool                 # an attempt of this solve ran out of budget: the sparse polish takes over
     accepted::Bool               # this solve's point came from the dense path
+    tried::Bool                  # this solve made an attempt
+    spent_solve::Float64         # work of this solve's attempts (shares one budget of two attempts)
     last_dense::Bool             # so did the last accepted one (its factor is cached)
     cols::Int                    # factor columns computed in the last solve (statistics)
 end
@@ -151,7 +152,7 @@ function _dual_setup!(s::Solver)
     w = DualWork(sys, At, rows, zeros(mi, mi), fill(false, mi), zeros(mi, mi), zeros(Int, mi), 0, 0, zeros(Int, mi),
                  fill(false, mi), zeros(Int8, mi), zeros(Int8, mi), zeros(Int8, mi),
                  zeros(mi), zeros(mi), zeros(mi), zeros(mi), zeros(mi),
-                 zeros(N), zeros(N), zeros(N), false, t_fac, Inf, ffma, sfma, 0.0, 0.0, 0.0, 0, 0, false, 0, 0, false, false)
+                 zeros(N), zeros(N), zeros(N), false, t_fac, Inf, ffma, sfma, 0.0, 0.0, 0.0, 0, 0, false, 0, false, false, false, 0.0)
     # Z costs one solve per inequality row: all of them in setup when that fits
     # the budget (`dual_setup_budget` seconds), otherwise each column when its
     # row first enters an active set (kept for later solves)
@@ -463,7 +464,9 @@ function _dual_iterate!(s::Solver, w::DualWork, maxit::Int)
     side = w.side; nside = w.nside; pside = w.pside
     fill!(side, Int8(0)); fill!(pside, Int8(0))
     it = 0
-    lim = typemax(Int)              # changes allowed per iteration (halved on a cycle)
+    tau = 0.1 * min(s.settings.eps_abs, s.settings.eps_rel)
+    lim = typemax(Int)              # changes allowed per iteration (see below)
+    pchg = typemax(Int)
     while true
         it += 1
         w.iters += 1
@@ -492,7 +495,18 @@ function _dual_iterate!(s::Solver, w::DualWork, maxit::Int)
         @inbounds for r in 1:mi
             i = w.rows[r]
             yr = w.y[r]; vr = w.v[r]
+            # the rule y + (a'x - u) > 0 (upper), y + (a'x - l) < 0 (lower), with a
+            # hysteresis: an active row does not leave for a multiplier of the
+            # wrong sign within the tolerance, an inactive row does not enter
+            # for a violation within it (weakly active rows of a degenerate
+            # solution would flip forever; either side passes the final check)
             sd = yr + (vr - s.u[i]) > 0 ? Int8(1) : (yr + (vr - s.l[i]) < 0 ? Int8(-1) : Int8(0))
+            sr = side[r]
+            if sd == 0 && sr != 0 && abs(yr) <= tau
+                sd = sr
+            elseif sr == 0 && sd != 0 && max(vr - s.u[i], s.l[i] - vr) <= tau
+                sd = Int8(0)
+            end
             same &= sd == side[r]
             cyc &= sd == pside[r]
             nside[r] = sd
@@ -501,12 +515,18 @@ function _dual_iterate!(s::Solver, w::DualWork, maxit::Int)
                 score[r] = abs(yr) + max(vr - s.u[i], s.l[i] - vr, 0.0)
             end
         end
+        s.settings.verbose && @printf("      active-set iteration %d: %d active, %d changes\n", it, w.na, nchg)
         same && return true
         w.spent += DUAL_DENSE_WEIGHT * (w.na + 2) * mi
-        (it >= maxit || w.spent > w.budget) && return false
-        # a cycle (the sides of two iterations back again): from now on take
-        # only the largest changes, half as many as this iteration's
+        w.spent > w.budget && (w.toobig = true; return false)
+        it >= maxit && return false
+        # safeguards of the plain iteration, which can oscillate near a
+        # degenerate solution: once the changes are few (at most 5% of the rows)
+        # their number may not grow (only the largest are taken), and a cycle
+        # (the sides of two iterations back again) halves it
+        nchg > pchg && pchg <= max(2, mi ÷ 20) && (lim = min(lim, pchg))
         cyc && (lim = max(1, min(lim, nchg) ÷ 2))
+        pchg = min(nchg, lim)
         nchg > lim && _dual_limit!(w, lim, nchg)
         copyto!(pside, side)
     end
@@ -670,18 +690,23 @@ function _try_dual!(s::Solver, w::DualWork, seed::Symbol)
     end
     # a budget of multiply-adds (deterministic): `dual_budget` times a sparse
     # factorization of K11 plus 20 solves, against which a failed attempt is
-    # cheaper than the ADMM iterations and sparse polish it replaces
+    # cheaper than the ADMM iterations and sparse polish it replaces; all the
+    # attempts of a solve draw on twice that
     w.spent = 0.0
-    w.budget = st.dual_budget * (w.fac_fma + 20 * w.solve_fma)
+    full = st.dual_budget * (w.fac_fma + 20 * w.solve_fma)
+    w.budget = min(full, 2 * full - w.spent_solve)
+    if w.budget <= 0
+        w.toobig = true
+        return false
+    end
+    w.tried = true
     info.polish_attempts += 1
     ok = _dual_iterate!(s, w, st.dual_iter)
-    # a start from xbar that grows past the budget says nothing about the
-    # active sets ADMM will guess: only those attempts count against the path
-    # (two of those in one solve turn it off: the active sets are too large)
-    if w.toobig
-        seed == :xbar || (w.nbig += 1)
-        w.toobig = w.nbig >= 2
-    end
+    w.spent_solve += w.spent
+    # a start from xbar that runs out of budget says little about the active
+    # sets ADMM will guess; a guess that does means the active sets are too
+    # large for the dense path, and the sparse polish takes over for the solve
+    seed == :xbar && w.spent_solve < 2 * full && (w.toobig = false)
     if ok
         ok, pr, dr, _ = _dual_finish!(s, w)
         if ok

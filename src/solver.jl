@@ -480,8 +480,12 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     if dw !== nothing
         dw.xbar_ok = false
         dw.iters = 0; dw.cols = 0
-        dw.toobig = false; dw.nbig = 0
-        dw.accepted = false
+        dw.toobig = false
+        dw.accepted = false; dw.tried = false
+        dw.spent_solve = 0.0
+        # after solves in which the dense path failed, it is tried only every
+        # 4th solve (the sparse polish serves the others)
+        dw.fails == 0 || dw.fails % 4 == 0 || (dw.toobig = true)
     end
     warm = !cold && st.polish && st.polish_warm && s.m > 0
     retry = max(st.polish_warm_retry, 1)
@@ -504,7 +508,7 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     # start, the shifted active set), then from the last accepted active set
     # unshifted, then from the equality-only solution (after repeated
     # failures, every 4th solve)
-    if !ok && dw !== nothing
+    if !ok && dw !== nothing && !dw.toobig
         if warm
             _guess_active!(s, s.z, s.y)
             ok = _try_dual!(s, :act)
@@ -513,12 +517,7 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
                 ok = _try_dual!(s, :act)
             end
         end
-        if !ok && (dw.fails == 0 || dw.fails % 4 == 0)
-            ok = _try_dual!(s, :xbar)
-            dw.fails = ok ? 0 : dw.fails + 1
-        elseif !ok
-            dw.fails += 1
-        end
+        ok || (ok = _try_dual!(s, :xbar))
     end
     # 3. the sparse polish of the warm iterate's guess, without the dense path
     # or when it found the active sets too large (every `polish_warm_retry`-th
@@ -562,7 +561,11 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
                 # cheap enough to try often, with a doubling wait after a failure)
                 if k % st.dual_interval == 0 && k >= next_dense
                     _guess_active!(s, s.z, s.y)
-                    if !(s.has_fail && s.act == s.act_fail)
+                    # only a guess that has settled (at most 2% of the rows
+                    # changed since the last check) is worth an attempt
+                    settled = _act_settled(s, 0.02)
+                    copyto!(s.act_prev, s.act)
+                    if settled && !(s.has_fail && s.act == s.act_fail)
                         copyto!(s.act_fail, s.act)
                         ok = _try_dual!(s, :act)
                         if ok
@@ -637,6 +640,7 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
         s.has_last = true
         dw === nothing || (dw.last_dense = dw.accepted)
     end
+    dw === nothing || (dw.fails = dw.accepted ? 0 : (dw.tried || dw.fails > 0 ? dw.fails + 1 : 0))
     status == :budget && return status
     _finalize!(s, status)
     return status
