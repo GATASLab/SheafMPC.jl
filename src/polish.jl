@@ -374,12 +374,11 @@ function _try_polish!(s::Solver; restart::Bool = true, corrections::Int = s.sett
     # step) and the SOC blocks (Moreau rule, new boundary parameters).
     #   * a new classification needs a factorization; after the first
     #     correction, corrections continue only while they halve the KKT merit;
-    #   * the same classification with new boundary parameters is first a
-    #     CHORD step: the last factorization, applied as the preconditioner of
-    #     more refinement steps against the new linearization (solves, no
-    #     factorization); a chord step that does not cut the primal residual
-    #     tenfold is followed by a full Newton step, and a Newton step that does
-    #     not either ends the polish.
+    #   * the same classification with new boundary parameters is a Newton step
+    #     (a factorization: the system's 1/delta terms along e_s make an
+    #     outdated factorization a poor preconditioner, so chord steps are kept
+    #     for the tightening of an accepted point, `_polish_tighten!`); a step
+    #     that does not cut the primal residual tenfold ends the polish.
     # At most `maxc` steps; on failure the caller falls back (ADMM restart,
     # more ADMM or IPM iterations).
     chord = false
@@ -405,12 +404,9 @@ function _try_polish!(s::Solver; restart::Bool = true, corrections::Int = s.sett
             attempt >= 1 && merit > 0.5 * prev_merit && break
             chord = false
         elseif anyon
-            if pr > 0.1 * prev
-                chord || break
-                chord = false
-            else
-                chord = true
-            end
+            # same classes, new boundary parameters: a Newton step, which must
+            # cut the primal residual tenfold to continue
+            pr > 0.1 * prev && break
         else
             break
         end
