@@ -24,6 +24,11 @@ ADMM
   with the spectral rho the residual-balancing estimate is a safeguard against
   a badly wrong rho, not a tuning rule: it moves a good rho away from the
   fastest active-set identification);
+  `adaptive_rho_tolerance_soc = 5`: the tolerance for problems with
+  second-order cones, where ADMM finishes by a slow linear tail rather than
+  by identifying an active set, and a residual imbalance of 5 or more costs
+  more iterations than the refactorization (on grid fleets with input balls
+  it halves the iterations);
   `adaptive_rho_first > 0` adds one early estimate at that iteration;
 * `max_iter = 4000`, `time_limit = Inf` (seconds);
 * `anderson = 0`: memory of the safeguarded type-II Anderson acceleration of
@@ -173,6 +178,7 @@ Base.@kwdef mutable struct Settings
     adaptive_rho_interval::Int = 25
     adaptive_rho_first::Int = 0
     adaptive_rho_tolerance::Float64 = 25.0
+    adaptive_rho_tolerance_soc::Float64 = 5.0
     max_iter::Int = 4000
     anderson::Int = 0
     anderson_safeguard::Float64 = 1.0

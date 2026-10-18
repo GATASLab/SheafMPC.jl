@@ -436,11 +436,15 @@ function _dual_infeasible(s::Solver)
     return true
 end
 
+"The tolerance factor of the adaptive rho (`adaptive_rho_tolerance`, or `adaptive_rho_tolerance_soc` with cones)."
+_rho_tolerance(s::Solver) = isempty(s.socs) ? s.settings.adaptive_rho_tolerance : s.settings.adaptive_rho_tolerance_soc
+
 function _adapt_rho!(s::Solver, pr, dr, pn, dn)
     st = s.settings
+    tol = _rho_tolerance(s)
     est = s.rho * sqrt((pr / (pn + 1e-10)) / (dr / (dn + 1e-10) + 1e-10))
     est = clamp(est, st.rho_min, st.rho_max)
-    if est > st.adaptive_rho_tolerance * s.rho || est < s.rho / st.adaptive_rho_tolerance
+    if est > tol * s.rho || est < s.rho / tol
         _set_rho!(s, est)
         _refactor_kkt!(s)
         s.info.rho_updates += 1
@@ -848,7 +852,8 @@ function warm_start!(s::Solver; x = nothing, y = nothing)
     # start the next solve from the default rho (one refactorization if the
     # previous solve had adapted it by more than the tolerance factor)
     st = s.settings
-    if st.warm_reset_rho && (s.rho > st.adaptive_rho_tolerance * s.rho0 || s.rho < s.rho0 / st.adaptive_rho_tolerance)
+    tol = _rho_tolerance(s)
+    if st.warm_reset_rho && (s.rho > tol * s.rho0 || s.rho < s.rho0 / tol)
         _set_rho!(s, s.rho0)
         _refactor_kkt!(s)
     end
