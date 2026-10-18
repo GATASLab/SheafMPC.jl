@@ -94,6 +94,7 @@ end
             _extend_add!(Lx, U, rel, rb, co, rc, 1, j1, o, h, Ub, ub, r, w, nt)
         end
         nreg = _ldlt_front!(Lx, off, h, w, F.d, f, S.signs, F.delta, T; nt = nt)
+        _flush_subnormals!(Lx, off, off + h * w - 1)        # while the panel is in cache
         if r > 0 && uo >= 0
             # U_s = -L21 D L21' (written, not accumulated), then the children's trailing entries
             _front_update!(Ub, ub, r, Lx, off, h, w, F.d, f, T; overwrite = true, nt = nt)
@@ -201,21 +202,20 @@ function factor!(F::Factor, K::SparseMatrixCSC)
     @inbounds for i in eachindex(d)
         di[i] = 1.0 / d[i]
     end
-    _flush_subnormals!(F.Lx)
-    _flush_subnormals!(F.leafL)
     return F
 end
 
 """
-Set the subnormal entries of `v` to zero. Entries of L below `floatmin` carry
+Set the subnormal entries of `v[i1:i2]` to zero (every panel right after its
+factorization, while it is in cache). Entries of L below `floatmin` carry
 no information at working precision against the unit diagonal, but every
 solve that touches them runs at microcode speed (10 to 100 times slower per
 operation on x86); flushing them here keeps the factor normal without changing
 the thread's floating-point state, which belongs to the caller.
 """
-function _flush_subnormals!(v::Vector{Float64})
+function _flush_subnormals!(v::Vector{Float64}, i1::Int = 1, i2::Int = length(v))
     fm = floatmin(Float64)
-    @inbounds @simd for i in eachindex(v)
+    @inbounds @simd for i in i1:i2
         x = v[i]
         v[i] = ifelse(abs(x) < fm, 0.0, x)
     end
@@ -238,6 +238,7 @@ function _factor_leaves!(F::Factor)
         end
         t = Lx[o+1]
         l = t / dj
+        l = ifelse(abs(l) < floatmin(Float64), 0.0, l)
         d[j] = dj; Lx[o+1] = l; L[j] = l
         Lx[S.leaf_dpos[j]] -= t * l
     end
