@@ -18,6 +18,8 @@ include(joinpath(@__DIR__, "kkt_problems.jl"))
 const TAG = get(ENV, "BENCH_TAG", "")
 const NS = parse.(Int, split(get(ENV, "BENCH_N", "1,2,4,8,16,32,64,128,256"), ","))
 const BSET = parse.(Int, split(get(ENV, "BENCH_B", "1,2,4,8,24"), ","))
+# supernode relaxation of BlockLDL: exact, light (the package default) or cholmod
+const RELAX = Dict("exact" => BL.EXACT, "light" => BL.LIGHT, "cholmod" => BL.Relax())[get(ENV, "BENCH_RELAX", "light")]
 
 function timeit(f; budget = 0.2, minreps = 3, maxreps = 500)
     f()
@@ -58,7 +60,7 @@ function main()
             Q = SheafMPC.QDLDLSystem(copy(K), di; perm = perm)
             tqf = timeit(() -> SheafMPC.refactor!(Q))
             tqs = timeit(() -> (copyto!(x, bb); SheafMPC.solve!(Q, x)))
-            tsym = @elapsed S = BL.symbolic(K, perm, signs; relax = BL.EXACT)
+            tsym = @elapsed S = BL.symbolic(K, perm, signs; relax = RELAX)
             F = BL.Factor(S); BL.factor!(F, K)
             tbf = timeit(() -> BL.factor!(F, K))
             tbs = timeit(() -> (copyto!(x, bb); BL.ldiv!(F, x, w)))
