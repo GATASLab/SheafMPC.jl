@@ -31,6 +31,7 @@ cd $ROOT/SheafMPC.jl/benchmarks
 julia --project=. -e 'using Pkg; Pkg.precompile()'
 julia --project=envs/mumblebee_fast -e 'using Pkg; Pkg.precompile()'
 export HPIPM_LIB_DIR=/blue/fairbanksj/itaykadosh/central_bench/acados/lib PIQP_LIB=$T/piqp-install/lib/libpiqpc.so
+export SHEAFMPC_PAPER=/blue/fairbanksj/itaykadosh/pushforward_bench/mpc-sheaf-pushforward
 julia --project=. test/test_families.jl
 HPIPM_TEST_HARNESS=1 julia --project=. test/test_hpipm.jl
 julia --project=. test/test_piqp.jl
