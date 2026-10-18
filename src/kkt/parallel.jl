@@ -26,6 +26,8 @@ struct Schedule
     roots::Vector{Int}
     rootpos::Vector{Int}                 # supernode -> index in roots (0 otherwise)
     tmp::Vector{Vector{Float64}}         # per task solve scratch
+    tsz::Vector{Int}                     # per task factor scratch sizes (panel, update matrix)
+    wsz::Vector{Int}
     blas_top::Int                        # BLAS threads in the top part
 end
 
@@ -57,7 +59,7 @@ end
 Subtrees for `nt` threads: split until the largest subtree has at most
 `1 / (split * nt)` of the total work (or no split is possible), then pack.
 """
-function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt)
+function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt, dynamic::Bool = true)
     ns = S.nsup
     wk, sw = _work(S)
     total = sum(wk)
@@ -83,14 +85,31 @@ function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt)
         p = S.parent[s]
         p > 0 && (first[p] = min(first[p], first[s]))
     end
-    # pack subtrees into nt bins, heaviest first
+    # one task per subtree, heaviest first (Julia's scheduler balances them);
+    # `dynamic = false` packs them into nt bins instead
     order = sort(cand; by = s -> -sw[s])
-    bins = [Int[] for _ in 1:nt]; load = zeros(nt)
-    for s in order
-        b = argmin(load)
-        push!(bins[b], s); load[b] += sw[s]
+    if dynamic
+        # heavy subtrees alone, light ones grouped up to the target work
+        tasks = Vector{Int}[]; cur = Int[]; cw = 0.0
+        for s in order
+            if sw[s] >= target
+                push!(tasks, [s])
+            else
+                push!(cur, s); cw += sw[s]
+                if cw >= target
+                    push!(tasks, sort(cur)); cur = Int[]; cw = 0.0
+                end
+            end
+        end
+        isempty(cur) || push!(tasks, sort(cur))
+    else
+        bins = [Int[] for _ in 1:nt]; load = zeros(nt)
+        for s in order
+            b = argmin(load)
+            push!(bins[b], s); load[b] += sw[s]
+        end
+        tasks = [sort(b) for b in bins if !isempty(b)]
     end
-    tasks = [sort(b) for b in bins if !isempty(b)]
     roots = sort(cand)
     rootpos = zeros(Int, ns)
     for (k, s) in enumerate(roots)
@@ -168,8 +187,18 @@ function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt)
         end
     end
     xbuf = [zeros(S.str_ptr[t+1] - S.str_ptr[t]) for t in roots]
-    tmp = [zeros(max(S.max_r, 1)) for _ in 1:(length(tasks)+1)]
-    return Schedule(tasks, first, top, uoff, nupd, nin, extpos, sroot, xbuf, roots, rootpos, tmp, blas_top)
+    # scratch sizes of every task (its subtrees' largest fronts), the top part last
+    tsz = Int[]; wsz = Int[]; rsz_ = Int[]
+    for tk in tasks
+        mf = 1; mr = 1; mw = 1
+        for t in tk, s in first[t]:t
+            w = S.sup_ptr[s+1] - S.sup_ptr[s]; r = S.str_ptr[s+1] - S.str_ptr[s]
+            mf = max(mf, w + r); mr = max(mr, r); mw = max(mw, w)
+        end
+        push!(tsz, max(mf * 32, mr * mw)); push!(wsz, mr * mr); push!(rsz_, mr)
+    end
+    tmp = [zeros(r) for r in [rsz_; max(S.max_r, 1)]]
+    return Schedule(tasks, first, top, uoff, nupd, nin, extpos, sroot, xbuf, roots, rootpos, tmp, tsz, wsz, blas_top)
 end
 
 function _factor_parallel!(F::Factor)

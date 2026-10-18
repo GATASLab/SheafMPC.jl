@@ -49,26 +49,48 @@ function _kkt_structure(K::SpMat, n::Int, st)
     return BlockLDL.KKTStructure(ag, bl)
 end
 
-function BlockLDLSystem(K::SpMat, diag_idx::Vector{Int}, n::Int; settings = nothing)
-    ordering = settings === nothing ? :auto : settings.kkt_ordering
-    threads = settings === nothing ? 1 : settings.kkt_threads
-    relax = settings === nothing ? BlockLDL.EXACT : (settings.kkt_relax == :exact ? BlockLDL.EXACT :
-            settings.kkt_relax == :light ? BlockLDL.LIGHT : BlockLDL.Relax())
-    structure = settings === nothing ? nothing : _kkt_structure(K, n, settings.kkt_structure)
+_kkt_threads(settings) = settings === nothing ? 1 : settings.kkt_threads
+_kkt_relax(settings) = settings === nothing ? BlockLDL.EXACT : (settings.kkt_relax == :exact ? BlockLDL.EXACT :
+                       settings.kkt_relax == :light ? BlockLDL.LIGHT : BlockLDL.Relax())
+
+function BlockLDLSystem(K::SpMat, diag_idx::Vector{Int}, n::Int; settings = nothing, perm = nothing,
+                        name::Symbol = :given, table = Any[])
+    threads = _kkt_threads(settings)
+    if perm === nothing
+        ordering = settings === nothing ? :auto : settings.kkt_ordering
+        structure = settings === nothing ? nothing : _kkt_structure(K, n, settings.kkt_structure)
+        if ordering == :auto
+            perm, name, table = BlockLDL.choose_ordering(K; structure = structure,
+                                                         cost = BlockLDL.CostModel(nthreads = threads))
+        else
+            perm = BlockLDL.make_ordering(K, ordering; structure = structure)
+            perm === nothing && throw(ArgumentError("ordering $ordering is not available (structure or Metis missing)"))
+            name = ordering
+        end
+    end
     N = size(K, 1)
     signs = [i <= n ? 1.0 : -1.0 for i in 1:N]
-    cm = BlockLDL.CostModel(nthreads = threads)
-    if ordering == :auto
-        perm, name, table = BlockLDL.choose_ordering(K; structure = structure, cost = cm)
-    else
-        perm = BlockLDL.make_ordering(K, ordering; structure = structure)
-        perm === nothing && throw(ArgumentError("ordering $ordering is not available (structure or Metis missing)"))
-        name = ordering; table = Any[]
-    end
-    S = BlockLDL.symbolic(K, perm, signs; relax = relax)
+    S = BlockLDL.symbolic(K, perm, signs; relax = _kkt_relax(settings))
     F = BlockLDL.Factor(S; nthreads = threads)
     BlockLDL.factor!(F, K)
     return BlockLDLSystem(K, diag_idx, F, zeros(N), name, table)
+end
+
+"""
+    model_system(K, diag_idx, n; upd_idx, settings) -> LinearSystem
+
+`linsys = :model`: the engine (simplicial QDLDL or the multifrontal BlockLDL)
+and the elimination order of least estimated cost under BlockLDL's cost model
+(elimination-tree statistics of every candidate order; no trial
+factorizations), factored once.
+"""
+function model_system(K::SpMat, diag_idx::Vector{Int}, n::Int; upd_idx::Vector{Int} = diag_idx, settings = nothing)
+    threads = _kkt_threads(settings)
+    structure = settings === nothing ? nothing : _kkt_structure(K, n, settings.kkt_structure)
+    perm, name, eng, table = BlockLDL.choose_system(K; structure = structure,
+                                                    cost = BlockLDL.CostModel(nthreads = threads))
+    eng == :simplicial && return QDLDLSystem(K, diag_idx, upd_idx; perm = perm)
+    return BlockLDLSystem(K, diag_idx, n; settings = settings, perm = perm, name = name, table = table)
 end
 
 refactor!(S::BlockLDLSystem) = (BlockLDL.factor!(S.F, S.K); S)

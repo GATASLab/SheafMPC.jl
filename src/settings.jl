@@ -57,7 +57,9 @@ Linear algebra
 * `ordering = :amd`: the fill-reducing ordering when `linsys = :qdldl`
   (`:amd`, `:mmd`, `:amf`, `:mf`).
 
-Structured KKT kernel (`linsys = :blockldl`, see `BlockLDL`)
+Structured KKT kernel (`linsys = :blockldl`, see `BlockLDL`; `linsys = :model`
+picks the engine, QDLDL or BlockLDL, and the order by BlockLDL's cost model
+without trial factorizations)
 * `kkt_ordering = :auto`: picked by the cost model among `:amd`, `:amf`,
   `:metis` (with Metis.jl loaded) and, given `kkt_structure`, the
   structure-given `:stage` (time-major, Riccati-like), `:chain` (per-agent

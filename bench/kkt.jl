@@ -220,19 +220,27 @@ function threads_set(rows)
         bb = randn(N); x = similar(bb); w = zeros(N)
         res = Dict{String,Any}()
         @printf("threads %s %s n=%d N=%d load=%.1f\n", graph, form, n, N, loadavg())
+        perms = Dict{Symbol,Vector{Int}}()
+        for ord in (:amd, :nd4, :nd16)
+            perms[ord] = BL.make_ordering(K, ord; structure = st)
+        end
         for nt in THREADS
             nt <= Threads.nthreads() || continue
-            perm, name, _ = BL.choose_ordering(K; structure = st, cost = BL.CostModel(nthreads = nt))
-            S = BL.symbolic(K, perm, signs; relax = BL.EXACT)
-            F = BL.Factor(S; nthreads = nt)
-            tf = timeit(() -> BL.factor!(F, K))
-            tso = timeit(() -> (copyto!(x, bb); BL.ldiv!(F, x, w)))
-            res[string(nt)] = Dict("factor" => tf.min, "factor_med" => tf.med, "solve" => tso.min, "solve_med" => tso.med,
-                                   "ordering" => string(name), "nnzL" => S.nnzL, "res" => relres(K, x, bb),
-                                   "tasks" => F.sched === nothing ? 1 : length(F.sched.tasks))
-            @printf("   t=%2d %-6s factor %9.3f ms  solve %8.3f ms  nnzL %9d  res %.1e\n", nt, name, 1e3 * tf.min,
-                    1e3 * tso.min, S.nnzL, res[string(nt)]["res"])
-            flush(stdout)
+            pm, name, _ = BL.choose_ordering(K; structure = st, cost = BL.CostModel(nthreads = nt))
+            for (ord, perm) in [collect(perms); [:model => pm]]
+                S = BL.symbolic(K, perm, signs; relax = BL.EXACT)
+                F = BL.Factor(S; nthreads = nt)
+                tf = timeit(() -> BL.factor!(F, K))
+                tso = timeit(() -> (copyto!(x, bb); BL.ldiv!(F, x, w)))
+                key = string(nt, "_", ord)
+                res[key] = Dict("threads" => nt, "order" => string(ord), "model_pick" => string(name), "factor" => tf.min,
+                                "factor_med" => tf.med, "solve" => tso.min, "solve_med" => tso.med, "nnzL" => S.nnzL,
+                                "flops" => S.flops, "res" => relres(K, x, bb),
+                                "tasks" => F.sched === nothing ? 1 : length(F.sched.tasks))
+                @printf("   t=%2d %-6s%s factor %9.3f ms  solve %8.3f ms  nnzL %9d  res %.1e\n", nt, ord,
+                        ord == :model ? "(" * string(name) * ")" : "", 1e3 * tf.min, 1e3 * tso.min, S.nnzL, res[key]["res"])
+                flush(stdout)
+            end
         end
         push!(rows, Dict{String,Any}("set" => "threads", "graph" => string(graph), "form" => form, "n" => n,
                                      "kkt_dim" => N, "load" => loadavg(), "threads" => res))

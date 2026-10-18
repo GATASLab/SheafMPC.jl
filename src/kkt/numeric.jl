@@ -39,9 +39,9 @@ function Factor(S::Symbolic; delta::Float64 = 1e-12, nthreads::Int = 1)
     nt = max(nthreads, 1)
     sched = nt > 1 ? schedule_tree(S, nt) : nothing
     nu = sched === nothing ? S.nupd : sched.nupd
-    ntask = sched === nothing ? 1 : length(sched.tasks) + 1
-    return Factor(S, zeros(S.nlx), zeros(S.N), zeros(S.N), zeros(nu),
-                  [zeros(tsz) for _ in 1:ntask], [zeros(max(S.max_r^2, 1)) for _ in 1:ntask],
+    Ts = sched === nothing ? [zeros(tsz)] : [[zeros(t) for t in sched.tsz]; [zeros(tsz)]]
+    Ws = sched === nothing ? [zeros(max(S.max_r^2, 1))] : [[zeros(t) for t in sched.wsz]; [zeros(max(S.max_r^2, 1))]]
+    return Factor(S, zeros(S.nlx), zeros(S.N), zeros(S.N), zeros(nu), Ts, Ws,
                   delta, 0, sched, nt, zeros(S.nleaf))
 end
 

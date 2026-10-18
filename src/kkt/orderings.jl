@@ -450,21 +450,56 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    CostModel(; flop_rate, mem_rate, solves, nthreads)
+    CostModel(; factors, solves, nthreads, coefficients)
 
-Estimated time of one factorization plus `solves` solves: factorization
-`flops / flop_rate` (with threads, `max(flops / nthreads, critical path) /
-flop_rate`), solve `2 nnz(L) / mem_rate` (entries per second, both sweeps).
+Estimated time of `factors` numeric factorizations plus `solves` solves with
+an elimination order, for the two engines:
+
+* `:simplicial` (QDLDL, up-looking, column by column):
+  factor `q[1] N + q[2] flops`, solve `q[3] N + q[4] nnz(L)`;
+* `:multifrontal` (BlockLDL): factor `b[1] N + b[2] flops`, solve
+  `b[3] N + b[4] nnz(L)`; with threads the flops term is
+  `max(flops / nthreads, critical path)` and the solve term likewise.
+
+The coefficients are least-squares fits (seconds per unit) to measured times on
+the fleet KKT matrices (bench/kkt_calibrate.jl, AMD EPYC 7702, one thread).
+Defaults: 4 factorizations (setup, a rho update, two polish attempts) and 60
+solves (ADMM iterations and polish refinement) per cold solve.
 """
 Base.@kwdef struct CostModel
-    flop_rate::Float64 = 4e9
-    mem_rate::Float64 = 1.5e9
-    solves::Float64 = 30.0
+    factors::Float64 = 4.0
+    solves::Float64 = 60.0
     nthreads::Int = 1
+    q::NTuple{4,Float64} = (QCOEF[1], QCOEF[2], QCOEF[3], QCOEF[4])
+    b::NTuple{4,Float64} = (BCOEF[1], BCOEF[2], BCOEF[3], BCOEF[4])
 end
 
-"nnz(L), flops and the critical path (flops along the heaviest root-to-leaf path) of an order."
-function order_stats(K::SparseMatrixCSC, perm::AbstractVector{<:Integer})
+# fitted coefficients (seconds per column, per flop, per column, per entry of L)
+const QCOEF = (2.63e-8, 1.20e-9, 1.92e-9, 1.85e-9)
+const BCOEF = (5.70e-8, 3.10e-10, 1.04e-8, 8.21e-10)
+
+function estimate(cm::CostModel, s, N::Int, engine::Symbol)
+    if engine == :simplicial
+        c = cm.q
+        tf = c[1] * N + c[2] * s.flops
+        ts = c[3] * N + c[4] * s.nnzL
+    else
+        c = cm.b
+        nt = cm.nthreads
+        par = nt > 1 ? max(1 / nt, s.critical / max(s.flops, 1.0)) : 1.0
+        tf = c[1] * N * (nt > 1 ? par : 1.0) + c[2] * s.flops * par
+        ts = (c[3] * N + c[4] * s.nnzL) * (nt > 1 ? par : 1.0)
+    end
+    return cm.factors * tf + cm.solves * ts
+end
+
+"""
+nnz(L), flops and the critical path (flops along the heaviest root-to-leaf
+path) of an order; with `nthreads > 1` the flops of columns with at least
+`blas_cols` entries (dense fronts, where BLAS runs threaded) count `1 / nthreads`
+on the path.
+"""
+function order_stats(K::SparseMatrixCSC, perm::AbstractVector{<:Integer}; nthreads::Int = 1, blas_cols::Int = 96)
     N = size(K, 1)
     iperm = invperm(perm)
     colptr, rowval, _ = _permuted_upper(K, iperm)
@@ -475,7 +510,7 @@ function order_stats(K::SparseMatrixCSC, perm::AbstractVector{<:Integer})
     @inbounds for j in 1:N
         f = cc[j] * (cc[j] + 1) / 2 + 1
         fl += f
-        cp[j] += f
+        cp[j] += cc[j] >= blas_cols ? f / nthreads : f
         p = parent[j]
         p > 0 && (cp[p] = max(cp[p], cp[j]))
     end
@@ -486,15 +521,6 @@ function order_stats(K::SparseMatrixCSC, perm::AbstractVector{<:Integer})
     return (nnzL = N + sum(cc), flops = fl, critical = crit)
 end
 
-function estimate(cm::CostModel, s)
-    tf = max(s.flops / cm.nthreads, s.critical) / cm.flop_rate
-    ts = 2 * s.nnzL / cm.mem_rate
-    if cm.nthreads > 1
-        ts = max(ts / cm.nthreads, ts * s.critical / max(s.flops, 1.0))
-    end
-    return tf + cm.solves * ts
-end
-
 """
     choose_ordering(K; structure = nothing, candidates = :auto, cost = CostModel()) -> (perm, name, table)
 
@@ -503,23 +529,51 @@ lists every candidate's statistics and estimate. `candidates` is `:auto` or a
 list among `:amd, :amf, :mmd, :metis, :stage, :chain, :nd2, :nd4, :nd8, :nd16`.
 """
 function choose_ordering(K::SparseMatrixCSC; structure::Union{Nothing,KKTStructure} = nothing,
-                         candidates = :auto, cost::CostModel = CostModel())
-    cands = candidates === :auto ?
-            (structure === nothing ? [:amd, :amf, :metis] : [:amd, :amf, :metis, :stage, :chain, :nd2, :nd4, :nd8, :nd16]) :
-            collect(candidates)
-    best = nothing; bestc = Inf; name = :none
+                         candidates = :auto, cost::CostModel = CostModel(), engines = (:multifrontal,))
+    best, name, _, table = choose_system(K; structure = structure, candidates = candidates, cost = cost, engines = engines)
+    return best, name, table
+end
+
+"""
+    choose_system(K; structure, candidates, cost, engines) -> (perm, ordering, engine, table)
+
+The order and the engine (`:simplicial` or `:multifrontal`) of least estimated
+cost. Generic candidates `:amd, :amf, :mmd` (`:metis` on request, with Metis.jl loaded),
+with `structure` also the structure-given ones; the time-major `:stage` and
+`:chain` orders only for few agents (their fronts grow with the agent count).
+"""
+function choose_system(K::SparseMatrixCSC; structure::Union{Nothing,KKTStructure} = nothing,
+                       candidates = :auto, cost::CostModel = CostModel(), engines = (:simplicial, :multifrontal))
+    N = size(K, 1)
+    if candidates === :auto
+        cands = [:amd, :amf, :mmd]
+        # METIS is not a default candidate: on these KKTs it pivots on primal
+        # variables with only sigma on the diagonal before their dynamics rows
+        # (residuals 1e-10 before refinement, against 1e-14 for AMD)
+        if structure !== nothing
+            na = maximum(structure.agent)
+            na <= 8 && push!(cands, :stage, :chain)
+            na > 1 && push!(cands, :nd2, :nd4, :nd8, :nd16)
+        end
+    else
+        cands = collect(candidates)
+    end
+    best = nothing; bestc = Inf; name = :none; eng = :multifrontal
     table = Any[]
     for c in cands
         t = @elapsed p = make_ordering(K, c; structure = structure)
         p === nothing && continue
-        s = order_stats(K, p)
-        e = estimate(cost, s)
-        push!(table, (name = c, nnzL = s.nnzL, flops = s.flops, critical = s.critical, est = e, time = t))
-        if e < bestc
-            bestc = e; best = p; name = c
+        s = order_stats(K, p; nthreads = cost.nthreads)
+        for e in engines
+            (e == :simplicial && cost.nthreads > 1) && continue
+            est = estimate(cost, s, N, e)
+            push!(table, (name = c, engine = e, nnzL = s.nnzL, flops = s.flops, critical = s.critical, est = est, time = t))
+            if est < bestc
+                bestc = est; best = p; name = c; eng = e
+            end
         end
     end
-    return best, name, table
+    return best, name, eng, table
 end
 
 function make_ordering(K::SparseMatrixCSC, c::Symbol; structure::Union{Nothing,KKTStructure} = nothing)

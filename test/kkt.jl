@@ -122,6 +122,12 @@ end
         ref, _, _ = clarabel_ref(p)
         s = setup(p; linsys = :blockldl, eps_abs = 1e-8, eps_rel = 1e-8)
         @test relgap(solve!(s).obj, ref) <= 1e-6
+        for ls in (:blockldl, :model)
+            p = random_socp(rng2, 12, 4, 3)
+            ref, _, _ = clarabel_ref(p)
+            s = setup(p; linsys = ls, eps_abs = 1e-8, eps_rel = 1e-8)
+            @test relgap(solve!(s).obj, ref) <= 1e-6
+        end
         s = setup(random_qp(rng2, 30, 25); linsys = :blockldl)
         solve!(s)
         SheafMPC.admm_step!(s)
@@ -132,6 +138,8 @@ end
             qp, lab = fleet_problem(n, 24; graph = graph, b = 1)
             s0 = setup(qp; linsys = :qdldl, eps_abs = 1e-8, eps_rel = 1e-8)
             solve!(s0)
+            sm = setup(qp; linsys = :model, eps_abs = 1e-8, eps_rel = 1e-8)
+            @test solve!(sm).status == :solved && relgap(sm.info.obj, s0.info.obj) <= 1e-6
             for kw in ((kkt_ordering = :auto,), (kkt_ordering = :nd4, kkt_structure = (agent = lab.var_agent, block = lab.var_block)),
                        (kkt_ordering = :auto, kkt_threads = 2, kkt_structure = (agent = lab.var_agent, block = lab.var_block)))
                 s = setup(qp; linsys = :blockldl, eps_abs = 1e-8, eps_rel = 1e-8, kw...)
