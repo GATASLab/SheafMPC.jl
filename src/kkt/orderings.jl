@@ -472,7 +472,7 @@ Base.@kwdef struct CostModel
     nthreads::Int = 1
     q::NTuple{4,Float64} = (QCOEF[1], QCOEF[2], QCOEF[3], QCOEF[4])
     b::NTuple{4,Float64} = (BCOEF[1], BCOEF[2], BCOEF[3], BCOEF[4])
-    par_overhead::NTuple{2,Float64} = (4e-5, 2e-5)     # task spawning per threaded factor / solve (s)
+    par_overhead::NTuple{2,Float64} = (1.5e-4, 1e-4)   # task start-up per threaded factor / solve (s), EPYC 7702
 end
 
 # fitted coefficients (seconds per column, per flop, per column, per entry of L)
@@ -491,7 +491,9 @@ function estimate(cm::CostModel, s, N::Int, engine::Symbol)
         tf = c[1] * N * (nt > 1 ? par : 1.0) + c[2] * s.flops * par
         ts = (c[3] * N + c[4] * s.nnzL) * (nt > 1 ? par : 1.0)
         if nt > 1
-            tf += cm.par_overhead[1]; ts += cm.par_overhead[2]
+            tf += cm.par_overhead[1]
+            # solves stay sequential below PAR_SOLVE_NNZ
+            s.nnzL < PAR_SOLVE_NNZ[] ? (ts = (c[3] * N + c[4] * s.nnzL)) : (ts += cm.par_overhead[2])
         end
     end
     return cm.factors * tf + cm.solves * ts
