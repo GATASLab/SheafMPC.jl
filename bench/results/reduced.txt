@@ -1,16 +1,16 @@
 grid 8x8, H = 10, fibre basis: structured
 level             vars    rows   push ms  setup ms   ours ms  ours med   clar ms          J     price   vs clar iters/polish
-fine              5120    5760      0.00    295.62     8.694     8.853    36.119   18.63980  0.00e+00   3.9e-13 20/success (qdldl_amd, 0 active SOC)
-teams k=1         4000    5760      8.64     33.74     2.338     2.354     9.844   18.63980  1.93e-14   7.1e-14 20/success (qdldl_amd, 0 active SOC)
-teams k=2         3920    5760      9.74     29.57     2.221     2.234    15.748   25.01135  3.42e-01   1.6e-14 20/success (qdldl_amd, 0 active SOC)
-teams k=4         3880    5760     12.84     51.62     3.085     3.107    15.135   41.32713  1.22e+00   3.6e-14 20/success (qdldl_amd, 0 active SOC)
-fleet (k=8)       3860    5760     30.96     46.52     3.043     3.073    15.615   44.24509  1.37e+00   6.8e-14 20/success (qdldl_amd, 0 active SOC)
+fine              5120    5760      0.00    511.17    11.978    13.275    54.428   18.63980  0.00e+00   3.9e-13 20/success (qdldl_mmd, 0 active SOC)
+teams k=1         4000    5760     13.81    624.64     3.768     6.945    17.211   18.63980  1.93e-14   7.1e-14 20/success (qdldl_amd, 0 active SOC)
+teams k=2         3920    5760     14.78     47.97     3.658     3.821    18.776   25.01135  3.42e-01   1.6e-14 20/success (qdldl_amd, 0 active SOC)
+teams k=4         3880    5760     22.66     72.16     2.839     3.610    19.544   41.32713  1.22e+00   3.6e-14 20/success (qdldl_amd, 0 active SOC)
+fleet (k=8)       3860    5760     46.76     67.99     3.721     4.155    17.357   44.24509  1.37e+00   6.8e-14 20/success (qdldl_amd, 0 active SOC)
 
 receding horizon, 10 steps (fibres reused; SheafMPC warm from the previous solution, factorizations kept)
 level            push med   ours med   ours max   cold med   clar med    iters   max gap
-fine                0.000      1.073      1.310      8.548     36.406      0.0   4.1e-13
-teams k=1           9.435      0.584      0.624      2.737     11.166      0.0   7.1e-14
-teams k=2           5.983      0.600      1.722      2.809     12.798      0.0   6.3e-14
-teams k=4           6.738      0.598      0.677      2.783     12.906      0.0   5.5e-14
-fleet (k=8)        12.585      0.592      0.713      2.771     13.655      0.0   1.3e-13
+fine                0.000      1.887      8.761     13.466     60.033      0.0   4.1e-13
+teams k=1           9.083      0.752      0.897      3.774     16.306      0.0   7.1e-14
+teams k=2           9.007      0.928      3.572      3.916     20.641      0.0   6.3e-14
+teams k=4          10.120      0.813      2.882      3.822     19.660      0.0   5.5e-14
+fleet (k=8)        15.237      0.813      0.958      3.708     18.599      0.0   1.3e-13
 wrote /home/itaykadosh/Projects/GATAS/SheafMPC.jl/bench/results/reduced.json
