@@ -3,16 +3,26 @@
 
 using Dates
 
-function git_state(dir)
+"""
+    git_state(dir; paths) -> Dict
+
+HEAD, and whether the files under `paths` (git pathspecs, relative to the
+repository root) differ from it. For the package under test the default is
+`["src", "Project.toml"]`, what the solver is built from (the harness and the
+package bench results live in the same repository); the harness is `["benchmarks"]`.
+"""
+function git_state(dir; paths = ["src", "Project.toml"])
     d = isdir(dir) ? dir : dirname(dir)
     run_ok(cmd) = try
         strip(read(cmd, String))
     catch
         ""
     end
-    sha = run_ok(`git -C $d rev-parse HEAD`)
-    st = run_ok(`git -C $d status --porcelain --untracked-files=no`)
-    diff = run_ok(`git -C $d diff HEAD`)
+    root = run_ok(`git -C $d rev-parse --show-toplevel`)
+    isempty(root) && return Dict{String,Any}("sha" => "", "dirty" => false, "diff_sha1" => "", "dirty_files" => String[])
+    sha = run_ok(`git -C $root rev-parse HEAD`)
+    st = run_ok(`git -C $root status --porcelain --untracked-files=no -- $paths`)
+    diff = run_ok(`git -C $root diff HEAD -- $paths`)
     return Dict{String,Any}("sha" => sha, "dirty" => !isempty(st),
                             "diff_sha1" => isempty(diff) ? "" : bytes2hex(SHA.sha1(diff)),
                             "dirty_files" => isempty(st) ? String[] : split(st, '\n'))
@@ -20,7 +30,7 @@ end
 
 "The working-tree diff of the package under test (saved next to the results when dirty)."
 package_diff(dir) = try
-    read(`git -C $dir diff HEAD`, String)
+    read(`git -C $dir diff HEAD -- src Project.toml`, String)
 catch
     ""
 end

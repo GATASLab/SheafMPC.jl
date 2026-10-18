@@ -88,7 +88,7 @@ function clarabel_spec(; time_limit = Inf)
     solve! = function (h::ClarabelHandle)
         r = Clarabel.solve!(h.s)
         st = get(CLARABEL_STATUS, string(r.status), :failed)
-        return SolveResult(r.x, clarabel_y(h.d, r.z, h.m), st, r.iterations, r.solve_time)
+        return SolveResult(copy(r.x), clarabel_y(h.d, r.z, h.m), st, r.iterations, r.solve_time)
     end
     update! = function (h::ClarabelHandle, p::QP)
         # Clarabel's data updates keep the symbolic factorization (presolve is off)

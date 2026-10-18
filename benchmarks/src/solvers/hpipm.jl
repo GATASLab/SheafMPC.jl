@@ -201,6 +201,11 @@ function hpipm_setup(qp::QP, eps::Real, variant::AbstractDict)
     N = st.N
     mode = String(get(variant, "mode", "SPEED"))
     N2 = _hpipm_N2(get(variant, "N2", "N"), N)
+    # condensed stages are dense in the inputs of a block: cap their width (the
+    # paper's DENSE_MAX, 6000 variables), beyond which a variant is not attempted
+    blk = cld(N, N2) * maximum(st.nu) + maximum(st.nx)
+    blk <= parse(Int, get(ENV, "BENCH_HPIPM_DENSE_MAX", "6000")) ||
+        throw(ArgumentError("hpipm: condensed stage width $blk over the dense cap"))
 
     nx = Cint[k == 0 ? 0 : st.nx[k+1] for k in 0:N]
     nu = Cint[st.nu[k+1] for k in 0:N]
@@ -430,7 +435,11 @@ function _hpipm_check_pattern(h::HpipmHandle, st::StageOCP)
     return nothing
 end
 
-hpipm_applicable(qp::QP) = qp.stage !== nothing && isempty(qp.socs)
+# HPIPM has no sparsity inside a stage: the fleet stacked into one stage makes
+# dense nx x nx blocks, so stages wider than BENCH_HPIPM_MAX_NX (default 1100,
+# the n = 256 fleet) are not attempted (memory and cubic cost; disclosed).
+hpipm_applicable(qp::QP) = qp.stage !== nothing && isempty(qp.socs) &&
+                           maximum(qp.stage.nx) <= parse(Int, get(ENV, "BENCH_HPIPM_MAX_NX", "1100"))
 
 function hpipm_variants()
     v = Dict{String,Any}[]

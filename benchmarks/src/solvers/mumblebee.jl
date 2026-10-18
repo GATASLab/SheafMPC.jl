@@ -263,7 +263,9 @@ function mumblebee_spec(; max_iter = 200)
         return nothing
     end
     info = () -> Dict{String,Any}("package" => "Mumblebee", "path" => pkgdir(Mumblebee),
-                                  "commit" => "e78d9b9a3a0a2f4c226bf2eb0cf20f662e7d676b (pinned as in the paper's bench/mpc)",
+                                  "commit" => isdir(joinpath(pkgdir(Mumblebee), ".git")) ?
+                                              git_state(pkgdir(Mumblebee); paths = ["src"]) :
+                                              "e78d9b9a3a0a2f4c226bf2eb0cf20f662e7d676b (pinned as in the paper's bench/mpc)",
                                   "settings" => "feas_tol = gap_tol = eps, max_iter $max_iter, other IPMSettings defaults; ordering per variant",
                                   "warm_start" => "none (interior point); sequence mode keeps the symbolic analysis through reinit!(f, g)")
     return SolverSpec(name = "mumblebee", kind = :ipm, applicable = p -> true,

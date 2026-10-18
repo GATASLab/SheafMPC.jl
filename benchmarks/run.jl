@@ -128,7 +128,7 @@ function run_instance(s, solvers)
     res = Dict{String,Any}("tier" => TIER, "key" => s.key, "instance" => instance_summary(inst),
                            "machine" => BH.machine_info(), "load_before" => gate, "time_limit" => TLIM,
                            "protocol" => Dict("reps" => s.reps, "cold_qps" => s.cold, "tiers" => s.tiers,
-                                              "calibration" => "tolerance in eps .* (1, 0.1, 0.01, 0.001), fastest variant meeting the tier on QP 1",
+                                              "calibration" => "tolerance in eps .* (1, 0.1, 0.01, 0.001), fastest variant meeting the tier on the first, middle and last QP",
                                               "timer" => "time_ns around the call; GC.gc(false) before, outside the clock"),
                            "solvers" => Dict{String,Any}())
     for sp in solvers
@@ -187,7 +187,7 @@ function main()
         isfile(file) && (println("skip $(s.key) (done)"); continue)
         println("== $(s.key)  load $(BH.loadavg()[1])"); flush(stdout)
         res = run_instance(s, solvers)
-        res["harness_git"] = BH.git_state(@__DIR__)
+        res["harness_git"] = BH.git_state(@__DIR__; paths = ["benchmarks"])
         open(io -> JSON.print(io, jsonable(res)), file, "w")
     end
     println("wrote ", OUT)

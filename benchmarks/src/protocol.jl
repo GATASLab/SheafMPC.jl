@@ -6,11 +6,11 @@
 # relative primal residual <= eps against the reference of that QP.
 #
 # Calibration (untimed for the result; it also compiles every code path): on
-# the first QP of the instance's sequence, every variant of the solver is
-# tried with its tolerance at eps, eps/10, eps/100, eps/1000 (the solver's own
-# termination tolerance is not the achieved accuracy); the loosest tolerance
-# that meets the tier is kept per variant, and the variant with the smallest
-# median solve time over 3 cold solves wins. Every later QP of the instance
+# the first, middle and last QP of the instance's sequence, every variant of
+# the solver is tried with its tolerance at eps, eps/10, eps/100, eps/1000 (the
+# solver's own termination tolerance is not the achieved accuracy); the
+# loosest tolerance that meets the tier on all three is kept per variant, and
+# the variant with the smallest median cold solve time on them wins. Every later QP of the instance
 # runs with that (variant, tolerance); a QP that then misses the tier is a
 # failure. A solver that meets the tier with no variant fails the whole
 # instance at that tier (recorded with its best achieved accuracy).
@@ -70,28 +70,37 @@ end
 The (variant, tolerance) this solver uses for this instance at tier `eps`.
 """
 function calibrate(spec::SolverSpec, inst::Instance, eps; time_cap = 60.0)
-    p = inst.seq[1]; ref = inst.refs[1]
+    L = length(inst.seq)
+    cal = unique([1, cld(L, 2), L])
     trials = Dict{String,Any}[]
     best = nothing
     for v in spec.variants
         for f in (1.0, 0.1, 0.01, 0.001)
             tol = eps * f
-            h, err = safe_setup(spec, p, tol, v)
-            if h === nothing
-                push!(trials, Dict{String,Any}("variant" => v, "tol" => tol, "error" => err)); break
+            ok = true; ts = Float64[]; worst_o = 0.0; worst_p = 0.0; st = ""; its = 0; err = nothing
+            for j in cal
+                p = inst.seq[j]
+                h, err = safe_setup(spec, p, tol, v)
+                h === nothing && (ok = false; break)
+                r, t = timed(() -> safe_solve(spec, h, nvars(p)))
+                c = check(p, r.x, r.y, inst.refs[j].obj0)
+                worst_o = max(worst_o, c.obj_err); worst_p = max(worst_p, c.prim_rel)
+                st = string(r.status); its = max(its, r.iters)
+                push!(ts, t)
+                meets(c, eps) || (ok = false; break)
             end
-            r, t = timed(() -> safe_solve(spec, h, nvars(p)))
-            c = check(p, r.x, r.y, ref.obj0)
-            tr = Dict{String,Any}("variant" => v, "tol" => tol, "status" => string(r.status), "obj_err" => c.obj_err,
-                                  "prim_rel" => c.prim_rel, "t" => t, "iters" => r.iters)
+            tr = Dict{String,Any}("variant" => v, "tol" => tol, "status" => st, "obj_err" => worst_o, "prim_rel" => worst_p,
+                                  "t" => isempty(ts) ? NaN : maximum(ts), "iters" => its, "cal_qps" => cal)
+            err === nothing || (tr["error"] = err)
             push!(trials, tr)
-            if meets(c, eps)
-                ts = [t]
-                for _ in 1:2
-                    t > time_cap / 4 && break
-                    h2, _ = safe_setup(spec, p, tol, v)
-                    _, t2 = timed(() -> safe_solve(spec, h2, nvars(p)))
-                    push!(ts, t2)
+            err !== nothing && break
+            if ok
+                if maximum(ts) < time_cap / 8
+                    for j in cal                       # one more solve of every calibration QP
+                        h2, _ = safe_setup(spec, inst.seq[j], tol, v)
+                        _, t2 = timed(() -> safe_solve(spec, h2, nvars(inst.seq[j])))
+                        push!(ts, t2)
+                    end
                 end
                 tr["t_med"] = median(ts)
                 if best === nothing || tr["t_med"] < best["t_med"]
@@ -99,7 +108,7 @@ function calibrate(spec::SolverSpec, inst::Instance, eps; time_cap = 60.0)
                 end
                 break
             end
-            t > time_cap && break
+            (!isempty(ts) && maximum(ts) > time_cap) && break
         end
     end
     return Dict{String,Any}("chosen" => best, "trials" => trials)
