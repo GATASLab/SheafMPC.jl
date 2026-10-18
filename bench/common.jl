@@ -32,8 +32,8 @@ function fleet_conic(Q; cone::String = "box")
     return ConicQP(Q.P, Q.q, [Q.Aeq; sparse(I, J, V, row, ny)], [Q.beq; b], cones; c = Q.c)
 end
 
-"Clarabel on a ConicQP (Clarabel form rebuilt from the rows), returns (obj, x, status, iterations, time)."
-function clarabel_solve(p::ConicQP; tol = 1e-10, reps = 0)
+"A set-up Clarabel solver for a ConicQP (Clarabel form rebuilt from the rows)."
+function clarabel_setup(p::ConicQP; tol = 1e-10)
     m = nrows(p); n = nvars(p)
     rows = Int[]; b = Float64[]; sgn = Float64[]; cones = Clarabel.SupportedCone[]
     # equality rows, then one-sided rows, then SOC blocks
@@ -55,6 +55,12 @@ function clarabel_solve(p::ConicQP; tol = 1e-10, reps = 0)
                            presolve_enable = false, max_iter = 500)
     s = Clarabel.Solver()
     Clarabel.setup!(s, SparseMatrixCSC(triu(p.P)), p.q, SparseMatrixCSC(A), b, cones, st)
+    return s
+end
+
+"Clarabel on a ConicQP, returns (obj, x, status, iterations, time)."
+function clarabel_solve(p::ConicQP; tol = 1e-10, reps = 0)
+    s = clarabel_setup(p; tol = tol)
     r = Clarabel.solve!(s)
     ts = Float64[]
     for _ in 1:reps
