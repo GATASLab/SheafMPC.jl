@@ -109,6 +109,25 @@ end
         BlockLDL.ldiv!(F, x, zeros(N))
         @test norm(full_sym(K2) * x - b) / norm(b) <= 1e-10
     end
+    @testset "rank-one path of the polish system" begin
+        qp, lab = fleet_problem(8, 24; graph = :ring, b = 4)
+        K, nv, di = kkt_matrix(qp)
+        N = size(K, 1)
+        A = SheafMPC.BlockLDLSystem(copy(K), di, nv)
+        P = SheafMPC._polish_system(A, copy(K), nv)
+        @test P.lowrank
+        nz = nonzeros(P.K)
+        rows = nv .+ [2, 9, 30]
+        nz[di[rows]] .= -1e-6                          # three rows turn active
+        SheafMPC.refactor!(P)
+        @test P.nlowrank == 1
+        b = randn(N); x = zeros(N); r = zeros(N); w = zeros(N)
+        _, rel, _ = BlockLDL.solve_refined!(P.F, P.K, x, b, r, w; iters = 3, rtol = 1e-15)
+        @test rel <= 1e-10
+        nz[di] .*= 1.5                                  # every row: a full refactorization
+        SheafMPC.refactor!(P)
+        @test P.nlowrank == 1 && P.nupd == 0
+    end
     @testset "random QPs vs Clarabel with :blockldl" begin
         rng2 = Xoshiro(11)
         for (n, m) in ((10, 8), (40, 30), (80, 60))

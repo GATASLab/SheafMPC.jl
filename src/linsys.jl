@@ -250,7 +250,7 @@ minimum fill), `:mf` (minimum fill).
 """
 function make_system(kind::Symbol, K::SpMat, diag_idx::Vector{Int}, n::Int; ordering::Symbol = :amd,
                      upd_idx::Vector{Int} = diag_idx, settings = nothing)
-    kind == :blockldl && return BlockLDLSystem(K, diag_idx, n; settings = settings)
+    kind == :blockldl && return BlockLDLSystem(K, diag_idx, n; settings = settings, upd_idx = upd_idx)
     kind == :model && return model_system(K, diag_idx, n; upd_idx = upd_idx, settings = settings)
     if kind == :qdldl
         ordering == :amd && return QDLDLSystem(K, diag_idx, upd_idx)

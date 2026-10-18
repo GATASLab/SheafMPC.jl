@@ -92,3 +92,25 @@ function path_cost(F::Factor, j::Int)
     end
     return c
 end
+
+"""
+    column_path_costs(S) -> Vector{Int}
+
+Entries of L read by a rank-one update starting at every (permuted) column:
+the column's own entries plus those of the next column on its path (the next
+column of its supernode, or the first row below the supernode).
+"""
+function column_path_costs(S::Symbolic)
+    N = S.N
+    pc = zeros(Int, N)
+    @inbounds for s in S.nsup:-1:1
+        f = S.sup_ptr[s]; l = S.sup_ptr[s+1] - 1
+        r = S.str_ptr[s+1] - S.str_ptr[s]
+        nxt = r > 0 ? S.str_idx[S.str_ptr[s]] : 0
+        for j in l:-1:f
+            e = (l - j) + r
+            pc[j] = e + (j < l ? pc[j+1] : (nxt > 0 ? pc[nxt] : 0))
+        end
+    end
+    return pc
+end
