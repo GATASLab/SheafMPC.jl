@@ -173,16 +173,23 @@ Clarabel and of sheaf programs).
 
 * ADMM of OSQP (Stellato et al. 2020, Algorithm 1) with over-relaxation
   `alpha = 1.6`, per-row penalties (`rho_eq_scale * rho` on equality rows,
-  `rho_min` on free rows), adaptive rho with a refactorization only when the
-  estimate moves by more than a factor `adaptive_rho_tolerance`, OSQP's
+  `rho_min` on free rows). The base rho is `1 / sqrt(lmin lmax)` for the
+  extreme eigenvalues of the inequality rows' operator on the null space of the
+  equality rows, `A_I (P restricted)^{-1} A_I'` (the optimal penalty of
+  Ghadimi et al. 2015 for a QP), estimated in `setup` by 25 Lanczos steps with
+  the polish system's factorization (`rho_spectral`); adaptive rho with a
+  refactorization only when the estimate moves by more than a factor
+  `adaptive_rho_tolerance` serves as a safeguard. Optional safeguarded
+  type-II Anderson acceleration of the fixed-point map (`anderson`). OSQP's
   unscaled termination criteria, and primal and dual infeasibility
   certificates (extended to second-order cones). Second-order cones are handled
   by projection, as in COSMO.
 * Modified Ruiz equilibration (OSQP), uniform within each SOC block.
 * One quasi-definite KKT matrix `[P + sigma I, A'; A, -R^{-1}]`, ordered and
-  factored once in `setup` (QDLDL with AMD, MMD or AMF ordering, or the
-  supernodal multifrontal LDLt of CliqueTrees; `linsys = :auto` keeps the
-  fastest solve). The iteration allocates nothing.
+  factored once in `setup` (QDLDL, or the supernodal multifrontal LDLt of
+  CliqueTrees; with `ordering = :auto` the AMD and MMD orderings are compared by
+  the nonzeros and flops of their factors, counted on the elimination tree, and
+  only the cheaper one is factored). The iteration allocates nothing.
 * Polish (active-set refinement). The equality-constrained QP on the guessed
   active set is solved with a matrix of the same sparsity pattern as the ADMM
   KKT matrix (inactive rows get `-1/delta`, active rows `-delta` on the
@@ -190,8 +197,9 @@ Clarabel and of sheaf programs).
   work, and nothing at all when the active set is the one factored last time;
   iterative refinement against the exact reduced system gives full accuracy.
   The polished point is accepted only if it meets the termination tolerance
-  including the signs of the multipliers. Rejected points get one
-  primal-dual active-set correction and then restart ADMM (Moreau
+  including the signs of the multipliers. Rejected points get up to
+  `polish_corrections` primal-dual active-set corrections, as long as each
+  halves the KKT merit, and then restart ADMM (Moreau
   decomposition of `A x + y / rho`). Polish attempts are also made during the
   iterations once the active-set guess is stable, with exponential back-off.
 * Second-order cone blocks on their boundary are polished by Newton's method
@@ -240,5 +248,8 @@ forward sheaf programs of its Resolution module (read only, from
     julia --project=bench bench/single.jl     # one QP: SheafMPC, OSQP, Clarabel
     julia --project=bench bench/rh.jl         # receding horizon, 30 steps
     julia --project=bench bench/reduced.jl    # fine program vs pushforwards
+    julia --project=bench bench/compare.jl    # single solves, solvers interleaved, min/median
+    julia --project=bench bench/rh_compare.jl # receding horizon, interleaved per step (BENCH_WARMUP)
+    julia --project=bench bench/variants.jl   # settings variants: iterations, factorizations
 
 Results go to `bench/results/`.

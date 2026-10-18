@@ -63,7 +63,7 @@ Polishing (active-set refinement)
 * `polish_warm = true`: when a solve starts warm, attempt the polish before the
   first iteration (in steady receding horizon the active set of the shifted
   plan is usually the right one); after a failed warm polish it is tried only
-  every 4th solve until it succeeds again;
+  every `polish_warm_retry`-th solve until it succeeds again (1: every solve);
 * `warm_reset_rho = true`: `warm_start!` puts rho back to `rho` if the last
   solve adapted it beyond the tolerance factor (one refactorization);
 * `polish_delta = 1e-6`: regularization of the polish system.
@@ -125,6 +125,7 @@ Base.@kwdef mutable struct Settings
     polish_gate::Float64 = 0.0
     polish_settle::Float64 = 0.0
     polish_warm::Bool = true
+    polish_warm_retry::Int = 4
     polish_delta::Float64 = 1e-6
     polish_refine_iter::Int = 3
     warm_start::Bool = true

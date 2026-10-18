@@ -467,7 +467,7 @@ function solve!(s::Solver)
         # skip the warm polish after a failure, retrying every 4th solve (a
         # failure costs a factorization; when the warm start's active set is
         # usually right, as in steady receding horizon, it saves the iterations)
-        if s.warm_fails == 0 || s.warm_fails % 4 == 0
+        if s.warm_fails == 0 || s.warm_fails % max(st.polish_warm_retry, 1) == 0
             _guess_active!(s, s.z, s.y)
             ok = _try_polish!(s)
             st.verbose && @printf("  warm polish %s\n", ok ? "accepted" : "rejected")
