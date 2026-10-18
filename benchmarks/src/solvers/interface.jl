@@ -22,6 +22,12 @@
 #                                has no primal-dual warm start (interior point)
 #   info()                    -> Dict of version, commit, library path, fixed
 #                                settings
+#   readback(handle)          -> Dict read back from the live solver object
+#                                after setup (not what we passed: what the
+#                                solver holds), with "tols" => Dict of every
+#                                termination tolerance, which the protocol
+#                                checks against the requested one; a keyword
+#                                API that drops unknown options is caught here
 
 struct SolveResult
     x::Vector{Float64}
@@ -41,6 +47,7 @@ Base.@kwdef struct SolverSpec
     update!::Function
     warm!::Union{Nothing,Function} = nothing
     info::Function = () -> Dict{String,Any}()
+    readback::Function = h -> Dict{String,Any}()
 end
 
 failed_result(n) = SolveResult(fill(NaN, n), nothing, :failed, 0, NaN)

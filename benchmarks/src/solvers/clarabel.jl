@@ -99,7 +99,14 @@ function clarabel_spec(; time_limit = Inf)
     info = () -> Dict{String,Any}("package" => "Clarabel.jl", "version" => string(pkgversion(Clarabel)),
                                   "settings" => "tol_gap_abs = tol_gap_rel = tol_feas = eps, tol_ktratio = min(1e-6, eps), presolve off, equilibration on (default), max_iter 500",
                                   "warm_start" => "none (interior point); sequence mode reuses the setup through update_q!/update_b!")
-    return SolverSpec(name = "clarabel", kind = :ipm, applicable = p -> true,
+    readback = function (h::ClarabelHandle)
+        st = h.s.settings
+        return Dict{String,Any}("tols" => Dict("tol_gap_abs" => st.tol_gap_abs, "tol_gap_rel" => st.tol_gap_rel, "tol_feas" => st.tol_feas),
+                                "tol_ktratio" => st.tol_ktratio, "max_iter" => st.max_iter, "presolve_enable" => st.presolve_enable,
+                                "direct_solve_method" => string(st.direct_solve_method), "equilibrate_enable" => st.equilibrate_enable,
+                                "static_regularization_enable" => st.static_regularization_enable, "time_limit" => st.time_limit)
+    end
+    return SolverSpec(name = "clarabel", readback = readback, kind = :ipm, applicable = p -> true,
                       variants = [Dict{String,Any}("direct" => "qdldl"), Dict{String,Any}("direct" => "cholmod")],
                       setup = setup, solve! = solve!, update! = update!, warm! = nothing, info = info)
 end

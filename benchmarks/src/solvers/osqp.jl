@@ -14,7 +14,7 @@ function osqp_spec(; time_limit = 0.0, max_iter = 400_000)
         OSQP.setup!(m; P = SpMat(triu(p.P)), q = p.q, A = p.A, l = p.l, u = p.u, verbose = false,
                     eps_abs = eps, eps_rel = eps, eps_prim_inf = 1e-6, eps_dual_inf = 1e-6,
                     polish = v["polish"], polish_refine_iter = 3, max_iter = max_iter, adaptive_rho = true,
-                    warm_start = true, time_limit = time_limit)
+                    warm_start = false, time_limit = time_limit)   # cold; warm! turns it on (osqp_warm_start)
         return OSQPHandle(m, OSQP.Results())
     end
     solve! = function (h::OSQPHandle)
@@ -35,9 +35,19 @@ function osqp_spec(; time_limit = 0.0, max_iter = 400_000)
     end
     info = () -> Dict{String,Any}("package" => "OSQP.jl", "version" => string(pkgversion(OSQP)),
                                   "library" => unsafe_string(ccall((:osqp_version, OSQP.osqp), Cstring, ())),
-                                  "settings" => "eps_abs = eps_rel = eps, adaptive_rho on (OSQP default interval), polish per variant with 3 refinement steps, max_iter $max_iter, scaling 10 (default)",
-                                  "warm_start" => "update! (factorization kept) + warm_start!(x, y) from the shifted previous solution")
-    return SolverSpec(name = "osqp", kind = :admm, applicable = p -> !has_soc(p),
+                                  "settings" => "eps_abs = eps_rel = eps, adaptive_rho on with OSQP's default interval 0 (chosen from measured setup time, so iteration counts vary run to run), polish per variant with 3 refinement steps, max_iter $max_iter, scaling 10 (default)",
+                                  "warm_start" => "setup with warm_start = false (cold); warm mode: update! (factorization kept) + warm_start!(x, y) from the shifted previous solution, which turns warm starting on")
+    readback = function (h::OSQPHandle)
+        st = unsafe_load(unsafe_load(h.m.workspace).settings)
+        return Dict{String,Any}("tols" => Dict("eps_abs" => st.eps_abs, "eps_rel" => st.eps_rel),
+                                "polish" => st.polish, "warm_start" => st.warm_start, "max_iter" => st.max_iter,
+                                "adaptive_rho" => st.adaptive_rho, "adaptive_rho_interval" => st.adaptive_rho_interval,
+                                "scaling" => st.scaling, "polish_refine_iter" => st.polish_refine_iter,
+                                "check_termination" => st.check_termination, "time_limit" => st.time_limit,
+                                "rho" => st.rho, "sigma" => st.sigma, "alpha" => st.alpha,
+                                "expect" => Dict("warm_start" => 0))
+    end
+    return SolverSpec(name = "osqp", readback = readback, kind = :admm, applicable = p -> !has_soc(p),
                       variants = [Dict{String,Any}("polish" => true), Dict{String,Any}("polish" => false)],
                       setup = setup, solve! = solve!, update! = update!, warm! = warm!, info = info)
 end

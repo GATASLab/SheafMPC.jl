@@ -462,7 +462,31 @@ function hpipm_info()
     return d
 end
 
-hpipm_spec() = SolverSpec(name = "hpipm", kind = :ipm,
+# Mirror of struct d_ocp_qp_ipm_arg (hpipm_d_ocp_qp_ipm.h, HPIPM bad1123, the
+# commit of both libraries used), to read the live settings back: HPIPM has no
+# getter for its tolerances. tol_stat/eq/ineq/comp are res_g/b/d/m_max.
+struct _HpIpmArg
+    dim::Ptr{Cvoid}
+    mu0::Cdouble; alpha_min::Cdouble; res_g_max::Cdouble; res_b_max::Cdouble; res_d_max::Cdouble; res_m_max::Cdouble
+    dual_gap_max::Cdouble; reg_prim::Cdouble; lam_min::Cdouble; t_min::Cdouble; tau_min::Cdouble; lam0_min::Cdouble
+    t0_min::Cdouble; m_safe::Cdouble
+    iter_max::Cint; stat_max::Cint; pred_corr::Cint; cond_pred_corr::Cint; itref_pred_max::Cint; itref_corr_max::Cint
+    warm_start::Cint; square_root_alg::Cint; lq_fact::Cint; abs_form::Cint; comp_dual_sol_eq::Cint; comp_res_exit::Cint
+    comp_res_pred::Cint; split_step::Cint; var_init_scheme::Cint; t_lam_min::Cint; t0_init::Cint; update_fact_exit::Cint
+    mode::Cint
+    memsize::Csize_t
+end
+
+function hpipm_readback(h::HpipmHandle)
+    a = GC.@preserve h unsafe_load(Ptr{_HpIpmArg}(pointer(h.arg_s)))
+    d = Dict{String,Any}(string(f) => getfield(a, f) for f in fieldnames(_HpIpmArg) if f != :dim)
+    d["tols"] = Dict("tol_stat" => a.res_g_max, "tol_eq" => a.res_b_max, "tol_ineq" => a.res_d_max, "tol_comp" => a.res_m_max)
+    d["N2"] = h.N2
+    d["expect"] = Dict("warm_start" => 0, "mode" => Int(HPIPM_MODES[h.mode]))
+    return d
+end
+
+hpipm_spec() = SolverSpec(name = "hpipm", kind = :ipm, readback = hpipm_readback,
                           applicable = hpipm_applicable,
                           variants = hpipm_variants(),
                           setup = hpipm_setup,

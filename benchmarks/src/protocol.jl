@@ -78,10 +78,15 @@ function calibrate(spec::SolverSpec, inst::Instance, eps; time_cap = 60.0)
         for f in (1.0, 0.1, 0.01, 0.001)
             tol = eps * f
             ok = true; ts = Float64[]; worst_o = 0.0; worst_p = 0.0; st = ""; its = 0; err = nothing
+            rb = nothing
             for j in cal
                 p = inst.seq[j]
                 h, err = safe_setup(spec, p, tol, v)
                 h === nothing && (ok = false; break)
+                if rb === nothing
+                    rb, rerr = check_readback(spec, h, tol)
+                    rerr === nothing || (err = rerr; ok = false; break)
+                end
                 r, t = timed(() -> safe_solve(spec, h, nvars(p)))
                 c = check(p, r.x, r.y, inst.refs[j].obj0)
                 worst_o = max(worst_o, c.obj_err); worst_p = max(worst_p, c.prim_rel)
@@ -92,6 +97,7 @@ function calibrate(spec::SolverSpec, inst::Instance, eps; time_cap = 60.0)
             tr = Dict{String,Any}("variant" => v, "tol" => tol, "status" => st, "obj_err" => worst_o, "prim_rel" => worst_p,
                                   "t" => isempty(ts) ? NaN : maximum(ts), "iters" => its, "cal_qps" => cal)
             err === nothing || (tr["error"] = err)
+            rb === nothing || (tr["readback"] = rb)
             push!(trials, tr)
             err !== nothing && break
             if ok
@@ -112,6 +118,29 @@ function calibrate(spec::SolverSpec, inst::Instance, eps; time_cap = 60.0)
         end
     end
     return Dict{String,Any}("chosen" => best, "trials" => trials)
+end
+
+"""
+    check_readback(spec, h, tol) -> (readback, error or nothing)
+
+The settings the live solver object holds after setup: every termination
+tolerance must equal the requested one, and every entry of "expect" (e.g. warm
+starting off at setup) must hold. A mismatch disqualifies the variant.
+"""
+function check_readback(spec::SolverSpec, h, tol)
+    rb = try
+        spec.readback(h)
+    catch e
+        return nothing, "readback failed: " * sprint(showerror, e)[1:min(end, 200)]
+    end
+    for (k, v) in get(rb, "tols", Dict())
+        isapprox(Float64(v), tol; rtol = 1e-12) || return rb, "readback: $k = $v, requested $tol"
+    end
+    for (k, v) in get(rb, "expect", Dict())
+        got = get(rb, k, nothing)
+        got == v || return rb, "readback: $k = $got, expected $v"
+    end
+    return rb, nothing
 end
 
 function result_row(p::QP, ref::Reference, r::SolveResult, eps)

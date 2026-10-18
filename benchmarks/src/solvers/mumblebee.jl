@@ -267,8 +267,14 @@ function mumblebee_spec(; max_iter = 200)
                                               git_state(pkgdir(Mumblebee); paths = ["src"]) :
                                               "e78d9b9a3a0a2f4c226bf2eb0cf20f662e7d676b (pinned as in the paper's bench/mpc)",
                                   "settings" => "feas_tol = gap_tol = eps, max_iter $max_iter, other IPMSettings defaults; ordering per variant",
-                                  "warm_start" => "none (interior point); sequence mode keeps the symbolic analysis through reinit!(f, g)")
-    return SolverSpec(name = "mumblebee", kind = :ipm, applicable = p -> true,
+                                  "warm_start" => "none (interior point); sequence mode keeps the symbolic analysis through reinit!(f, g), which restarts from Mumblebee's starting point (its iteration count can differ by one from a fresh setup: some internal state survives reinit!)")
+    readback = function (hd::MBHandle)
+        st = hd.solver.settings
+        d = Dict{String,Any}(string(f) => string(getfield(st, f)) for f in fieldnames(typeof(st)))
+        d["tols"] = Dict("feas_tol" => st.feas_tol, "gap_tol" => st.gap_tol)
+        return d
+    end
+    return SolverSpec(name = "mumblebee", readback = readback, kind = :ipm, applicable = p -> true,
                       variants = [Dict{String,Any}("elim" => "amf"), Dict{String,Any}("elim" => "nd")],
                       setup = setup, solve! = solve!, update! = update!, warm! = nothing, info = info)
 end

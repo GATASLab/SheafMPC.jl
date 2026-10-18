@@ -331,7 +331,15 @@ end
 function piqp_spec()
     variants = [Dict{String,Any}("kkt_solver" => k)
                 for k in ("sparse_ldlt", "sparse_ldlt_eq_cond", "sparse_ldlt_ineq_cond", "sparse_ldlt_cond", "sparse_multistage")]
-    return SolverSpec(name = "piqp", kind = :ipm, applicable = p -> !has_soc(p), variants = variants,
+    # PIQP copies the settings at setup and has no getter: this is the struct passed to piqp_setup_sparse
+    readback = function (h::PiqpHandle)
+        st = h.settings
+        d = Dict{String,Any}(string(f) => getfield(st, f) for f in fieldnames(PiqpSettings))
+        d["tols"] = Dict("eps_abs" => st.eps_abs, "eps_duality_gap_abs" => st.eps_duality_gap_abs)
+        d["source"] = "struct passed to piqp_setup_sparse (no getter in the C API)"
+        return d
+    end
+    return SolverSpec(name = "piqp", kind = :ipm, readback = readback, applicable = p -> !has_soc(p), variants = variants,
                       setup = piqp_setup, solve! = piqp_solve!, update! = piqp_update!, warm! = nothing,
                       info = piqp_info)
 end

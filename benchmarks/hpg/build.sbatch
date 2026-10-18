@@ -36,4 +36,5 @@ export SHEAFMPC_PAPER=/blue/fairbanksj/itaykadosh/pushforward_bench/mpc-sheaf-pu
 julia --project=. test/test_families.jl
 HPIPM_TEST_HARNESS=1 julia --project=. test/test_hpipm.jl
 julia --project=. test/test_piqp.jl
+julia --project=. test/test_settings.jl
 echo "build done $(date -Is)"

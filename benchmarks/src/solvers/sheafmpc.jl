@@ -61,7 +61,15 @@ function sheafmpc_spec(; time_limit = Inf, max_iter = 100_000)
     info = () -> Dict{String,Any}("package" => "SheafMPC", "path" => SHEAFMPC_DIR, "git" => git_state(SHEAFMPC_DIR),
                                   "settings" => "package defaults (SheafMPC.Settings()), eps_abs = eps_rel = eps, max_iter $max_iter",
                                   "warm_start" => "update! (factorization kept) + warm_start!(x, y) from the shifted previous solution")
-    return SolverSpec(name = "sheafmpc", kind = :admm, applicable = p -> true,
+    readback = function (h::SheafMPCHandle)
+        st = h.s.settings
+        d = Dict{String,Any}(string(f) => getfield(st, f) for f in fieldnames(typeof(st)))
+        d["tols"] = Dict("eps_abs" => st.eps_abs, "eps_rel" => st.eps_rel)
+        d["has_iterate"] = h.s.has_iterate
+        d["expect"] = Dict("has_iterate" => false)
+        return d
+    end
+    return SolverSpec(name = "sheafmpc", readback = readback, kind = :admm, applicable = p -> true,
                       variants = [Dict{String,Any}("label" => "default")],
                       setup = setup, solve! = solve!, update! = update!, warm! = warm!, info = info)
 end

@@ -15,7 +15,7 @@ benchmarks/run.sh summarize OUT DIR...      # markdown tables and pgfplots .dat 
 julia --project=benchmarks benchmarks/run.jl full --list   # instance keys; --only KEY, --solvers a,b, --families f
 ```
 
-Tests: `test/test_families.jl` (generators against the paper's `qp.jl`, stage
+Tests: `test/test_settings.jl` (every solver holds the requested settings, read back from the live object; cold is cold), `test/test_families.jl` (generators against the paper's `qp.jl`, stage
 forms against the canonical QPs), `test/test_hpipm.jl`, `test/test_piqp.jl`.
 
 ## Layout
@@ -46,6 +46,14 @@ forms against the canonical QPs), `test/test_hpipm.jl`, `test/test_piqp.jl`.
   five KKT solvers; HPIPM's four modes x five partial-condensing levels) with
   its tolerance at eps, eps/10, eps/100, eps/1000; the loosest tolerance meeting
   the tier on the first, middle and last QP; the fastest variant wins.
+* **Settings read-back.** After every calibration setup the harness reads the
+  settings back from the live solver object (OSQP's C settings struct,
+  Clarabel's and Mumblebee's settings, SheafMPC's `Settings`, HPIPM's ipm arg
+  struct; for PIQP, which has no getter, the struct passed to setup) and
+  disqualifies a variant whose tolerances differ from the requested ones or
+  whose warm start is on at setup (OSQP.jl drops unknown keywords silently).
+  `test/test_settings.jl` also checks that a warm-mode step of an
+  interior-point solver iterates like a cold solve.
 * **Cold mode.** Per QP, k repeats of setup (timed separately) and a solve
   from zero (timed).
 * **Warm mode.** k replays of the sequence: setup and a cold solve of QP 1,
