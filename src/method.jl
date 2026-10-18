@@ -84,14 +84,17 @@ _ipm_iters(eps::Float64, cones::Bool) = clamp((cones ? 2.5 : 4.0) + 0.9 * log10(
 """
 Estimated seconds of an IPM solve, of an ADMM iteration and of a factorization from the kernel's
 estimates of one factorization `tf` and one solve `ts` and the vector work
-`v = N + nnz(A) + nnz(P)` (least-squares fits to measured solves of the
-benchmark families):
+`v = N + nnz(A) + nnz(P)` (relative least-squares fits of measured solves
+of the benchmark families, n = 4 to 1024 fleets, random MPC, chains, reduced
+programs, against the kernel's estimates, EPYC 7702, one thread):
 
-    IPM   (k + 1) 1.1 tf + k (10 ts + 12e-9 v),   k = `_ipm_iters(eps, cones)`
+    IPM   (k + 1) 0.85 tf + k (21 ts + 22e-9 v),   k = `_ipm_iters(eps, cones)`
           (a factorization per iteration and one for the starting point; three
           Newton systems per iteration with about 1.2 refinement steps each,
-          every refinement a product with K; the cone scalings and step lengths)
-    ADMM  1.17 ts + 2e-10 v per iteration.
+          every refinement a product with K; the cone scalings and step lengths;
+          the solves of large factors run slower than the kernel's estimate,
+          which the solve coefficient absorbs)
+    ADMM  1.6 ts + 5e-10 v per iteration.
 """
 function _ipm_cost_estimate(s)
     S = s.kkt
@@ -101,7 +104,7 @@ function _ipm_cost_estimate(s)
     ts = BlockLDL.estimate(BlockLDL.CostModel(factors = 0.0, solves = 1.0), stats, N, eng)
     v = N + nnz(s.A) + nnz(s.P)
     k = _ipm_iters(min(s.settings.eps_abs, s.settings.eps_rel), !isempty(s.socs))
-    return (k + 1) * 1.1 * tf + k * (10 * ts + 12e-9 * v), 1.17 * ts + 2e-10 * v, tf
+    return (k + 1) * 0.85 * tf + k * (21 * ts + 22e-9 * v), 1.6 * ts + 5e-10 * v, tf
 end
 
 """
