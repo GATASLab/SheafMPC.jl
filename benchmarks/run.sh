@@ -22,16 +22,18 @@ case "${1:-}" in
   quick)
     OUT="${OUT:-$HERE/results/quick_$STAMP}"
     jl --project="$HERE" "$HERE/run.jl" quick --out "$OUT"
-    julia --project="$HERE" "$HERE/summarize.jl" "$OUT/summary" "$OUT"
+    for V in mumblebee_fast mumblebee_fast_ct; do
+      [ -d "$HERE/envs/$V" ] && BENCH_MUMBLEBEE_NAME=$V jl --project="$HERE/envs/$V" "$HERE/run.jl" quick --solvers $V --out "$OUT/$V"
+    done
+    julia --project="$HERE" "$HERE/summarize.jl" "$OUT/summary" "$OUT" $(for V in mumblebee_fast mumblebee_fast_ct; do [ -d "$OUT/$V" ] && echo "$OUT/$V"; done)
     ;;
   full)
     OUT="${OUT:-$HERE/results/full_$STAMP}"
     jl --project="$HERE" "$HERE/run.jl" full --out "$OUT"
-    if [ -d "$HERE/envs/mumblebee_fast" ]; then
-      BENCH_MUMBLEBEE_NAME=mumblebee_fast jl --project="$HERE/envs/mumblebee_fast" "$HERE/run.jl" full \
-        --solvers mumblebee_fast --out "$OUT/mumblebee_fast"
-    fi
-    julia --project="$HERE" "$HERE/summarize.jl" "$OUT/summary" "$OUT" $( [ -d "$OUT/mumblebee_fast" ] && echo "$OUT/mumblebee_fast" )
+    for V in mumblebee_fast mumblebee_fast_ct; do
+      [ -d "$HERE/envs/$V" ] && BENCH_MUMBLEBEE_NAME=$V jl --project="$HERE/envs/$V" "$HERE/run.jl" full --solvers $V --out "$OUT/$V"
+    done
+    julia --project="$HERE" "$HERE/summarize.jl" "$OUT/summary" "$OUT" $(for V in mumblebee_fast mumblebee_fast_ct; do [ -d "$OUT/$V" ] && echo "$OUT/$V"; done)
     ;;
   hpg-prepare)
     bash "$HERE/hpg/prepare.sh"
