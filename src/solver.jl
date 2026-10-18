@@ -106,6 +106,10 @@ mutable struct Solver{LS<:LinearSystem}
     soc_eta::Vector{Float64}
     soc_u::Vector{Float64}
     warm_fails::Int
+    aa::Anderson
+    rho0::Float64                 # base rho (spectral estimate or settings.rho)
+    lam_min::Float64              # Lanczos estimates of the constraint operator spectrum
+    lam_max::Float64
 end
 
 function _rowtypes(l, u, kinds)
@@ -172,7 +176,7 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
     kkt = nothing
     if kind == :auto
         # engine and order from BlockLDL's cost model (no trial factorizations)
-        kkt = make_system(:model, copy(K), diag_idx, n; upd_idx = upd_idx, settings = st)
+        kkt = make_system(:model, copy(K), diag_idx, n; upd_idx = upd_idx, settings = st, logical = true)
         kind = system_kind(kkt)
     elseif kind == :timed
         # time a few backends and orderings on this matrix, keep the fastest solve
@@ -185,7 +189,8 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
             end
         end
     else
-        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering, upd_idx = upd_idx, settings = st)
+        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering, upd_idx = upd_idx, settings = st,
+                          logical = true)
     end
     pol = _polish_system(kkt, copy(K), n)
     s = Solver(st, Info(), n, m, P, q, A, l, u, socb, copy(p.socs), copy(p.kinds), rowtype, p.c, scl, Pdiag,
@@ -196,10 +201,23 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
                zeros(m), zeros(n + m), zeros(n + m), zeros(n + m), zeros(n), zeros(m), zeros(m), zeros(m),
                zeros(n), zeros(n),
                zeros(n), zeros(m), zeros(m), false, false,
-               soc_idx, zeros(length(p.socs)), zeros(length(p.socs)), zeros(m), 0)
+               soc_idx, zeros(length(p.socs)), zeros(length(p.socs)), zeros(m), 0,
+               Anderson(st.anderson, st.anderson > 0 ? n + m : 0), st.rho, NaN, NaN)
+    # the base rho: from the spectrum of the constraint operator, or the setting
+    if st.rho_spectral
+        r = spectral_rho!(s)
+        r === nothing || (s.rho0 = r)
+    end
+    # the numerical factorization of the ADMM system for the base rho (QDLDL was
+    # built with the symbolic factorization only; the other backends factor in
+    # their constructor, at settings.rho)
+    if s.rho0 != st.rho || (kkt isa QDLDLSystem && kkt.F.logical[])
+        _set_rho!(s, s.rho0)
+        _refactor_kkt!(s)
+    end
     s.info.setup_time = (time_ns() - t0) / 1e9
     s.info.linsys = kind
-    s.info.rho = st.rho
+    s.info.rho = s.rho0
     return s
 end
 
@@ -265,6 +283,23 @@ function admm_step!(s::Solver)
         y[i] += rv[i] * (w[i] - z[i])
     end
     return nothing
+end
+
+"""
+Whether the active-set guess has settled since the last early-polish check: at
+most `frac` of the inequality and cone rows changed label (0: none). The
+polish corrects a few wrong labels itself (primal-dual active-set steps), so
+it need not wait for the slow tail of ADMM's identification.
+"""
+function _act_settled(s::Solver, frac::Float64)
+    frac <= 0 && return s.act == s.act_prev
+    nchg = 0; nrows = 0
+    @inbounds for i in 1:s.m
+        s.rowtype[i] == ROWT_INEQ || s.rowtype[i] == ROWT_SOC || continue
+        nrows += 1
+        nchg += s.act[i] != s.act_prev[i]
+    end
+    return nchg <= frac * nrows
 end
 
 # ---------------------------------------------------------------------------
@@ -390,8 +425,9 @@ function _adapt_rho!(s::Solver, pr, dr, pn, dn)
         _set_rho!(s, est)
         _refactor_kkt!(s)
         s.info.rho_updates += 1
+        return true
     end
-    return nothing
+    return false
 end
 
 # ---------------------------------------------------------------------------
@@ -433,7 +469,9 @@ function solve!(s::Solver)
         # usually right, as in steady receding horizon, it saves the iterations)
         if s.warm_fails == 0 || s.warm_fails % 4 == 0
             _guess_active!(s, s.z, s.y)
-            if _try_polish!(s)
+            ok = _try_polish!(s)
+            st.verbose && @printf("  warm polish %s\n", ok ? "accepted" : "rejected")
+            if ok
                 polished = true; converged = true; status = :solved
                 s.warm_fails = 0
             else
@@ -449,6 +487,8 @@ function solve!(s::Solver)
     wait = 2 * pint
     next_polish = 0
     next_adapt = st.adaptive_rho_first > 0 ? st.adaptive_rho_first : st.adaptive_rho_interval
+    use_aa = st.anderson > 0
+    use_aa && reset!(s.aa)
     if !polished
         while k < st.max_iter
             k += 1
@@ -456,7 +496,9 @@ function solve!(s::Solver)
             if check
                 copyto!(s.xprev, s.x); copyto!(s.yprev, s.y)
             end
+            use_aa && _aa_load_point!(s.aa.w, s)
             admm_step!(s)
+            use_aa && _aa_update!(s.aa, s; extrapolate = !check, safeguard = st.anderson_safeguard)
             info.iter = k
             if st.polish && pint > 0 && k % pint == 0 && s.m > 0 && k >= next_polish
                 _guess_active!(s, s.z, s.y)
@@ -465,8 +507,11 @@ function solve!(s::Solver)
                     gpr, gdr, gpn, gdn = _residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty)
                     gate_ok = max(gpr / (gpn + 1e-10), gdr / (gdn + 1e-10)) <= st.polish_gate
                 end
-                if gate_ok && s.act == s.act_prev && !(s.has_fail && s.act == s.act_fail)
-                    if _try_polish!(s)
+                if gate_ok && _act_settled(s, st.polish_settle) && !(s.has_fail && s.act == s.act_fail)
+                    ok = _try_polish!(s)
+                    use_aa && reset!(s.aa)            # a restart moved the iterate off the orbit
+                    st.verbose && @printf("  it %4d  early polish %s (%d attempts so far)\n", k, ok ? "accepted" : "rejected", info.polish_attempts)
+                    if ok
                         polished = true; converged = true; status = :solved
                         break
                     end
@@ -479,6 +524,7 @@ function solve!(s::Solver)
             if check
                 pr, dr, pn, dn = _residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty)
                 info.prim_res = pr; info.dual_res = dr
+                st.verbose && @printf("  it %4d  prim %.2e (tol %.1e)  dual %.2e (tol %.1e)  rho %.2e\n", k, pr, _eps_prim(st, pn), dr, _eps_dual(st, dn), s.rho)
                 if pr <= _eps_prim(st, pn) && dr <= _eps_dual(st, dn)
                     converged = true; status = :solved
                     break
@@ -490,7 +536,7 @@ function solve!(s::Solver)
                     status = :dual_infeasible; break
                 end
                 if st.adaptive_rho && k >= next_adapt
-                    _adapt_rho!(s, pr, dr, pn, dn)
+                    _adapt_rho!(s, pr, dr, pn, dn) && use_aa && reset!(s.aa)
                     next_adapt = k + st.adaptive_rho_interval
                 end
             end
@@ -624,8 +670,8 @@ function warm_start!(s::Solver; x = nothing, y = nothing)
     # start the next solve from the default rho (one refactorization if the
     # previous solve had adapted it by more than the tolerance factor)
     st = s.settings
-    if st.warm_reset_rho && (s.rho > st.adaptive_rho_tolerance * st.rho || s.rho < st.rho / st.adaptive_rho_tolerance)
-        _set_rho!(s, st.rho)
+    if st.warm_reset_rho && (s.rho > st.adaptive_rho_tolerance * s.rho0 || s.rho < s.rho0 / st.adaptive_rho_tolerance)
+        _set_rho!(s, s.rho0)
         _refactor_kkt!(s)
     end
     return s
@@ -659,7 +705,7 @@ end
     reset!(solver)
 
 Forget the previous solve: zero iterate (the next `solve!` is a cold start),
-rho back to `settings.rho` (refactoring the KKT matrix if it had changed), and
+rho back to its base value (`settings.rho` or the spectral estimate; refactoring the KKT matrix if it had changed), and
 the cached polish factorization dropped. The ordering and symbolic
 factorization are kept.
 """
@@ -669,8 +715,8 @@ function reset!(s::Solver)
     s.warm_pending = false
     s.pol_valid = false
     s.has_fail = false
-    if s.rho != s.settings.rho
-        _set_rho!(s, s.settings.rho)
+    if s.rho != s.rho0
+        _set_rho!(s, s.rho0)
         _refactor_kkt!(s)
     end
     return s

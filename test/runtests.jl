@@ -182,6 +182,62 @@ end
         @test (@allocated SheafMPC.admm_step!(s)) == 0
     end
 
+    @testset "spectral rho" begin
+        # the Lanczos estimates against the dense spectrum of A_I Z (Z'PZ)^{-1} Z' A_I'
+        rng = Xoshiro(17)
+        p = random_qp(rng, 30, 24)
+        s = setup(p; rho_spectral_iter = 60)
+        P = Matrix(s.P) + s.settings.polish_delta * I
+        A = Matrix(s.A)
+        eq = findall(==(SheafMPC.ROWT_EQ), s.rowtype)
+        iq = findall(==(SheafMPC.ROWT_INEQ), s.rowtype)
+        Z = nullspace(A[eq, :])
+        M = A[iq, :] * Z * ((Z' * P * Z) \ (Z' * A[iq, :]'))
+        ev = eigvals(Symmetric((M + M') / 2))
+        ev = ev[ev .> 1e-9 * maximum(ev)]
+        @test s.lam_max ≈ maximum(ev) rtol = 1e-3
+        @test s.lam_min ≈ minimum(ev) rtol = 0.5
+        @test s.rho0 ≈ clamp(1 / sqrt(s.lam_min * s.lam_max), 1e-4, 10.0)
+        @test s.rho == s.rho0
+        # the spectral rho is the base rho of reset! and of a cold solve
+        info = solve!(s)
+        @test info.status == :solved
+        reset!(s)
+        @test s.rho == s.rho0
+        # without inequality rows the setting is kept
+        pe = ConicQP(sparse(1.0I, 3, 3), ones(3), sparse([1.0 1 1]), [1.0], [1.0])
+        @test setup(pe).rho0 == Settings().rho
+        @test setup(p; rho_spectral = false).rho0 == Settings().rho
+    end
+
+    @testset "Anderson acceleration and the polish trigger" begin
+        rng = Xoshiro(23)
+        for trial in 1:6
+            p = isodd(trial) ? random_qp(rng, rand(rng, 15:35), rand(rng, 12:28)) :
+                random_socp(rng, rand(rng, 8:16), rand(rng, 1:3), 3)
+            ref, _, _ = clarabel_ref(p)
+            for kw in ((anderson = 5,), (anderson = 10, polish = false), (polish_settle = 0.01,))
+                s = setup(p; eps_abs = 1e-8, eps_rel = 1e-8, max_iter = 20_000, kw...)
+                info = solve!(s)
+                @test info.status == :solved
+                @test relgap(info.obj, ref) <= 1e-6
+                @test violation(p, s.xsol) <= 1e-6
+            end
+        end
+        # without the polish the accelerated iteration still converges, with
+        # accepted extrapolations, and allocates nothing per iteration
+        p = random_qp(rng, 30, 25)
+        s = setup(p; anderson = 8, polish = false, eps_abs = 1e-9, eps_rel = 1e-9, max_iter = 20_000)
+        info = solve!(s)
+        @test info.status == :solved && s.aa.accepted > 0
+        SheafMPC._aa_load_point!(s.aa.w, s)
+        SheafMPC.admm_step!(s)
+        SheafMPC._aa_update!(s.aa, s)
+        step(s) = (SheafMPC._aa_load_point!(s.aa.w, s); SheafMPC.admm_step!(s); SheafMPC._aa_update!(s.aa, s); nothing)
+        step(s)
+        @test (@allocated step(s)) == 0
+    end
+
     @testset "update and warm start" begin
         rng = Xoshiro(9)
         p = random_qp(rng, 25, 20)

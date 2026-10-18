@@ -110,12 +110,13 @@ and the elimination order of least estimated cost under BlockLDL's cost model
 (elimination-tree statistics of every candidate order; no trial
 factorizations), factored once.
 """
-function model_system(K::SpMat, diag_idx::Vector{Int}, n::Int; upd_idx::Vector{Int} = diag_idx, settings = nothing)
+function model_system(K::SpMat, diag_idx::Vector{Int}, n::Int; upd_idx::Vector{Int} = diag_idx, settings = nothing,
+                      logical::Bool = false)
     threads = _kkt_threads(settings)
     structure = settings === nothing ? nothing : _kkt_structure(K, n, settings.kkt_structure)
     perm, name, eng, table, tree, nt = BlockLDL.choose_system(K; structure = structure,
                                                               cost = BlockLDL.CostModel(nthreads = threads))
-    eng == :simplicial && return QDLDLSystem(K, diag_idx, upd_idx; perm = perm)
+    eng == :simplicial && return QDLDLSystem(K, diag_idx, upd_idx; perm = perm, logical = logical)
     return BlockLDLSystem(K, diag_idx, n; settings = settings, perm = perm, name = name, table = table, tree = tree,
                           threads = nt, upd_idx = upd_idx)
 end

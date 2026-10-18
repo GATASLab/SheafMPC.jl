@@ -6,15 +6,30 @@
 Solver settings (defaults follow OSQP where the option exists there):
 
 ADMM
-* `rho = 0.03` (OSQP uses 0.1; 0.03 was faster on the fleet MPC family), `sigma = 1e-6`,
-  `alpha = 1.6` (over-relaxation);
+* `rho = 0.03` (OSQP uses 0.1), the penalty when `rho_spectral = false` or
+  the problem has no inequality rows, `sigma = 1e-6`, `alpha = 1.6`
+  (over-relaxation);
 * `rho_eq_scale = 1e3`: equality rows get `rho_eq_scale * rho`, free rows `rho_min`;
-* `adaptive_rho = true`, `adaptive_rho_interval = 25`, `adaptive_rho_tolerance = 5`:
+* `rho_spectral = true`: replace `rho` by `rho_spectral_scale / sqrt(lmin lmax)`,
+  the extreme eigenvalues of the inequality and cone rows' operator on the
+  null space of the equality rows, `A_I (P restricted)^{-1} A_I'`, estimated
+  by `rho_spectral_iter` Lanczos steps in `setup` (the optimal ADMM penalty of
+  Ghadimi et al. 2015 for a QP; see rho.jl), `rho_spectral_scale = 1.0`,
+  `rho_spectral_iter = 25`; on the fleet MPC family it halves the iterations
+  of a fixed rho = 0.03 and of the adaptive rule, which drifts away from it;
+* `adaptive_rho = true`, `adaptive_rho_interval = 25`, `adaptive_rho_tolerance = 25`:
   every `adaptive_rho_interval` iterations rho is re-estimated from the ratio of
   the normalized primal and dual residuals and the KKT matrix is refactored
-  only if the estimate moved by more than the tolerance factor;
+  only if the estimate moved by more than the tolerance factor (OSQP uses 5;
+  with the spectral rho the residual-balancing estimate is a safeguard against
+  a badly wrong rho, not a tuning rule: it moves a good rho away from the
+  fastest active-set identification);
   `adaptive_rho_first > 0` adds one early estimate at that iteration;
-* `max_iter = 4000`, `time_limit = Inf` (seconds).
+* `max_iter = 4000`, `time_limit = Inf` (seconds);
+* `anderson = 0`: memory of the safeguarded type-II Anderson acceleration of
+  the iteration (0 disables; see anderson.jl), `anderson_safeguard = 1.0`: an
+  accelerated point is rejected when its fixed-point residual exceeds this
+  factor times the residual it was computed from.
 
 Termination (OSQP's unscaled criteria)
 * `eps_abs = 1e-3`, `eps_rel = 1e-3`, checked every `check_termination = 25` iterations;
@@ -29,8 +44,11 @@ Polishing (active-set refinement)
   pattern, `polish_refine_iter` steps of iterative refinement) and accept the
   result only if it satisfies the KKT conditions to the termination tolerance
   (primal and dual residuals and the signs of the multipliers);
-* `polish_corrections = 1`: if not, correct the active set from the polished
-  point (a primal-dual active-set step) and try again, up to this many times;
+* `polish_corrections = 3`: if not, correct the active set from the polished
+  point (a primal-dual active-set step) and try again, up to this many times,
+  as long as every correction at least halves the KKT merit of the polished
+  point (a correction that does not is not converging, and each costs a
+  factorization);
 * `polish_soc_newton = 6`: Newton steps of the polish for second-order cone
   blocks on their boundary (see polish.jl);
 * `polish_restart = true`: after a rejected polish, restart ADMM from the
@@ -80,13 +98,18 @@ Base.@kwdef mutable struct Settings
     sigma::Float64 = 1e-6
     alpha::Float64 = 1.6
     rho_eq_scale::Float64 = 1e3
+    rho_spectral::Bool = true
+    rho_spectral_scale::Float64 = 1.0
+    rho_spectral_iter::Int = 25
     rho_min::Float64 = 1e-6
     rho_max::Float64 = 1e6
     adaptive_rho::Bool = true
     adaptive_rho_interval::Int = 25
     adaptive_rho_first::Int = 0
-    adaptive_rho_tolerance::Float64 = 5.0
+    adaptive_rho_tolerance::Float64 = 25.0
     max_iter::Int = 4000
+    anderson::Int = 0
+    anderson_safeguard::Float64 = 1.0
     time_limit::Float64 = Inf
     eps_abs::Float64 = 1e-3
     eps_rel::Float64 = 1e-3
@@ -95,11 +118,12 @@ Base.@kwdef mutable struct Settings
     check_termination::Int = 25
     scaling::Int = 10
     polish::Bool = true
-    polish_corrections::Int = 1
+    polish_corrections::Int = 3
     polish_restart::Bool = true
     polish_soc_newton::Int = 6
     polish_interval::Int = 10
     polish_gate::Float64 = 0.0
+    polish_settle::Float64 = 0.0
     polish_warm::Bool = true
     polish_delta::Float64 = 1e-6
     polish_refine_iter::Int = 3

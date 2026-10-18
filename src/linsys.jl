@@ -133,8 +133,9 @@ mutable struct QDLDLSystem <: LinearSystem
 end
 
 function QDLDLSystem(K::SpMat, diag_idx::Vector{Int}, upd_idx::Vector{Int} = diag_idx;
-                     perm::Union{Nothing,Vector{Int}} = nothing)
-    F = perm === nothing ? QDLDL.qdldl(K) : QDLDL.qdldl(K; perm = perm)
+                     perm::Union{Nothing,Vector{Int}} = nothing, logical::Bool = false)
+    # logical = true: symbolic factorization only (refactor! before the first solve)
+    F = perm === nothing ? QDLDL.qdldl(K; logical = logical) : QDLDL.qdldl(K; perm = perm, logical = logical)
     ws = F.workspace
     p = F.perm === nothing ? collect(1:size(K, 1)) : F.perm
     return QDLDLSystem(K, diag_idx, upd_idx, F, p, zeros(size(K, 1)), ws.Ln, ws.Lp, ws.Li, ws.Lx, ws.Dinv)
@@ -246,22 +247,23 @@ factor_nnz(S::ChordalSystem) = nnz(S.F)
 # ---------------------------------------------------------------------------
 
 """
-    make_system(kind, K, diag_idx, n; ordering = :amd) -> LinearSystem
+    make_system(kind, K, diag_idx, n; ordering = :amd, perm = nothing, logical = false) -> LinearSystem
 
-`kind` is `:qdldl` or `:cliquetrees`. `K` must already hold its numerical
+`kind` is `:qdldl` or `:cliquetrees`. With `logical = true` QDLDL stops after
+the symbolic factorization (call `refactor!` before solving). `K` must already hold its numerical
 values. For `:qdldl` the fill-reducing `ordering` is `:amd` (QDLDL's own),
 or one of CliqueTrees' `:mmd` (multiple minimum degree), `:amf` (approximate
 minimum fill), `:mf` (minimum fill).
 """
 function make_system(kind::Symbol, K::SpMat, diag_idx::Vector{Int}, n::Int; ordering::Symbol = :amd,
                      upd_idx::Vector{Int} = diag_idx, settings = nothing,
-                     perm::Union{Nothing,Vector{Int}} = nothing)
+                     perm::Union{Nothing,Vector{Int}} = nothing, logical::Bool = false)
     kind == :blockldl && return BlockLDLSystem(K, diag_idx, n; settings = settings, upd_idx = upd_idx)
-    kind == :model && return model_system(K, diag_idx, n; upd_idx = upd_idx, settings = settings)
+    kind == :model && return model_system(K, diag_idx, n; upd_idx = upd_idx, settings = settings, logical = logical)
     if kind == :qdldl
-        perm === nothing || return QDLDLSystem(K, diag_idx, upd_idx; perm = perm)
-        ordering == :amd && return QDLDLSystem(K, diag_idx, upd_idx)
-        return QDLDLSystem(K, diag_idx, upd_idx; perm = fill_ordering(K, ordering))
+        perm === nothing || return QDLDLSystem(K, diag_idx, upd_idx; perm = perm, logical = logical)
+        ordering == :amd && return QDLDLSystem(K, diag_idx, upd_idx; logical = logical)
+        return QDLDLSystem(K, diag_idx, upd_idx; perm = fill_ordering(K, ordering), logical = logical)
     end
     kind == :cliquetrees && return ChordalSystem(K, diag_idx, n)
     throw(ArgumentError("unknown linear system backend $kind (use :qdldl, :cliquetrees or :blockldl)"))
