@@ -593,6 +593,17 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
                 if ext > 0
                     budget = k + ext; extended = true
                 else
+                    # a last polish of the current active-set guess before the
+                    # crossover (one factorization against an IPM solve): the
+                    # polish ends most ADMM solves well before the residuals do
+                    if k > 0 && st.polish && s.m > 0
+                        _guess_active!(s, s.z, s.y, st.polish_soc_band)
+                        if !(s.has_fail && s.act == s.act_fail) && _try_polish!(s; restart = false)
+                            polished = true; converged = true; status = :solved
+                            st.verbose && @printf("  it %4d  polish at the budget accepted\n", k)
+                            break
+                        end
+                    end
                     status = :budget; break
                 end
             end
