@@ -29,6 +29,11 @@ function rank1_diagonal!(F::Factor, j::Int, alpha::Float64, w::Vector{Float64})
         for kk in k:l
             p = w[kk]
             p == 0.0 && continue
+            # below this the remaining modification is under rounding and its
+            # arithmetic would be subnormal: stop the walk (w is cleared below)
+            if abs(alpha) * p * p < floatmin(Float64) / eps(Float64)
+                alpha = 0.0; break
+            end
             w[kk] = 0.0
             dk = d[kk]
             dn = dk + alpha * p * p
@@ -37,20 +42,24 @@ function rank1_diagonal!(F::Factor, j::Int, alpha::Float64, w::Vector{Float64})
             d[kk] = dn; dinv[kk] = 1.0 / dn
             c = kk - f + 1
             ck = o + (c - 1) * h
+            fm = floatmin(Float64)
             for i in (c+1):wc
                 gi = f + i - 1
                 wi = muladd(-p, Lx[ck+i], w[gi]); w[gi] = wi
-                Lx[ck+i] = muladd(beta, wi, Lx[ck+i])
+                v = muladd(beta, wi, Lx[ck+i])
+                Lx[ck+i] = ifelse(abs(v) < fm, 0.0, v)
             end
             cb = ck + wc
             for i in 1:r
                 gi = si[rb+i]
                 wi = muladd(-p, Lx[cb+i], w[gi]); w[gi] = wi
-                Lx[cb+i] = muladd(beta, wi, Lx[cb+i])
+                v = muladd(beta, wi, Lx[cb+i])
+                Lx[cb+i] = ifelse(abs(v) < fm, 0.0, v)
             end
             kk <= S.nleaf && (F.leafL[kk] = Lx[cb+1])          # the contiguous copy of a leaf's entry
         end
-        (r == 0 || alpha == 0.0) && break
+        alpha == 0.0 && break
+        r == 0 && break
         k = si[rb+1]
         s = S.sup_of[k]
     end

@@ -128,6 +128,54 @@ end
         SheafMPC.refactor!(P)
         @test P.nlowrank == 1 && P.nupd == 0
     end
+    @testset "no subnormals in the factor" begin
+        nsub(v) = count(x -> x != 0 && abs(x) < floatmin(Float64), v)
+        # entries of K below floatmin: the factor holds zeros, not subnormals
+        K = sparse(triu([2.0 1e-310 0.0; 1e-310 3.0 1e-311; 0.0 1e-311 -4.0]))
+        S = BlockLDL.symbolic(K, [1, 2, 3], [1.0, 1.0, -1.0])
+        F = BlockLDL.Factor(S); BlockLDL.factor!(F, K)
+        @test nsub(F.Lx) == 0 && nsub(F.leafL) == 0
+        # a rank-one update whose scale underflows leaves the factor untouched and normal
+        qp, lab = fleet_problem(8, 24; graph = :ring, b = 1)
+        Kf, nv, di = kkt_matrix(qp)
+        N = size(Kf, 1)
+        S2 = BlockLDL.symbolic(Kf, BlockLDL.order_amd(Kf), kkt_signs(N, nv))
+        F2 = BlockLDL.Factor(S2); BlockLDL.factor!(F2, Kf)
+        L0 = copy(F2.Lx); w = zeros(N)
+        BlockLDL.rank1_diagonal!(F2, 1, 1e-310, w)
+        @test nsub(F2.Lx) == 0 && all(iszero, w)
+        @test maximum(abs.(F2.Lx .- L0)) <= 1e-300
+        # the polish cycle (delta and 1/delta pivots, rank-one flips of the active set):
+        # no subnormals in the factor or the solutions, solves as fast as with flushing
+        s = setup(qp; linsys = :blockldl)
+        P = s.pol
+        nzP = nonzeros(P.K); n = s.n; m = s.m; del = s.settings.polish_delta
+        rngs = MersenneTwister(5)
+        b = randn(rngs, N); x = similar(b)
+        for _ in 1:6
+            for i in rand(rngs, 1:m, 8)
+                v = nzP[P.diag_idx[n+i]]
+                nzP[P.diag_idx[n+i]] = v ≈ -del ? -1 / del : -del
+            end
+            SheafMPC.refactor!(P)
+            @test nsub(P.F.Lx) == 0 && nsub(P.F.d) == 0
+            copyto!(x, b); solve!(P, x)
+            @test nsub(x) == 0
+        end
+        @test P.nlowrank > 0
+        tplain = minimum(@elapsed((copyto!(x, b); solve!(P, x))) for _ in 1:20)
+        set_zero_subnormals(true)
+        tflush = minimum(@elapsed((copyto!(x, b); solve!(P, x))) for _ in 1:20)
+        set_zero_subnormals(false)
+        @test tplain <= 2.0 * tflush + 1e-5
+    end
+    @testset "threaded solves only on large factors" begin
+        qp, lab = fleet_problem(4, 24; graph = :ring, b = 1)
+        K, nv, _ = kkt_matrix(qp)
+        S = BlockLDL.symbolic(K, BlockLDL.order_amd(K), kkt_signs(size(K, 1), nv))
+        F = BlockLDL.Factor(S; nthreads = 4)
+        @test F.sched !== nothing && !F.par_solve
+    end
     @testset "random QPs vs Clarabel with :blockldl" begin
         rng2 = Xoshiro(11)
         for (n, m) in ((10, 8), (40, 30), (80, 60))

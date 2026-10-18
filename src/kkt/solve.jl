@@ -222,7 +222,7 @@ Solve `L D L' x = x` in the permuted index space (`x` is overwritten).
 """
 function ldiv_permuted!(F::Factor, x::Vector{Float64})
     _forward_leaves!(F, x)
-    if F.sched === nothing
+    if !F.par_solve
         tmp = F.T[1]
         nl = F.S.nleaf
         _forward_range!(F, x, tmp, nl + 1, F.S.nsup)

@@ -26,6 +26,7 @@ mutable struct Factor
     delta::Float64
     nreg::Int
     sched::Any                          # parallel schedule (or nothing)
+    par_solve::Bool                     # solves over the schedule (else sequential)
     nthreads::Int
     leafL::Vector{Float64}              # L entry of every leaf pivot (contiguous copy for the solves)
 end
@@ -38,12 +39,17 @@ function Factor(S::Symbolic; delta::Float64 = 1e-12, nthreads::Int = 1)
     tsz = max(S.max_front * 32, S.max_r * maxw, 1)
     nt = max(nthreads, 1)
     sched = nt > 1 ? schedule_tree(S, nt) : nothing
+    # threaded solves pay only on large factors (task start-up is 0.1 to 0.7 ms)
+    par_solve = sched !== nothing && S.nnzL >= PAR_SOLVE_NNZ[]
     nu = sched === nothing ? S.nupd : sched.nupd
     Ts = sched === nothing ? [zeros(tsz)] : [[zeros(t) for t in sched.tsz]; [zeros(tsz)]]
     Ws = sched === nothing ? [zeros(max(S.max_r^2, 1))] : [[zeros(t) for t in sched.wsz]; [zeros(max(S.max_r^2, 1))]]
     return Factor(S, zeros(S.nlx), zeros(S.N), zeros(S.N), zeros(nu), Ts, Ws,
-                  delta, 0, sched, nt, zeros(S.nleaf))
+                  delta, 0, sched, par_solve, nt, zeros(S.nleaf))
 end
+
+"nnz(L) from which solves use the parallel schedule (EPYC 7702 measurements: below about 5e5 threaded solves are slower)."
+const PAR_SOLVE_NNZ = Ref(500_000)
 
 "Copy the stored entries of `K` (the matrix analysed by `symbolic`) into the panels."
 function assemble!(F::Factor, K::SparseMatrixCSC)
@@ -195,7 +201,25 @@ function factor!(F::Factor, K::SparseMatrixCSC)
     @inbounds for i in eachindex(d)
         di[i] = 1.0 / d[i]
     end
+    _flush_subnormals!(F.Lx)
+    _flush_subnormals!(F.leafL)
     return F
+end
+
+"""
+Set the subnormal entries of `v` to zero. Entries of L below `floatmin` carry
+no information at working precision against the unit diagonal, but every
+solve that touches them runs at microcode speed (10 to 100 times slower per
+operation on x86); flushing them here keeps the factor normal without changing
+the thread's floating-point state, which belongs to the caller.
+"""
+function _flush_subnormals!(v::Vector{Float64})
+    fm = floatmin(Float64)
+    @inbounds @simd for i in eachindex(v)
+        x = v[i]
+        v[i] = ifelse(abs(x) < fm, 0.0, x)
+    end
+    return v
 end
 
 """
