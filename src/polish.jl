@@ -427,7 +427,7 @@ end
 
 """
 An accepted polish with boundary SOC blocks is exact only up to the Newton
-linearization: when its primal residual `pr` is above 1% of the tolerance, one
+linearization: when its primal residual `pr` is above 10% of the tolerance, one
 chord step (new boundary parameters, the same factorization, solves only)
 usually gains several digits; it is kept if it passes the check and is better.
 """
@@ -439,11 +439,11 @@ function _polish_tighten!(s::Solver, pr::Float64)
         pn = max(pn, abs(s.scl.Einv[i] * s.Ax[i]))
     end
     viol, vtol = _violation(s, s.Ax)
-    pr <= 0.01 * _eps_prim(st, pn) && viol <= 0.01 * vtol && return false
+    pr <= 0.1 * _eps_prim(st, pn) && viol <= 0.1 * vtol && return false
     any(B -> s.act[first(B)] == ACT_SOC_ON, s.socs) || return false
     cs, _ = _correct_soc!(s)
     cs && return false                    # a class changed: the accepted point stays
-    _polish_solve!(s; refine = 3 * max(st.polish_refine_iter, 1))
+    _polish_solve!(s; refine = 2 * max(st.polish_refine_iter, 1))
     s.info.polish_attempts += 1
     ok2, pr2, dr2, _ = _polish_check(s)
     st.verbose && @printf("      polish tighten: ok %s  pr %.2e\n", ok2, pr2)

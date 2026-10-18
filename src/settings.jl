@@ -76,9 +76,12 @@ Polishing (active-set refinement)
   factorization);
 * `polish_soc_newton = 6`: Newton steps of the polish for second-order cone
   blocks on their boundary (see polish.jl);
-* `polish_soc_band = 1e-4`: hysteresis of the classification of SOC blocks
+* `polish_soc_band = 1e-6`: hysteresis of the classification of SOC blocks
   (inactive, boundary, apex) read off the ADMM iterates: a block keeps its
-  class while it is within this relative band of the boundary;
+  class while it is within this relative band of the boundary (a wider band
+  settles the guess, and so enters the polish, earlier, from a less accurate
+  iterate that then needs more Newton factorizations: worth it only where
+  factorizations are cheap against ADMM iterations);
 * `polish_restart = true`: after a rejected polish, restart ADMM from the
   polished point (its primal, and the Moreau decomposition of `A x + y / rho`
   for the constraint and dual iterates), which carries the active-set
@@ -156,7 +159,7 @@ Base.@kwdef mutable struct Settings
     polish_corrections::Int = 3
     polish_restart::Bool = true
     polish_soc_newton::Int = 6
-    polish_soc_band::Float64 = 1e-4
+    polish_soc_band::Float64 = 1e-6
     polish_interval::Int = 10
     polish_gate::Float64 = 0.0
     polish_settle::Float64 = 0.0
