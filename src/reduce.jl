@@ -336,6 +336,40 @@ function update!(R::ReducedProgram)
 end
 
 """
+    update_matrices!(reduced, verts) -> blocks
+
+After the constraint matrices of the fine vertices `verts` changed in place
+(on their sparsity patterns, as `set_state_set!` does), recompute what depends
+on them: the stacked fine constraint matrix behind the right-hand sides
+`b - A xbar`, and the coarse constraint matrix `A_B N_B` of every block that
+holds one of them (the fibers do not depend on node constraints, so nothing
+else changes). Returns the coarse vertices whose matrices changed; call
+`update!(reduced)` afterwards for the vectors. Coarse programs that share
+their matrices with this one (`reduce(...; reuse)` when nothing structural
+changed) see the change too.
+"""
+function update_matrices!(R::ReducedProgram, verts)
+    P, Pc = R.fine, R.program
+    isempty(verts) && return Int[]
+    _refresh_node_rows!(R.An, P, verts)
+    blocks = sort!(unique(R.vertex_block[v] for v in verts))
+    for b in blocks
+        F = R.fibers[b]
+        AI = Int[]; AJ = Int[]; AV = Float64[]
+        arow = 0
+        for (l, v) in enumerate(F.members)
+            nd = P.nodes[v]
+            isempty(nd.b) && continue
+            _push_block!(AI, AJ, AV, arow, F.offsets[l], nd.A, 1.0)
+            arow += length(nd.b)
+        end
+        AB = sparse(AI, AJ, AV, arow, length(F))
+        _copy_values!(Pc.nodes[b].A, AB * F.N)
+    end
+    return blocks
+end
+
+"""
     lift(reduced, y) -> x
 
 The lift `x = xbar + N y` of a coarse cochain to the program `reduced` was

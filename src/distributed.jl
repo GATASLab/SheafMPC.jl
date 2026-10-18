@@ -293,7 +293,7 @@ function _shift_warm!(D::DistributedMPC, x::AbstractVector)
 end
 
 """
-    step!(dmpc::DistributedMPC, x, refs; terminal = nothing, targets = nothing, drift = nothing) -> StepInfo
+    step!(dmpc::DistributedMPC, x, refs; terminal = nothing, targets = nothing, drift = nothing, states = nothing) -> StepInfo
 
 One distributed receding-horizon step: update the data, iterate consensus ADMM
 (warm started as `dmpc.warm` says) to the tolerances or the budget, and
@@ -302,9 +302,13 @@ rounds), `info.t_solve` the sequential time of all local solves (the parallel
 time, the slowest local solve per iteration summed, is `dmpc.t_parallel`),
 `info.t_construct` includes the warm start (`dmpc.t_warm` alone), and
 `dmpc.converged`, `dmpc.floats` record the outcome and the communication.
+New state sets (`states`, as for `MPCController`, or `set_state_set!(dmpc.fp, ...)`)
+change the constraint matrices of the local QPs in place: only the agents or
+teams that hold a changed vertex recompute their coarse matrix and hand it to
+their solver (`update!(solver; A)`, a numerical refactorization).
 """
 function step!(D::DistributedMPC, x::AbstractVector, refs::AbstractVector; terminal = nothing, targets = nothing,
-               drift = nothing)
+               drift = nothing, states = nothing)
     t0 = time_ns()
     fp, R = D.fp, D.R
     Pc = R.program
@@ -312,6 +316,15 @@ function step!(D::DistributedMPC, x::AbstractVector, refs::AbstractVector; termi
     set_references!(fp, refs; terminal = terminal)
     targets === nothing || set_targets!(fp, targets)
     drift === nothing || set_drift!(fp, drift)
+    states === nothing || set_state_sets!(fp, states)
+    if !isempty(fp.changed)
+        for u in update_matrices!(R, fp.changed)
+            L = D.locals[u]
+            Au = Pc.nodes[u].A
+            update!(L.solver; A = [Au spzeros(size(Au, 1), length(L.q) - L.d)])
+        end
+        empty!(fp.changed)
+    end
     update!(R)
     for L in D.locals
         update!(L.solver; b = Pc.nodes[L.u].b)

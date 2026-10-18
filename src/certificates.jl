@@ -167,6 +167,19 @@ function Certifier(R::ReducedProgram; delta::Real = 1e-9, max_dense::Integer = 2
 end
 
 """
+    update_matrices!(cert::Certifier, verts) -> cert
+
+After the constraint matrices of the finest program's vertices `verts` changed
+in place (`set_state_set!`): refresh the stacked node matrix the certificate
+uses for the node multipliers.
+"""
+function update_matrices!(C::Certifier, verts)
+    _refresh_node_rows!(C.An, C.P0, verts)
+    refresh_matrices!(C.qmap, C.P0, verts)
+    return C
+end
+
+"""
     certify!(cert, x, hard_duals, node_duals) -> upper
 
 The upper bound (a) at the finest plan `x` (the lifted reduced solution) from
