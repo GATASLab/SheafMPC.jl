@@ -252,7 +252,7 @@ function step!(C::MPCController, x::AbstractVector, refs::AbstractVector; termin
         s = C.solver
     else
         s = C.solver
-        update!(s; q = M.q, b = M.b)
+        update!(s; q = M.q, b = M.b, c = M.c)
         if C.warm == :cold || s.info.status != :solved
             reset!(s)
         elseif C.warm == :shift && !isempty(C.xmap)

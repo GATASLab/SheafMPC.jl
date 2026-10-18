@@ -179,7 +179,7 @@ function main()
             else
                 bvec = [qp.kinds[i] == SheafMPC.ROW_SOC ? qp.socb[i] : qp.u[i] for i in 1:nrows(qp)]
                 t = @elapsed begin
-                    update!(s; q = qp.q, b = bvec)
+                    update!(s; q = qp.q, b = bvec, c = qp.c)
                     info = solve!(s)
                 end
                 push!(tws, t); push!(its, info.iter)
@@ -188,7 +188,7 @@ function main()
                 warm_start!(s; x = copy(s.xsol), y = copy(s.ysol))
                 info = solve!(s)
             end
-            push!(gaps, relg(info.obj - s0c + qp.c, sol.J))
+            push!(gaps, relg(info.obj, sol.J))
             z = k == 0 ? s.xsol : lift(L, s.xsol)
             u = [agent_state(model, z, i, 0)[2] for i in 1:spec.n]
             x = [spec.agents[i].A[1] * x[i] + spec.agents[i].B[1] * u[i] + spec.agents[i].c[1] for i in 1:spec.n]

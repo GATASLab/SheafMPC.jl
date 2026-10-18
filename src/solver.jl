@@ -113,6 +113,10 @@ mutable struct Solver{LS<:LinearSystem}
     act_last::Vector{Int8}        # active set of the last accepted polish
     has_last::Bool
     last_fails::Int               # consecutive warm solves whose last-active-set polish failed or was skipped
+    # interior-point workspace (ipm.jl, made on first use) and the cost model
+    # of the automatic method choice (method.jl)
+    ipm::Any
+    cost::CostModel
 end
 
 function _rowtypes(l, u, kinds)
@@ -210,7 +214,7 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
                zeros(n), zeros(m), zeros(m), false, false,
                soc_idx, zeros(length(p.socs)), zeros(length(p.socs)), zeros(m), 0,
                Anderson(st.anderson, st.anderson > 0 ? n + m : 0), st.rho, NaN, NaN,
-               fill(ACT_NONE, m), false, 0)
+               fill(ACT_NONE, m), false, 0, nothing, CostModel())
     # the base rho: from the spectrum of the constraint operator (the ADMM system
     # was factored with the values the estimate needs), or the setting
     if spectral
@@ -219,8 +223,9 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
         _set_rho!(s, s.rho0)
         _refactor_kkt!(s)
     end
-    s.info.setup_time = (time_ns() - t0) / 1e9
     s.info.linsys = kind
+    _cost_setup!(s)
+    s.info.setup_time = (time_ns() - t0) / 1e9
     s.info.rho = s.rho0
     return s
 end
@@ -326,16 +331,23 @@ function _residuals!(s::Solver, x, z, y, Ax, Px, Aty)
         nAx = max(nAx, abs(e * Ax[i]))
         nz = max(nz, abs(e * z[i]))
     end
-    dr = 0.0; nPx = 0.0; nAty = 0.0; nq = 0.0
+    dr = 0.0; nPx = 0.0; nAty = 0.0; nq = 0.0; nPxq = 0.0
     q = s.q
     @inbounds for j in 1:s.n
         d = D[j]
-        dr = max(dr, abs(d * (Px[j] + q[j] + Aty[j])))
+        g = Px[j] + q[j]
+        dr = max(dr, abs(d * (g + Aty[j])))
         nPx = max(nPx, abs(d * Px[j]))
         nAty = max(nAty, abs(d * Aty[j]))
         nq = max(nq, abs(d * q[j]))
+        nPxq = max(nPxq, abs(d * g))
     end
-    return pr, cinv * dr, max(nAx, nz), cinv * max(nPx, nAty, nq)
+    # with the gap test, the dual residual is measured against the gradient
+    # P x + q and A'y it balances rather than against P x and q separately
+    # (termination.jl: when they are large and cancel, the OSQP normalization
+    # admits dual residuals that move the objective by r_d'P^+r_d / 2)
+    dn = s.settings.check_gap ? max(nAty, nPxq) : max(nPx, nAty, nq)
+    return pr, cinv * dr, max(nAx, nz), cinv * dn
 end
 
 @inline _eps_prim(st::Settings, pnorm) = st.eps_abs + st.eps_rel * pnorm
@@ -439,24 +451,17 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    solve!(solver) -> Info
+    _admm_solve!(solver, t0, budget) -> status
 
 Run ADMM from the current iterate (a warm start if `settings.warm_start` and
-there is one, zero otherwise), with the polish described in `Settings`. The
-unscaled solution is in `solver.xsol`, `solver.ysol`, `solver.zsol`.
+there is one, zero otherwise), with the polish described in `Settings`, for at
+most `budget` iterations: `:budget` when they run out (the caller crosses over
+to the interior-point method), otherwise the final status, with the unscaled
+solution in `solver.xsol`, `solver.ysol`, `solver.zsol`.
 """
-function solve!(s::Solver)
-    t0 = time_ns()
+function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
     st = s.settings
     info = s.info
-    info.status = :unsolved
-    info.iter = 0
-    info.rho_updates = 0
-    info.polish = :none
-    info.polish_attempts = 0
-    info.polish_factorizations = 0
-    info.polish_iter = -1
-    info.polish_time = 0.0
     s.has_fail = false
     fill!(s.act_prev, Int8(-99))
     if !(st.warm_start && s.has_iterate)
@@ -484,7 +489,7 @@ function solve!(s::Solver)
             st.verbose && @printf("  warm polish (last active set) %s\n", ok ? "accepted" : "rejected")
         end
         if !ok && (s.warm_fails == 0 || s.warm_fails % max(st.polish_warm_retry, 1) == 0)
-            _guess_active!(s, s.z, s.y)
+            _guess_active!(s, s.z, s.y, st.polish_soc_band)
             ok = _try_polish!(s)
             st.verbose && @printf("  warm polish %s\n", ok ? "accepted" : "rejected")
         end
@@ -505,6 +510,9 @@ function solve!(s::Solver)
     use_aa && reset!(s.aa)
     if !polished
         while k < st.max_iter
+            if k >= budget
+                status = :budget; break
+            end
             k += 1
             check = k % st.check_termination == 0 || k == st.max_iter || (st.adaptive_rho && k == st.adaptive_rho_first)
             if check
@@ -515,7 +523,7 @@ function solve!(s::Solver)
             use_aa && _aa_update!(s.aa, s; extrapolate = !check, safeguard = st.anderson_safeguard)
             info.iter = k
             if st.polish && pint > 0 && k % pint == 0 && s.m > 0 && k >= next_polish
-                _guess_active!(s, s.z, s.y)
+                _guess_active!(s, s.z, s.y, st.polish_soc_band)
                 gate_ok = true
                 if st.polish_gate > 0
                     gpr, gdr, gpn, gdn = _residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty)
@@ -539,7 +547,7 @@ function solve!(s::Solver)
                 pr, dr, pn, dn = _residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty)
                 info.prim_res = pr; info.dual_res = dr
                 st.verbose && @printf("  it %4d  prim %.2e (tol %.1e)  dual %.2e (tol %.1e)  rho %.2e\n", k, pr, _eps_prim(st, pn), dr, _eps_dual(st, dn), s.rho)
-                if pr <= _eps_prim(st, pn) && dr <= _eps_dual(st, dn)
+                if pr <= _eps_prim(st, pn) && dr <= _eps_dual(st, dn) && _gap_ok(s, s.x, s.z, s.y, s.Px) && _violation_ok(s, s.Ax)
                     converged = true; status = :solved
                     break
                 end
@@ -570,9 +578,9 @@ function solve!(s::Solver)
         copyto!(s.act_last, s.act)
         s.has_last = true
     end
+    status == :budget && return status
     _finalize!(s, status)
-    info.solve_time = (time_ns() - t0) / 1e9
-    return info
+    return status
 end
 
 function _finalize!(s::Solver, status::Symbol)
@@ -599,6 +607,7 @@ function _finalize!(s::Solver, status::Symbol)
         # residuals of the returned point (already exact for an accepted polish)
         pr, dr, _, _ = _residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty)
         info.prim_res = pr; info.dual_res = dr
+        info.gap = _point_gap(s)
     end
     return nothing
 end
@@ -608,16 +617,21 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    update!(solver; q = nothing, l = nothing, u = nothing, b = nothing)
+    update!(solver; q = nothing, l = nothing, u = nothing, b = nothing, c = nothing)
 
-New linear cost and/or constraint data (unscaled), keeping the factorization.
+New linear cost and/or constraint data (unscaled), keeping the factorization,
+and optionally the constant `c` of the objective (it enters the reported
+objective and the relative part of the duality gap test, termination.jl; in
+receding horizon pass it, or the gap test is relative to the first problem's
+constant).
 `b` is the right-hand side in the convention of the constructor (`b - A x in
 K`): it sets `l = u = b` on equality rows, `u = b` on nonnegative-cone rows and
 the shift of every SOC block. A change that turns rows into equality or free
 rows (or back) changes their rho and costs one refactorization.
 """
-function update!(s::Solver; q = nothing, l = nothing, u = nothing, b = nothing)
+function update!(s::Solver; q = nothing, l = nothing, u = nothing, b = nothing, c = nothing)
     sc = s.scl
+    c === nothing || (s.c0 = Float64(c))
     if q !== nothing
         length(q) == s.n || throw(DimensionMismatch("q must have $(s.n) entries"))
         @inbounds for j in 1:s.n

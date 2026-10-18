@@ -62,9 +62,9 @@ function run_sheafmpc(seq, xmap, ymap; cold = false)
         p = st.p
         t = @elapsed begin
             if CONE == "box"
-                update!(s; q = p.q, l = p.l, u = p.u)
+                update!(s; q = p.q, l = p.l, u = p.u, c = p.c)
             else
-                update!(s; q = p.q, b = p.socb .+ [p.kinds[i] == SheafMPC.ROW_EQ ? p.u[i] : 0.0 for i in 1:nrows(p)])
+                update!(s; q = p.q, b = p.socb .+ [p.kinds[i] == SheafMPC.ROW_EQ ? p.u[i] : 0.0 for i in 1:nrows(p)], c = p.c)
             end
             if cold || k == 1
                 reset!(s)
@@ -73,7 +73,7 @@ function run_sheafmpc(seq, xmap, ymap; cold = false)
             end
             info = solve!(s)
         end
-        obj = info.obj - p0.c + p.c
+        obj = info.obj                       # update! sets the constant too
         push!(ts, t); push!(its, info.iter); push!(gaps, relgap(obj, st.ref))
         push!(pol, info.polish == :success ? (info.polish_iter == 0 ? 2 : 1) : 0); push!(facs, info.polish_factorizations)
     end
@@ -125,6 +125,9 @@ function main()
         @assert all(st.p.P == seq[1].p.P && st.p.A == seq[1].p.A for st in seq)
         xmap, ymap = shift_maps(seq[1].Q, CONE)
         res = Dict{String,Any}()
+        # an untimed replay first: a path first taken mid-sequence (the polish
+        # corrections, a crossover to the IPM) would otherwise time compilation
+        run_sheafmpc(seq, xmap, ymap); run_sheafmpc(seq, xmap, ymap; cold = true)
         res["sheafmpc"] = run_sheafmpc(seq, xmap, ymap)
         res["sheafmpc_cold"] = run_sheafmpc(seq, xmap, ymap; cold = true)
         if CONE == "box"

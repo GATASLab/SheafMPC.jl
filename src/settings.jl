@@ -33,7 +33,32 @@ ADMM
 
 Termination (OSQP's unscaled criteria)
 * `eps_abs = 1e-3`, `eps_rel = 1e-3`, checked every `check_termination = 25` iterations;
-* `eps_prim_inf = 1e-4`, `eps_dual_inf = 1e-4`: infeasibility certificates.
+* `eps_prim_inf = 1e-4`, `eps_dual_inf = 1e-4`: infeasibility certificates;
+* `check_gap = true`: also require the duality gap test of termination.jl,
+  `|f_p - f_d| <= eps_abs + eps_rel min(|f_p|, |f_d|)` (objectives with the
+  constant), of every ADMM iterate and polished point that is accepted. Without
+  it a problem whose `P x` and `q` are large and cancel can meet the residual
+  tests with an objective far less accurate than eps.
+
+Method (see method.jl)
+* `method = :auto`: `:admm`, `:ipm` (the interior-point method of ipm.jl on the
+  same KKT pattern) or `:auto`: ADMM with a budget of iterations, crossing over
+  to the IPM when the budget runs out, and the IPM directly once this solver's
+  ADMM solves have cost more than its IPM solves; the IPM directly for
+  problems with second-order cones solved cold at `eps <= ipm_eps_direct`;
+* `ipm_eps_direct = 1e-10`: tolerance at or below which `:auto` starts with the IPM;
+* `crossover = 1.0`: ADMM budget as a multiple of the estimated cost of an IPM
+  solve (in ADMM iterations; 0 disables the crossover);
+* `ipm_polish = false`: polish on the active set the IPM identifies (an exact
+  solution, and the iterate of the next warm-started ADMM solve): during the
+  iterations, up to `ipm_polish_tries = 2` times, once the duality gap is below
+  `ipm_polish_gap = 1e-5` (relative) and the residuals below the square roots
+  of their tolerances, with at most `ipm_polish_newton = 3` Newton steps;
+  an accepted polish ends the solve. With
+  `ipm_polish_final = false` a converged IPM point is returned as it is;
+* `ipm_max_iter = 100`, `ipm_reg = 1e-8` (static regularization of the
+  interior-point KKT matrix; iterative refinement removes it),
+  `ipm_step_fraction = 0.99`, `ipm_eps_infeas = 1e-8` (infeasibility certificates).
 
 Scaling
 * `scaling = 10` rounds of modified Ruiz equilibration (0 disables).
@@ -51,6 +76,9 @@ Polishing (active-set refinement)
   factorization);
 * `polish_soc_newton = 6`: Newton steps of the polish for second-order cone
   blocks on their boundary (see polish.jl);
+* `polish_soc_band = 1e-4`: hysteresis of the classification of SOC blocks
+  (inactive, boundary, apex) read off the ADMM iterates: a block keeps its
+  class while it is within this relative band of the boundary;
 * `polish_restart = true`: after a rejected polish, restart ADMM from the
   polished point (its primal, and the Moreau decomposition of `A x + y / rho`
   for the constraint and dual iterates), which carries the active-set
@@ -121,12 +149,14 @@ Base.@kwdef mutable struct Settings
     eps_rel::Float64 = 1e-3
     eps_prim_inf::Float64 = 1e-4
     eps_dual_inf::Float64 = 1e-4
+    check_gap::Bool = true
     check_termination::Int = 25
     scaling::Int = 10
     polish::Bool = true
     polish_corrections::Int = 3
     polish_restart::Bool = true
     polish_soc_newton::Int = 6
+    polish_soc_band::Float64 = 1e-4
     polish_interval::Int = 10
     polish_gate::Float64 = 0.0
     polish_settle::Float64 = 0.0
@@ -144,6 +174,18 @@ Base.@kwdef mutable struct Settings
     kkt_relax::Symbol = :exact
     kkt_structure::Any = nothing
     verbose::Bool = false
+    method::Symbol = :auto
+    ipm_eps_direct::Float64 = 1e-10
+    crossover::Float64 = 1.0
+    ipm_polish::Bool = false
+    ipm_polish_tries::Int = 2
+    ipm_polish_newton::Int = 3
+    ipm_polish_gap::Float64 = 1e-5
+    ipm_polish_final::Bool = false
+    ipm_max_iter::Int = 100
+    ipm_reg::Float64 = 1e-8
+    ipm_step_fraction::Float64 = 0.99
+    ipm_eps_infeas::Float64 = 1e-8
 end
 
 """
@@ -155,7 +197,9 @@ ADMM iterations `iter`, unscaled residuals `prim_res`, `dual_res`, `rho` at the
 end and the number of rho updates (refactorizations), the polish outcome
 (`:success`, `:failed`, `:skipped`, `:none`), the number of polish solves
 attempted and of polish refactorizations (a cached polish factorization is
-reused when the active set repeats), and times in seconds.
+reused when the active set repeats), times in seconds, the duality gap `gap`
+of the returned point, the `method` that produced it (`:admm`, `:ipm`, or
+`:admm_ipm` after a crossover) and the interior-point iterations `ipm_iter`.
 """
 Base.@kwdef mutable struct Info
     status::Symbol = :unsolved
@@ -173,4 +217,7 @@ Base.@kwdef mutable struct Info
     solve_time::Float64 = 0.0
     polish_time::Float64 = 0.0
     linsys::Symbol = :none
+    gap::Float64 = NaN
+    method::Symbol = :none
+    ipm_iter::Int = 0
 end
