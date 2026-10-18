@@ -1,19 +1,32 @@
 """
     SheafMPC
 
-An operator-splitting (ADMM) solver for convex conic QPs, aimed at sheaf
-programs and multi-agent model predictive control: OSQP's algorithm
-(Stellato et al. 2020) with second-order cones (as in COSMO), a quasi-definite
-KKT matrix factored once by a sparse LDLt (QDLDL or CliqueTrees'
-supernodal multifrontal LDLt), adaptive rho, Ruiz scaling, infeasibility
-detection, and an active-set polish that reuses the symbolic factorization.
-For receding horizon, `update!` and `warm_start!` keep every factorization.
+Multi-agent model predictive control as a homological program on a cellular
+sheaf over the time-expanded graph, its reduced-order models and condensations
+by sheaf pushforward, and certificates of their optimality gap; the companion
+of "Reduced-Order Models and Condensation of Multi-Agent MPC by Sheaf
+Pushforward".
+
+* Modelling: `Agent`, `Fleet`, `FleetProgram` (formation edges soft, dynamics
+  edges hard, the initial state pinned).
+* Reductions: `TimeBlocking` (condensing, exact), `Teams` (agreement
+  subspaces), products `teams ⊠ blocking`, `Mixed` resolutions;
+  `reduce(program, resolution)` is the pushforward, `lift` maps reduced plans
+  back, and reductions compose (teams of teams).
+* Certificates: `gap_bounds` (from the reduced solve, and the fine one when
+  available), `gap_kernel`, `gap` and `select_teams`.
+* Receding horizon: `MPCController` and `step!`.
+* The solver: an operator-splitting (ADMM) conic QP solver for sheaf programs
+  (OSQP's algorithm with second-order cones, a quasi-definite KKT matrix
+  factored once, an active-set polish), with `update!` and warm starts that
+  keep every factorization.
 """
 module SheafMPC
 
 using LinearAlgebra
 using SparseArrays
 using Printf
+using Random
 import QDLDL
 using CliqueTrees
 using CliqueTrees.Multifrontal: Multifrontal
@@ -27,8 +40,40 @@ include("settings.jl")
 include("solver.jl")
 include("polish.jl")
 
+include("program.jl")
+include("fiber.jl")
+include("resolutions.jl")
+include("reduce.jl")
+include("qpmap.jl")
+include("fleet.jl")
+include("scenarios.jl")
+include("certificates.jl")
+include("controller.jl")
+
+# the conic QP solver
 export ConicQP, RowKind, ROW_INTERVAL, ROW_EQ, ROW_LEQ, ROW_SOC
 export nvars, nrows, objective, violation, sheaf_qp, dedup_rows
 export Settings, Info, Solver, setup, solve!, update!, warm_start!, warm_start_shifted!, solution, reset!
+# programs
+export ConeKind, ZERO_CONE, NONNEG_CONE, SOC_CONE, ConeBlock, zero_cone, nonneg_cone, soc_cone
+export NodeData, EdgeTag, SheafEdge, SheafProgram
+export nvertices, nedges, c0dim, c1dim, vrange, erange, edgedim, hard_edges, soft_edges
+export coboundary, targets, quadratic_form, node_constraints, feasibility, harden, edge_defect
+# fleets
+export Agent, BallSet, BoxSet, Polyhedron, Fleet, FleetProgram, nagents
+export set_state!, set_references!, set_targets!, set_drift!, set_state_bound!
+export trajectories, first_inputs, plant_step
+export quadrotor, ground_vehicle, grid_graph, GridScenario, fleet, slots, references, formation_start
+export agent_kind, row_teams, strip_teams, block_teams
+# resolutions and reductions
+export FleetLayout, Resolution, Fine, TimeBlocking, full_condensing, partial_condensing, Teams, Product, ⊠
+export Mixed, VertexPartition, canonical_partition
+export ReducedProgram, Fiber, fiberdim, lift, lift!, restrict, reduction_chain, root_program, composite_partition, fiber_kinds
+export QPMap, refresh!, ProgramSolution, solve, isoptimal
+# certificates
+export gap_bounds, gap_lower_bound, Certifier, certify!, multipliers
+export GapKernel, gap_kernel, gap, team_front, select_teams
+# receding horizon
+export MPCController, StepInfo, step!, plan, reduced_program
 
 end

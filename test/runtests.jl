@@ -6,6 +6,8 @@ const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS"
 
 relgap(a, b) = abs(a - b) / max(1.0, abs(b))
 
+include("fixtures.jl")
+
 "Clarabel on a ConicQP at tolerance `tol`: (objective, x, status)."
 function clarabel_ref(p::ConicQP; tol = 1e-10)
     m = nrows(p)
@@ -198,6 +200,11 @@ end
         reset!(s)
         @test relgap(solve!(s).obj, ref) <= 1e-8
     end
+
+    include("structured_basis.jl")
+    include("reductions.jl")
+    include("certificates.jl")
+    include("controller.jl")
 
     if isdir(PAPER)
         include(joinpath(@__DIR__, "paper.jl"))
