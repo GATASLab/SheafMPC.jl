@@ -4,3 +4,5 @@ results/*/
 !results/baseline/
 envs/*/Manifest.toml
 data/osqprand/
+hpg/jobs/
+hpg/submitted_*.txt

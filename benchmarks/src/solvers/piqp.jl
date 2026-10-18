@@ -318,6 +318,8 @@ end
 function piqp_info()
     d = Dict{String,Any}("package" => "PIQP (C interface, in-process ccall)", "library" => piqp_libpath())
     piqp_libpath() == PIQP_DEFAULT_LIB || (d["note"] = "PIQP_LIB overrides the default; build fields describe the default library")
+    bi = joinpath(dirname(dirname(piqp_libpath())), "BUILD_INFO")      # written by hpg/build.sbatch
+    isfile(bi) && (d["build_info"] = read(bi, String))
     merge!(d, PIQP_BUILD)
     d["settings"] = "defaults of piqp_set_default_settings_sparse, then eps_abs = eps_duality_gap_abs = eps, " *
                     "eps_rel = eps_duality_gap_rel = 0, max_iter = $(PIQP_MAX_ITER), verbose off, compute_timings off"

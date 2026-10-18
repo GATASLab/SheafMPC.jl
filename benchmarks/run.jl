@@ -11,7 +11,8 @@
 #   --out DIR          results directory (default benchmarks/results/<tier>_<date>)
 #   --list             print the instance keys of the tier and exit
 # Environment: BENCH_MAX_LOAD (4), BENCH_MAX_WAIT (7200 s), BENCH_TIME_LIMIT (s per
-# solve), BENCH_MUMBLEBEE_NAME (rename the Mumblebee solver, for a second variant).
+# solve), BENCH_MUMBLEBEE_NAME (rename the Mumblebee solver, for a second variant),
+# BENCH_FLEET_MAXN (largest fleet of the full tier, default 256).
 #
 # One JSON file per instance: machine and software, the load before and after,
 # the references, and per solver and accuracy tier the calibration, the cold
@@ -60,7 +61,7 @@ function tier_specs(t)
         push!(S, spec("reduced_k8", "reduced", () -> BH.reduced_instance(k = 8, L = 6)))
     elseif t == "full" || t == "hpg"
         big = t == "hpg"
-        ns = big ? (256, 1024) : (1, 4, 16, 64, 256)
+        ns = big ? (256, 1024) : filter(<=(parse(Int, get(ENV, "BENCH_FLEET_MAXN", "256"))), (1, 4, 16, 64, 256))
         for graph in (:ring, :grid), cone in (:box, :soc), b in (1, 4), n in ns
             L = n >= 1024 ? 6 : n >= 256 ? 8 : 12
             reps = n >= 256 ? 3 : 5
