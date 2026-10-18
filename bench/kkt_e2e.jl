@@ -73,7 +73,7 @@ function run_osqp_single(p)
     P = SparseMatrixCSC(triu(p.P))
     m = OSQP.Model()
     t_setup = @elapsed OSQP.setup!(m; P = P, q = p.q, A = p.A, l = p.l, u = p.u, verbose = false, eps_abs = EPS,
-                                   eps_rel = EPS, polish = true, warm_starting = false, max_iter = 400_000, adaptive_rho = true)
+                                   eps_rel = EPS, polish = true, warm_start = false, max_iter = 400_000, adaptive_rho = true)
     r = OSQP.solve!(m)
     ts = Float64[]
     for _ in 1:REPS
