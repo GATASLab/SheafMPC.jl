@@ -203,17 +203,20 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
     return s
 end
 
-# the polish system shares the ordering (and, for the supernodal backend, the
-# symbolic factorization) of the ADMM system
-_polish_system(S::QDLDLSystem, K::SpMat, n::Int) = QDLDLSystem(K, S.diag_idx, S.upd_idx; perm = copy(S.perm))
+# the polish system shares the ordering and the symbolic factorization of the
+# ADMM system; it is factored numerically only when the polish first needs it
+# (`pol_valid` is false until then)
+function _polish_system(S::QDLDLSystem, K::SpMat, n::Int)
+    F = deepcopy(S.F)                  # same permuted pattern, elimination tree and factor pattern
+    ws = F.workspace
+    return QDLDLSystem(K, S.diag_idx, S.upd_idx, F, S.perm, zeros(size(K, 1)), ws.Ln, ws.Lp, ws.Li, ws.Lx, ws.Dinv)
+end
 function _polish_system(S::ChordalSystem, K::SpMat, n::Int)
     F = Multifrontal.ChordalLDLt(Hermitian(K, :U), S.F.P, S.F.S)
     N = size(K, 1)
     FWs = Multifrontal.FactorizationWorkspace(F)
     DWs = Multifrontal.DivisionWorkspace{Float64}(Multifrontal.symbolic(F), 1)
-    T = ChordalSystem(K, S.diag_idx, F, S.L, S.Lt, zeros(N), FWs, DWs, copy(S.signs), Vector{Int}(F.perm), zeros(N))
-    _factor!(T)
-    return T
+    return ChordalSystem(K, S.diag_idx, F, S.L, S.Lt, zeros(N), FWs, DWs, copy(S.signs), Vector{Int}(F.perm), zeros(N))
 end
 
 # ---------------------------------------------------------------------------

@@ -254,10 +254,12 @@ or one of CliqueTrees' `:mmd` (multiple minimum degree), `:amf` (approximate
 minimum fill), `:mf` (minimum fill).
 """
 function make_system(kind::Symbol, K::SpMat, diag_idx::Vector{Int}, n::Int; ordering::Symbol = :amd,
-                     upd_idx::Vector{Int} = diag_idx, settings = nothing)
+                     upd_idx::Vector{Int} = diag_idx, settings = nothing,
+                     perm::Union{Nothing,Vector{Int}} = nothing)
     kind == :blockldl && return BlockLDLSystem(K, diag_idx, n; settings = settings, upd_idx = upd_idx)
     kind == :model && return model_system(K, diag_idx, n; upd_idx = upd_idx, settings = settings)
     if kind == :qdldl
+        perm === nothing || return QDLDLSystem(K, diag_idx, upd_idx; perm = perm)
         ordering == :amd && return QDLDLSystem(K, diag_idx, upd_idx)
         return QDLDLSystem(K, diag_idx, upd_idx; perm = fill_ordering(K, ordering))
     end
@@ -267,6 +269,7 @@ end
 
 "A fill-reducing permutation of the symmetric matrix with upper triangle `K`."
 function fill_ordering(K::SpMat, ordering::Symbol)
+    ordering == :amd && return Vector{Int}(QDLDL.AMD.amd(K))     # QDLDL's default (AMD of K + K')
     Kf = K + transpose(K)
     alg = ordering == :mmd ? CliqueTrees.MMD() : ordering == :amf ? CliqueTrees.AMF() :
           ordering == :mf ? CliqueTrees.MF() : throw(ArgumentError("unknown ordering $ordering"))
