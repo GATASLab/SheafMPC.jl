@@ -18,7 +18,10 @@ using Printf, Statistics
 const SHIFT = 1e-4
 # the solver of the "equal or faster" gate: Mumblebee fast-symbolic with AMF
 const GATE = get(ENV, "BENCH_GATE", "mumblebee_fast")
-const MODES = ["cold", "warm"]
+# cold: the solve alone; setup: scaling, ordering and factorization (timed separately, per cold
+# repeat); cold_total: setup + solve of the same repeat set (medians added); warm: one
+# update + warm start + solve call of the sequence
+const MODES = ["cold", "setup", "cold_total", "warm"]
 const TIERNAMES = ["low", "medium", "e8", "high"]   # e8 (1e-8): cone families only
 
 num(x) = x isa Number ? Float64(x) : x == "NaN" ? NaN : x == "Inf" ? Inf : x == "-Inf" ? -Inf : NaN
@@ -54,8 +57,12 @@ function qptimes(r, solver, tier, mode)
     L = r["instance"]["L"]
     tl = num(r["time_limit"])
     if t["status"] != "ran"
-        n = mode == "cold" ? min(L, r["protocol"]["cold_qps"]) : L - 1
+        n = mode == "warm" ? L - 1 : min(L, r["protocol"]["cold_qps"])
         return [(j, Inf) for j in 1:n]
+    end
+    if mode in ("setup", "cold_total")
+        f(row) = mode == "setup" ? num(row["t_setup_med"]) : num(row["t_setup_med"]) + num(row["t_med"])
+        return [(Int(row["qp"]), row["ok"] ? f(row) : Inf) for row in t["cold"]]
     end
     rows = t[mode]
     mode == "warm" && (rows = rows[2:end])
@@ -149,12 +156,15 @@ function main()
                                       pkgmiss = haskey(med, pkg) && isnan(med[pkg]) && isfinite(get(med, GATE, NaN))))
                 println(io, "| $(r["key"]) | $(r["instance"]["nvars"]) | ", join(cells, " | "), " | $rs |", gs)
             end
-            println(io, mode == "warm" ? "\nWarm cells: median (max) ms.\n" : "\nCold cells: median ms of the solve; setup is separate.\n")
+            println(io, mode == "warm" ? "\nWarm cells: median (max) ms of update + warm start + solve.\n" :
+                        mode == "setup" ? "\nSetup cells: median ms of the setup (scaling, ordering, factorization) of a cold solve.\n" :
+                        mode == "cold_total" ? "\nSetup + solve cells: median ms of a cold setup plus its solve.\n" :
+                        "\nCold cells: median ms of the solve alone; setup is its own mode.\n")
         end
         # iterations: the median over the QPs of each solver's iteration count (ADMM
         # iterations against interior-point iterations are not comparable work units,
         # but cold SheafMPC against cold OSQP is the like-for-like count)
-        for mode in MODES
+        for mode in ("cold", "warm")
             println(io, "### $fam, $mode, iterations (median over the QPs; low / medium / high)\n")
             println(io, "| instance | ", join(fs, " | "), " |")
             println(io, "|---|", repeat("---:|", length(fs)))

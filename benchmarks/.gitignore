@@ -7,3 +7,4 @@ data/osqprand/
 hpg/jobs/
 hpg/submitted_*.txt
 results/*.log
+results/baseline/**/*.json
