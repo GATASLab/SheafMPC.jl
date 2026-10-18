@@ -10,11 +10,11 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="${HPG_ROOT:-/blue/fairbanksj/itaykadosh/sheafmpc_bench}"
 STAMP="${HPG_STAMP:-$(date +%Y%m%d)}"
 mkdir -p "$HERE/hpg/jobs"; rm -f "$HERE/hpg/jobs/"*.sbatch
-for TIER in hpg full; do
+for TIER in quick hpg full; do
   KEYS=$(julia --project="$HERE" "$HERE/run.jl" $TIER --list 2>/dev/null)
-  if [ $TIER = hpg ]; then GROUPS_="$KEYS"; else GROUPS_=$(echo "$KEYS" | sed -E 's/(_n|_N|_M|_nx|_k)[0-9]+(_s[0-9]+)?$/\1/' | sort -u); fi
+  if [ $TIER = quick ]; then GROUPS_="all"; elif [ $TIER = hpg ]; then GROUPS_="$KEYS"; else GROUPS_=$(echo "$KEYS" | sed -E 's/(_n|_N|_M|_nx|_k)[0-9]+(_s[0-9]+)?$/\1/' | sort -u); fi
   for G in $GROUPS_; do
-    MEM=16gb; TIME=12:00:00
+    MEM=16gb; TIME=12:00:00; ONLY="--only ${G}"; [ "$G" = all ] && ONLY="" && TIME=04:00:00
     case "$G" in *n1024) MEM=96gb; TIME=48:00:00;; *n256) MEM=48gb; TIME=24:00:00;; fleet_*_n) MEM=48gb; TIME=48:00:00;; esac
     cat > "$HERE/hpg/jobs/${TIER}_${G}.sbatch" <<EOT
 #!/bin/bash
@@ -32,9 +32,9 @@ cd ${ROOT}/SheafMPC.jl/benchmarks
 CORE=\$(taskset -cp \$\$ | awk -F': ' '{print \$2}' | cut -d, -f1 | cut -d- -f1)
 lscpu | grep "Model name"; echo "core \$CORE"
 OUT=${ROOT}/results/${TIER}_${STAMP}
-taskset -c \$CORE julia --startup-file=no -t 1 --project=. run.jl ${TIER} --only ${G} --out \$OUT
+taskset -c \$CORE julia --startup-file=no -t 1 --project=. run.jl ${TIER} ${ONLY} --out \$OUT
 BENCH_MUMBLEBEE_NAME=mumblebee_fast taskset -c \$CORE julia --startup-file=no -t 1 --project=envs/mumblebee_fast run.jl ${TIER} \\
-  --only ${G} --solvers mumblebee_fast --out \$OUT/mumblebee_fast
+  ${ONLY} --solvers mumblebee_fast --out \$OUT/mumblebee_fast
 echo "done \$(date -Is)"
 EOT
   done

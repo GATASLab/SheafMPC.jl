@@ -31,13 +31,15 @@ _cone_symbol(kind) = (s = string(Symbol(kind)); s == "ZERO_CONE" ? :zero : s == 
                       s == "SOC_CONE" ? :soc : throw(ArgumentError("unknown cone kind $kind")))
 
 """
-    sheaf_qp(prog) -> ConicQP
+    sheaf_qp(prog; dedup = false) -> ConicQP
 
 The conic QP of a sheaf program (fine or pushed forward): node costs, soft edges
 as quadratic penalties, hard edges and node constraints as rows (hard edges
-first). See the file header for the conventions.
+first). See the file header for the conventions. With `dedup = true` exact
+duplicate constraints are dropped (`dedup_rows`); the rows then no longer map
+one to one onto the program's edges and node cones.
 """
-function sheaf_qp(prog)
+function sheaf_qp(prog; dedup::Bool = false)
     offs = prog.offsets
     n = offs[end]
     nodes = prog.nodes
@@ -104,5 +106,6 @@ function sheaf_qp(prog)
         row += size(nd.A, 1)
     end
     A = sparse(AI, AJ, AV, row, n)
-    return ConicQP(P, q, A, b, cones; c = c)
+    p = ConicQP(P, q, A, b, cones; c = c)
+    return dedup ? dedup_rows(p)[1] : p
 end

@@ -1,0 +1,3 @@
+tier quick, 10 instances, solvers sheafmpc, osqp, clarabel, mumblebee, hpipm, piqp, out /home/itaykadosh/Projects/GATAS/SheafMPC.jl/benchmarks/results/quick_local
+SheafMPC 03ce3e25e8
+== fleet_ring_box_n1  load 29.53

@@ -136,3 +136,53 @@ function violation(p::ConicQP, x::AbstractVector)
     end
     return max(v, 0.0)
 end
+
+"""
+    dedup_rows(p::ConicQP) -> (p2, keep)
+
+Drop exact duplicate constraints: interval rows with the same row of `A` and
+the same bounds (the tightest bounds are kept when only the row repeats), and
+second-order cone blocks with the same rows and shift. A pushforward along
+rigid teams repeats every member's identical input cone; duplicates make the
+active constraint gradients linearly dependent (the polish system singular,
+the multipliers non-unique). `keep` lists the kept rows of `p`.
+"""
+function dedup_rows(p::ConicQP)
+    m = nrows(p)
+    At = SpMat(sparse(transpose(p.A)))
+    rowkey(i) = (rowvals(At)[nzrange(At, i)], nonzeros(At)[nzrange(At, i)])
+    insoc = falses(m)
+    for B in p.socs
+        insoc[B] .= true
+    end
+    keep = trues(m)
+    l = copy(p.l); u = copy(p.u)
+    seen = Dict{Any,Int}()
+    for i in 1:m
+        insoc[i] && continue
+        k = rowkey(i)
+        isempty(k[1]) && continue
+        j = get(seen, k, 0)
+        if j == 0
+            seen[k] = i
+        elseif p.kinds[i] == p.kinds[j]
+            l[j] = max(l[j], l[i]); u[j] = min(u[j], u[i])        # same row: intersect the intervals
+            keep[i] = false
+        end
+    end
+    seenb = Dict{Any,Int}()
+    for B in p.socs
+        k = ([rowkey(i) for i in B], p.socb[B])
+        if haskey(seenb, k)
+            keep[B] .= false
+        else
+            seenb[k] = first(B)
+        end
+    end
+    all(keep) && return p, collect(1:m)
+    idx = findall(keep)
+    newpos = cumsum(keep)
+    socs = [newpos[first(B)]:newpos[last(B)] for B in p.socs if keep[first(B)]]
+    return ConicQP(p.P, p.q, p.A[idx, :], l[idx], u[idx]; c = p.c, socs = socs, socb = p.socb[idx],
+                   kinds = p.kinds[idx]), idx
+end

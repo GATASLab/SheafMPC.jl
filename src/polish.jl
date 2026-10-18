@@ -66,6 +66,15 @@ function _soc_classify!(s::Solver, k::Int, B::UnitRange{Int}, w::Vector{Float64}
     if tau <= 1e-8 * max(1.0, eta)
         return ACT_SOC_APEX
     end
+    # the multiplier along (1, -u_s), u_s = s_1/||s_1||: a negative value means
+    # the boundary constraint pulls the wrong way and the block is inactive
+    if ns > 0
+        ys = y0
+        @inbounds for i in (i0+1):last(B)
+            ys -= (s.socb[i] - w[i]) / ns * y[i]
+        end
+        ys <= 0 && return ACT_SOC_IN
+    end
     # u along s_1 / tau - y_1 / eta (both point along u at a boundary solution)
     nu = 0.0
     ft = 1.0 / tau; fe = eta > 1e-12 * tau ? 1.0 / eta : 0.0

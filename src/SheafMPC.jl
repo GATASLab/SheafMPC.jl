@@ -28,7 +28,7 @@ include("solver.jl")
 include("polish.jl")
 
 export ConicQP, RowKind, ROW_INTERVAL, ROW_EQ, ROW_LEQ, ROW_SOC
-export nvars, nrows, objective, violation, sheaf_qp
+export nvars, nrows, objective, violation, sheaf_qp, dedup_rows
 export Settings, Info, Solver, setup, solve!, update!, warm_start!, warm_start_shifted!, solution, reset!
 
 end
