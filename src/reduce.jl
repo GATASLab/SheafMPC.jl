@@ -65,6 +65,9 @@ mutable struct ReducedProgram
     qc::Vector{Float64}
     cc::Vector{Float64}
     cons::Vector{Float64}
+    # restrict: per fiber, the factorization of its basis (built on first use, `nothing` for an orthonormal basis)
+    rfac::Vector{Any}
+    rbuf::Vector{Float64}
 end
 
 _sheaf(P::SheafProgram) = P
@@ -230,7 +233,7 @@ function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int},
     R = ReducedProgram(parent, P, Pc, res, basis, Pi, local_index, fibers, collapsed, cross, coarse_offsets,
                        N, SpMat(transpose(N)), X, Cons, clayout, true, 0.0, Float64(consistency_tol),
                        Qn, An, Dx, xrows, rowmap, vertex_block, FlatData(P), zeros(n), zeros(n), zeros(noderows(P)),
-                       zeros(c1dim(Pc)), zeros(c0dim(Pc)), zeros(nb), zeros(size(Cons, 1)))
+                       zeros(c1dim(Pc)), zeros(c0dim(Pc)), zeros(nb), zeros(size(Cons, 1)), Any[], zeros(n))
     update!(R)
     return R
 end
@@ -258,7 +261,8 @@ function _reuse_structure(parent, P::SheafProgram, res::Resolution, R0::ReducedP
     R = ReducedProgram(parent, P, Pc, res, R0.basis, R0.partition, R0.local_index, R0.fibers, R0.collapsed, R0.cross,
                        R0.coarse_offsets, R0.N, R0.Nt, R0.X, R0.Cons, clayout, true, 0.0, R0.consistency_tol,
                        R0.Qn, R0.An, R0.Dx, R0.xrows, R0.rowmap, R0.vertex_block, FlatData(P), zeros(n), zeros(n),
-                       zeros(noderows(P)), zeros(c1dim(Pc)), zeros(c0dim(Pc)), zeros(nvertices(Pc)), zeros(size(R0.Cons, 1)))
+                       zeros(noderows(P)), zeros(c1dim(Pc)), zeros(c0dim(Pc)), zeros(nvertices(Pc)), zeros(size(R0.Cons, 1)),
+                       R0.rfac, zeros(n))
     update!(R)
     return R
 end
@@ -355,19 +359,44 @@ end
 
 """
     restrict(reduced, x) -> y
+    restrict!(y, reduced, x) -> y
 
 The inverse of the lift on its image: the coarse coordinates of a fine plan
-that satisfies every contracted edge (least squares per block).
+that satisfies every contracted edge (least squares per block, so for any
+other plan the coordinates of the nearest lifted plan, block by block). The
+factorization of every fiber's basis is computed on the first call and kept
+(the fibers do not change between receding-horizon steps), so later calls cost
+one triangular solve per block.
 """
-function restrict(R::ReducedProgram, x::AbstractVector)
+restrict(R::ReducedProgram, x::AbstractVector) = restrict!(zeros(R.coarse_offsets[end]), R, x)
+
+function restrict!(y::AbstractVector, R::ReducedProgram, x::AbstractVector)
     P = R.fine
-    r = x - R.xbar
-    y = zeros(R.coarse_offsets[end])
+    length(x) == c0dim(P) || throw(DimensionMismatch("x must have $(c0dim(P)) entries"))
+    length(y) == R.coarse_offsets[end] || throw(DimensionMismatch("y must have $(R.coarse_offsets[end]) entries"))
+    if length(R.rfac) != length(R.fibers)
+        R.rfac = Any[F.kind in (:identity, :orthonormal) || fiberdim(F) == 0 ? nothing : qr(F.N) for F in R.fibers]
+    end
+    r = R.rbuf
+    @inbounds for j in eachindex(r)
+        r[j] = x[j] - R.xbar[j]
+    end
     for (b, F) in enumerate(R.fibers)
         cols = (R.coarse_offsets[b]+1):R.coarse_offsets[b+1]
         isempty(cols) && continue
-        rb = reduce(vcat, (r[vrange(P, v)] for v in F.members))
-        y[cols] = F.kind in (:identity, :orthonormal) ? F.N' * rb : qr(F.N) \ rb
+        rb = Vector{Float64}(undef, length(F))
+        @inbounds for (l, v) in enumerate(F.members)
+            o = F.offsets[l]
+            for (k, j) in enumerate(vrange(P, v))
+                rb[o+k] = r[j]
+            end
+        end
+        fq = R.rfac[b]
+        if fq === nothing
+            mul!(view(y, cols), transpose(F.N), rb)
+        else
+            copyto!(view(y, cols), fq \ rb)
+        end
     end
     return y
 end

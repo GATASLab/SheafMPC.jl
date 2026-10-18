@@ -81,7 +81,7 @@ export agent_kind, row_teams, strip_teams, block_teams
 # resolutions and reductions
 export FleetLayout, Resolution, Fine, TimeBlocking, full_condensing, partial_condensing, Teams, Product, ⊠
 export Mixed, VertexPartition, canonical_partition
-export ReducedProgram, Fiber, fiberdim, lift, lift!, restrict, reduction_chain, root_program, composite_partition, fiber_kinds
+export ReducedProgram, Fiber, fiberdim, lift, lift!, restrict, restrict!, reduction_chain, root_program, composite_partition, fiber_kinds
 export QPMap, refresh!, ProgramSolution, solve, isoptimal
 # certificates
 export gap_bounds, gap_lower_bound, Certifier, certify!, multipliers
