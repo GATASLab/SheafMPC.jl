@@ -175,7 +175,7 @@ function kkt_matrix(qp::SheafMPC.ConicQP; settings = SheafMPC.Settings())
     l = scl.E .* qp.l; u = scl.E .* qp.u
     rt = SheafMPC._rowtypes(l, u, qp.kinds)
     xdiag = Vector{Float64}(diag(P)) .+ st.sigma
-    res = SheafMPC.kkt_pattern(P, A)
+    res = SheafMPC.kkt_pattern(P, A, qp.socs)
     K, diag_idx = res[1], res[2]
     rinv = [rt[i] == SheafMPC.ROWT_EQ ? 1 / (st.rho_eq_scale * st.rho) : rt[i] == SheafMPC.ROWT_FREE ? 1 / st.rho_min :
             1 / st.rho for i in 1:m]

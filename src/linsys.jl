@@ -26,10 +26,15 @@
 # second system with the same pattern, sharing the ordering and, when the
 # backend can, the symbolic factorization).
 #
-# Two backends with the same interface:
+# Three backends with the same interface:
 #   QDLDLSystem    simplicial LDLt (QDLDL, the factorization of OSQP), AMD order
 #   ChordalSystem  supernodal multifrontal LDLt (CliqueTrees.Multifrontal)
-# `setup` times both on the problem and keeps the faster one (`linsys = :auto`).
+#   BlockLDLSystem the structured multifrontal kernel of src/kkt (BlockLDL);
+#                  a refactorization reads every stored value of K, so all
+#                  `upd_idx` changes are picked up
+# `linsys = :auto` picks QDLDL or BlockLDL and the order by BlockLDL's cost
+# model (no trial factorizations); `:timed` times QDLDL and CliqueTrees in
+# `setup` and keeps the faster one.
 
 abstract type LinearSystem end
 
