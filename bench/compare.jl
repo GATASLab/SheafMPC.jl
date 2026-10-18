@@ -30,23 +30,7 @@ const EPS = parse(Float64, get(ENV, "BENCH_EPS", "1e-7"))
 const TARGET = parse(Float64, get(ENV, "BENCH_TARGET", "1e-6"))
 const N = 24
 
-function parse_variants(s)
-    out = Pair{String,Dict{Symbol,Any}}[]
-    for item in split(s, ";")
-        isempty(strip(item)) && continue
-        name, kv = occursin(":", item) ? split(item, ":"; limit = 2) : (item, "")
-        d = Dict{Symbol,Any}()
-        for a in split(kv, ",")
-            isempty(strip(a)) && continue
-            k, v = split(a, "=")
-            vv = v == "true" ? true : v == "false" ? false : startswith(v, ":") ? Symbol(v[2:end]) :
-                 occursin(r"^-?\d+$", v) ? parse(Int, v) : parse(Float64, v)
-            d[Symbol(strip(k))] = vv
-        end
-        push!(out, String(strip(name)) => d)
-    end
-    return out
-end
+include(joinpath(@__DIR__, "variants_parse.jl"))
 const VARIANTS = parse_variants(get(ENV, "SHEAF_VARIANTS", "base:"))
 
 timed(f) = (t = time_ns(); r = f(); ((time_ns() - t) / 1e9, r))
