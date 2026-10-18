@@ -59,7 +59,7 @@ end
 
 "Factor supernode s; its update matrix goes to `F.U[uo .+ (1:r^2)]` (`uo < 0`: a root, none). Returns the number of regularized pivots."
 @inline function _factor_supernode!(F::Factor, s::Int, uo::Int, uoffs::Vector{Int}, T::Vector{Float64},
-                                    W::Vector{Float64})
+                                    W::Vector{Float64}; nt::Int = 1)
     S = F.S
     Lx = F.Lx; U = F.U
     @inbounds begin
@@ -91,10 +91,10 @@ end
                 end
             end
         end
-        nreg = _ldlt_front!(Lx, off, h, w, F.d, f, S.signs, F.delta, T)
+        nreg = _ldlt_front!(Lx, off, h, w, F.d, f, S.signs, F.delta, T; nt = nt)
         if r > 0 && uo >= 0
             # U_s = -L21 D L21' (written, not accumulated), then the children's trailing entries
-            _front_update!(Ub, ub, r, Lx, off, h, w, F.d, f, T; overwrite = true)
+            _front_update!(Ub, ub, r, Lx, off, h, w, F.d, f, T; overwrite = true, nt = nt)
             for c in c1:c2
                 ch = S.child_idx[c]
                 rc = S.str_ptr[ch+1] - S.str_ptr[ch]

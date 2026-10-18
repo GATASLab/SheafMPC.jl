@@ -28,7 +28,12 @@ struct Schedule
     tmp::Vector{Vector{Float64}}         # per task solve scratch
     tsz::Vector{Int}                     # per task factor scratch sizes (panel, update matrix)
     wsz::Vector{Int}
-    blas_top::Int                        # BLAS threads in the top part
+    blas_top::Int                        # BLAS threads in a sequential top part
+    topdag::Bool                         # top part as a task DAG (dedicated update buffers)
+    topkids::Dict{Int,Vector{Int}}       # top node -> its children in the top part
+    toproots::Vector{Int}
+    pool::Channel{Tuple{Vector{Float64},Vector{Float64}}}   # scratch for concurrent top nodes
+    nt::Int
 end
 
 function _work(S::Symbolic)
@@ -59,7 +64,8 @@ end
 Subtrees for `nt` threads: split until the largest subtree has at most
 `1 / (split * nt)` of the total work (or no split is possible), then pack.
 """
-function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt, dynamic::Bool = true)
+function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = 1, dynamic::Bool = true,
+                       top_mem::Int = 32_000_000)
     ns = S.nsup
     wk, sw = _work(S)
     total = sum(wk)
@@ -155,19 +161,42 @@ function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt,
             off += rsz(t)
         end
     end
-    top_ = off; peak = off
-    for s in top
-        S.parent[s] == 0 && continue
-        base = top_
-        for c in S.child_ptr[s]:(S.child_ptr[s+1]-1)
-            ch = S.child_idx[c]
-            sroot[ch] == 0 && (base = min(base, uoff[ch]))
+    # top part: a dedicated buffer per top node (so that sibling top nodes can
+    # run concurrently) when that costs at most `top_mem` doubles, else a stack
+    # (and the top part runs sequentially)
+    topmem = sum((S.parent[s] == 0 ? 0 : rsz(s) for s in top); init = 0)
+    topdag = topmem <= top_mem
+    if topdag
+        for s in top
+            S.parent[s] == 0 && continue
+            uoff[s] = off; off += rsz(s)
         end
-        uoff[s] = base
-        top_ = base + rsz(s)
-        peak = max(peak, top_)
+        nupd = off
+    else
+        top_ = off; peak = off
+        for s in top
+            S.parent[s] == 0 && continue
+            base = top_
+            for c in S.child_ptr[s]:(S.child_ptr[s+1]-1)
+                ch = S.child_idx[c]
+                sroot[ch] == 0 && (base = min(base, uoff[ch]))
+            end
+            uoff[s] = base
+            top_ = base + rsz(s)
+            peak = max(peak, top_)
+        end
+        nupd = max(peak, off)
     end
-    nupd = max(peak, off)
+    topkids = Dict{Int,Vector{Int}}()
+    toproots = Int[]
+    for s in top
+        p = S.parent[s]
+        if p == 0
+            push!(toproots, s)
+        else
+            push!(get!(topkids, p, Int[]), s)
+        end
+    end
     # forward-sweep maps: rows of a subtree supernode outside its subtree
     nin = zeros(Int, ns)
     extpos = zeros(Int, length(S.str_idx))
@@ -198,7 +227,19 @@ function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt,
         push!(tsz, max(mf * 32, mr * mw)); push!(wsz, mr * mr); push!(rsz_, mr)
     end
     tmp = [zeros(r) for r in [rsz_; max(S.max_r, 1)]]
-    return Schedule(tasks, first, top, uoff, nupd, nin, extpos, sroot, xbuf, roots, rootpos, tmp, tsz, wsz, blas_top)
+    pool = Channel{Tuple{Vector{Float64},Vector{Float64}}}(nt + 1)
+    if topdag
+        mf = 1; mr = 1; mw = 1
+        for s in top
+            w = S.sup_ptr[s+1] - S.sup_ptr[s]; r = S.str_ptr[s+1] - S.str_ptr[s]
+            mf = max(mf, w + r); mr = max(mr, r); mw = max(mw, w)
+        end
+        for _ in 1:(nt+1)
+            put!(pool, (zeros(max(mf * 32, mr * mw)), zeros(mr * mr)))
+        end
+    end
+    return Schedule(tasks, first, top, uoff, nupd, nin, extpos, sroot, xbuf, roots, rootpos, tmp, tsz, wsz, blas_top,
+                    topdag, topkids, toproots, pool, nt)
 end
 
 function _factor_parallel!(F::Factor)
@@ -218,16 +259,44 @@ function _factor_parallel!(F::Factor)
             nregs[ti] = nr
         end
     end
-    sc.blas_top > 1 && BLAS.set_num_threads(sc.blas_top)
-    Tt = F.T[end]; Wt = F.W[end]
     nrt = sum(nregs)
-    for s in sc.top
-        uo = S.parent[s] == 0 ? -1 : sc.uoff[s]
-        nrt += _factor_supernode!(F, s, uo, sc.uoff, Tt, Wt)
+    if sc.topdag
+        cnt = Threads.Atomic{Int}(0)
+        @sync for r in sc.toproots
+            Threads.@spawn _factor_top!(F, sc, r, cnt)
+        end
+        nrt += cnt[]
+    else
+        sc.blas_top > 1 && BLAS.set_num_threads(sc.blas_top)
+        Tt = F.T[end]; Wt = F.W[end]
+        for s in sc.top
+            uo = S.parent[s] == 0 ? -1 : sc.uoff[s]
+            nrt += _factor_supernode!(F, s, uo, sc.uoff, Tt, Wt)
+        end
     end
     BLAS.set_num_threads(nb)
     F.nreg = nrt
     return F
+end
+
+"Top node s after its top children (in parallel), with scratch from the pool."
+function _factor_top!(F::Factor, sc::Schedule, s::Int, cnt::Threads.Atomic{Int})
+    kids = get(sc.topkids, s, nothing)
+    if kids !== nothing
+        if length(kids) == 1
+            _factor_top!(F, sc, kids[1], cnt)
+        else
+            @sync for c in kids
+                Threads.@spawn _factor_top!(F, sc, c, cnt)
+            end
+        end
+    end
+    T, W = take!(sc.pool)
+    uo = F.S.parent[s] == 0 ? -1 : sc.uoff[s]
+    nr = _factor_supernode!(F, s, uo, sc.uoff, T, W; nt = sc.nt)
+    put!(sc.pool, (T, W))
+    Threads.atomic_add!(cnt, nr)
+    return nothing
 end
 
 "Forward sweep of one subtree supernode: rows outside the subtree go to the root's buffer."
