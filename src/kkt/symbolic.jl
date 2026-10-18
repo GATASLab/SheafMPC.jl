@@ -21,6 +21,15 @@
 # unit lower triangle of the diagonal block (upper part unused), the last r rows
 # the off-diagonal block L21. The diagonal D is a separate vector.
 
+"Packed per-supernode data of the solve sweeps: first column - 1, width, rows below, offset in str_idx, offset in Lx."
+struct SNode
+    fo::Int32
+    w::Int32
+    r::Int32
+    rb::Int32
+    o::Int64
+end
+
 """
     Symbolic
 
@@ -54,6 +63,11 @@ struct Symbolic
     nnzL_exact::Int              # entries of the exact (fundamental) pattern
     flops::Float64               # multiply-adds of the numeric factorization (frontal updates)
     solve_flops::Float64         # multiply-adds of one forward plus one backward solve
+    sidx::Vector{Int32}          # str_idx in 32 bits (the solves)
+    nleaf::Int                   # columns 1:nleaf are leaf pivots (one neighbour, eliminated first)
+    leaf_par::Vector{Int32}      # the neighbour (parent column) of every leaf
+    leaf_dpos::Vector{Int}       # position in Lx of the parent's diagonal entry
+    snd::Vector{SNode}           # packed supernode descriptors
 end
 
 # ---------------------------------------------------------------------------
@@ -181,7 +195,7 @@ const EXACT = Relax(nrelax = (0, 0, 0), zrelax = (0.0, 0.0, 0.0))
 const LIGHT = Relax(nrelax = (2, 8, 32), zrelax = (0.3, 0.05, 0.02))
 
 "Fundamental supernodes of a postordered tree: start column of each, then the amalgamated partition."
-function _supernodes(N::Int, parent::Vector{Int}, cc::Vector{Int}, relax::Relax)
+function _supernodes(N::Int, parent::Vector{Int}, cc::Vector{Int}, relax::Relax, nleaf::Int = 0)
     nchild = zeros(Int, N)
     @inbounds for j in 1:N
         p = parent[j]
@@ -192,7 +206,7 @@ function _supernodes(N::Int, parent::Vector{Int}, cc::Vector{Int}, relax::Relax)
     # precede j-1 in the postorder)
     starts = Int[1]
     @inbounds for j in 2:N
-        if !(parent[j-1] == j && cc[j-1] == cc[j] + 1 && (relax.maximal || nchild[j] == 1))
+        if j <= nleaf + 1 || !(parent[j-1] == j && cc[j-1] == cc[j] + 1 && (relax.maximal || nchild[j] == 1))
             push!(starts, j)
         end
     end
@@ -219,7 +233,7 @@ function _supernodes(N::Int, parent::Vector{Int}, cc::Vector{Int}, relax::Relax)
     merged_into_next = falses(ns)
     nr1, nr2, nr3 = relax.nrelax
     zr1, zr2, zr3 = relax.zrelax
-    @inbounds for s in 1:(ns-1)
+    @inbounds for s in (nleaf+1):(ns-1)
         spar[s] == s + 1 || continue
         p = s + 1
         wm = w[s] + w[p]
@@ -259,19 +273,39 @@ old), postordered. `signs_old[i]` is the sign the pivot of row `i` must have
 (+1 or -1; quasi-definite matrices have known pivot signs).
 """
 function symbolic(K::SparseMatrixCSC, perm0::AbstractVector{<:Integer}, signs_old::AbstractVector{<:Real};
-                  relax::Relax = Relax())
+                  relax::Relax = Relax(), leaves::Bool = true)
     N = size(K, 1)
     perm1 = Vector{Int}(perm0)
     iperm1 = invperm(perm1)
     colptr1, rowval1, _ = _permuted_upper(K, iperm1)
     post = _postorder(_etree(N, colptr1, rowval1))
-    perm = perm1[post]
+    perm2 = perm1[post]
+    iperm2 = invperm(perm2)
+    colptr2, rowval2, _ = _permuted_upper(K, iperm2)
+    parent2 = _etree(N, colptr2, rowval2)
+    nleaf = 0
+    if leaves
+        # leaf pivots: one neighbour in the graph (a column of L with one
+        # off-diagonal entry and no children); eliminated first, which changes
+        # neither the fill nor the factor, and handled by a vectorized pass
+        cc2 = _colcounts(N, parent2, colptr2, rowval2)
+        haschild = falses(N)
+        @inbounds for j in 1:N
+            parent2[j] > 0 && (haschild[parent2[j]] = true)
+        end
+        isleaf = [cc2[j] == 1 && !haschild[j] for j in 1:N]
+        nleaf = count(isleaf)
+        order = [findall(isleaf); findall(!, isleaf)]
+        perm = perm2[order]
+    else
+        perm = perm2
+    end
     iperm = invperm(perm)
     colptr, rowval, _ = _permuted_upper(K, iperm)
     parent = _etree(N, colptr, rowval)
     cc = _colcounts(N, parent, colptr, rowval)
     nnzL_exact = N + sum(cc)
-    starts = _supernodes(N, parent, cc, relax)
+    starts = _supernodes(N, parent, cc, relax, nleaf)
     ns = length(starts) - 1
     sof = Vector{Int}(undef, N)
     @inbounds for s in 1:ns, j in starts[s]:(starts[s+1]-1)
@@ -284,13 +318,13 @@ function symbolic(K::SparseMatrixCSC, perm0::AbstractVector{<:Integer}, signs_ol
     end
     # children lists
     nch = zeros(Int, ns + 1)
-    @inbounds for s in 1:ns
+    @inbounds for s in (nleaf+1):ns
         spar[s] > 0 && (nch[spar[s]+1] += 1)
     end
     child_ptr = cumsum([1; nch[2:end]])
     child_idx = Vector{Int}(undef, child_ptr[end] - 1)
     fillp = copy(child_ptr)
-    @inbounds for s in 1:ns
+    @inbounds for s in (nleaf+1):ns
         p = spar[s]
         p == 0 && continue
         child_idx[fillp[p]] = s; fillp[p] += 1
@@ -381,7 +415,7 @@ function symbolic(K::SparseMatrixCSC, perm0::AbstractVector{<:Integer}, signs_ol
     upd_off = zeros(Int, ns)
     top = 0; peak = 0
     stk = Int[]
-    @inbounds for s in 1:ns
+    @inbounds for s in (nleaf+1):ns
         nc = child_ptr[s+1] - child_ptr[s]
         base = top
         for _ in 1:nc
@@ -424,9 +458,18 @@ function symbolic(K::SparseMatrixCSC, perm0::AbstractVector{<:Integer}, signs_ol
     @inbounds for i in 1:N
         signs[i] = signs_old[perm[i]]
     end
+    leaf_par = Vector{Int32}(undef, nleaf); leaf_dpos = Vector{Int}(undef, nleaf)
+    @inbounds for j in 1:nleaf
+        p = str_idx[str_ptr[j]]
+        t = sof[p]; f = starts[t]; h = (starts[t+1] - f) + (str_ptr[t+1] - str_ptr[t])
+        leaf_par[j] = p
+        leaf_dpos[j] = lx_ptr[t] + (p - f) * h + (p - f)
+    end
     return Symbolic(N, perm, iperm, ns, starts, sof, spar, child_ptr, child_idx, str_ptr, str_idx, rel_idx,
                     lx_ptr, lx_ptr[end] - 1, upd_off, peak, max_front, max_r, amap, signs, nnzL, nnzL_exact,
-                    flops, sflops)
+                    flops, sflops, Vector{Int32}(str_idx), nleaf, leaf_par, leaf_dpos,
+                    [SNode(starts[s] - 1, starts[s+1] - starts[s], str_ptr[s+1] - str_ptr[s], str_ptr[s] - 1, lx_ptr[s] - 1)
+                     for s in 1:ns])
 end
 
 """

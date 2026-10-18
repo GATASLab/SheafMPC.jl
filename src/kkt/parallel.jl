@@ -44,7 +44,7 @@ function _work(S::Symbolic)
         wk[s] = fl + h * w + 50.0
     end
     sw = copy(wk)
-    @inbounds for s in 1:ns
+    @inbounds for s in (S.nleaf+1):ns
         p = S.parent[s]
         p > 0 && (sw[p] += sw[s])
     end
@@ -61,7 +61,7 @@ function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt)
     ns = S.nsup
     wk, sw = _work(S)
     total = sum(wk)
-    cand = [s for s in 1:ns if S.parent[s] == 0]
+    cand = [s for s in (S.nleaf+1):ns if S.parent[s] == 0]
     istop = falses(ns)
     target = total / (split * nt)
     for _ in 1:(4 * ns)
@@ -79,7 +79,7 @@ function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt)
     end
     # first descendant (postorder ranges)
     first = collect(1:ns)
-    @inbounds for s in 1:ns
+    @inbounds for s in (S.nleaf+1):ns
         p = S.parent[s]
         p > 0 && (first[p] = min(first[p], first[s]))
     end
@@ -100,7 +100,7 @@ function schedule_tree(S::Symbolic, nt::Int; split::Int = 4, blas_top::Int = nt)
     for t in roots, s in first[t]:t
         sroot[s] = t
     end
-    top = [s for s in 1:ns if sroot[s] == 0]
+    top = [s for s in (S.nleaf+1):ns if sroot[s] == 0]
     # update offsets: one stack per task, a buffer per subtree root, the top stack
     uoff = fill(-1, ns)
     off = 0
@@ -215,7 +215,7 @@ end
         if r > 0
             ni = sc.nin[s]
             if ni == r
-                _fwd_offdiag!(x, Lx, tmp, S.str_idx, rb, r, o + w, h, fo, w)
+                _fwd_offdiag!(x, Lx, tmp, S.sidx, rb, r, o + w, h, fo, w)
             else
                 _fwd_acc!(x, Lx, tmp, r, o + w, h, fo, w)
                 for i in 1:ni

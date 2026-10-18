@@ -12,7 +12,7 @@
 using Base.Cartesian: @nexprs
 
 # x[R[i]] -= sum_k L[i, k] x_s[k] for the W columns starting at column k0 of the block
-@generated function _fwd_rows!(::Val{W}, x::Vector{Float64}, Lx::Vector{Float64}, si::Vector{Int}, rb::Int, r::Int,
+@generated function _fwd_rows!(::Val{W}, x::Vector{Float64}, Lx::Vector{Float64}, si::AbstractVector{<:Integer}, rb::Int, r::Int,
                                base::Int, h::Int, fo::Int, k0::Int) where {W}
     quote
         @nexprs $W j -> (xs_j = x[fo+k0+j-1]; c_j = base + (k0 + j - 2) * h)
@@ -39,7 +39,7 @@ end
 end
 
 # x_s[k] -= sum_i L[i, k] x[R[i]] for the W columns from k0 (row-wise, gather once)
-@generated function _bwd_rows!(::Val{W}, x::Vector{Float64}, Lx::Vector{Float64}, si::Vector{Int}, rb::Int, r::Int,
+@generated function _bwd_rows!(::Val{W}, x::Vector{Float64}, Lx::Vector{Float64}, si::AbstractVector{<:Integer}, rb::Int, r::Int,
                                base::Int, h::Int, fo::Int, k0::Int) where {W}
     quote
         @nexprs $W j -> (a_j = 0.0; c_j = base + (k0 + j - 2) * h)
@@ -164,18 +164,21 @@ end
 
 "Forward solve with L and scaling by D^{-1}, supernodes `s1:s2` (in place on the permuted `x`)."
 function _forward_range!(F::Factor, x::Vector{Float64}, tmp::Vector{Float64}, s1::Int, s2::Int)
-    S = F.S; Lx = F.Lx; dinv = F.dinv
-    sp = S.sup_ptr; stp = S.str_ptr; si = S.str_idx; lp = S.lx_ptr
+    S = F.S; Lx = F.Lx; dinv = F.dinv; si = S.sidx; snd = S.snd
     @inbounds for s in s1:s2
-        f = sp[s]; w = sp[s+1] - f
-        rb = stp[s] - 1; r = stp[s+1] - stp[s]
+        nd = snd[s]
+        fo = Int(nd.fo); w = Int(nd.w); r = Int(nd.r); rb = Int(nd.rb); o = nd.o
         h = w + r
-        o = lp[s] - 1
-        fo = f - 1
-        w > 1 && _diag_fwd!(x, Lx, o, h, fo, w)
-        r > 0 && _fwd_offdiag!(x, Lx, tmp, si, rb, r, o + w, h, fo, w)
-        for k in 1:w
-            x[fo+k] *= dinv[fo+k]
+        if w == 1
+            xk = x[fo+1] * dinv[fo+1]
+            _fwd_rows1!(x, Lx, si, rb, r, o + 1, x[fo+1])
+            x[fo+1] = xk
+        else
+            _diag_fwd!(x, Lx, o, h, fo, w)
+            r > 0 && _fwd_offdiag!(x, Lx, tmp, si, rb, r, o + w, h, fo, w)
+            for k in 1:w
+                x[fo+k] *= dinv[fo+k]
+            end
         end
     end
     return x
@@ -183,18 +186,33 @@ end
 
 "Backward solve with L', supernodes `s2:-1:s1`."
 function _backward_range!(F::Factor, x::Vector{Float64}, tmp::Vector{Float64}, s1::Int, s2::Int)
-    S = F.S; Lx = F.Lx
-    sp = S.sup_ptr; stp = S.str_ptr; si = S.str_idx; lp = S.lx_ptr
+    S = F.S; Lx = F.Lx; si = S.sidx; snd = S.snd
     @inbounds for s in s2:-1:s1
-        f = sp[s]; w = sp[s+1] - f
-        rb = stp[s] - 1; r = stp[s+1] - stp[s]
+        nd = snd[s]
+        fo = Int(nd.fo); w = Int(nd.w); r = Int(nd.r); rb = Int(nd.rb); o = nd.o
         h = w + r
-        o = lp[s] - 1
-        fo = f - 1
-        r > 0 && _bwd_offdiag!(x, Lx, tmp, si, rb, r, o + w, h, fo, w)
-        w > 1 && _diag_bwd!(x, Lx, o, h, fo, w)
+        if w == 1
+            acc = 0.0
+            c = o + 1
+            for i in 1:r
+                acc = muladd(Lx[c+i], x[si[rb+i]], acc)
+            end
+            x[fo+1] -= acc
+        else
+            r > 0 && _bwd_offdiag!(x, Lx, tmp, si, rb, r, o + w, h, fo, w)
+            _diag_bwd!(x, Lx, o, h, fo, w)
+        end
     end
     return x
+end
+
+"x[R[i]] -= L[i] xk for one column (entries at Lx[c+1:c+r])."
+@inline function _fwd_rows1!(x, Lx, si, rb, r, c, xk)
+    @inbounds for i in 1:r
+        ri = si[rb+i]
+        x[ri] = muladd(-Lx[c+i], xk, x[ri])
+    end
+    return nothing
 end
 
 """
@@ -203,14 +221,37 @@ end
 Solve `L D L' x = x` in the permuted index space (`x` is overwritten).
 """
 function ldiv_permuted!(F::Factor, x::Vector{Float64})
+    _forward_leaves!(F, x)
     if F.sched === nothing
         tmp = F.T[1]
-        _forward_range!(F, x, tmp, 1, F.S.nsup)
-        _backward_range!(F, x, tmp, 1, F.S.nsup)
+        nl = F.S.nleaf
+        _forward_range!(F, x, tmp, nl + 1, F.S.nsup)
+        _backward_range!(F, x, tmp, nl + 1, F.S.nsup)
     else
         _solve_parallel!(F, x)
     end
+    _backward_leaves!(F, x)
     return x
+end
+
+"Leaf pivots, forward: x[parent] -= l x_j, x_j /= d_j."
+@inline function _forward_leaves!(F::Factor, x::Vector{Float64})
+    S = F.S; L = F.leafL; par = S.leaf_par; di = F.dinv
+    @inbounds for j in 1:S.nleaf
+        xj = x[j]
+        x[par[j]] = muladd(-L[j], xj, x[par[j]])
+        x[j] = xj * di[j]
+    end
+    return nothing
+end
+
+"Leaf pivots, backward: x_j -= l x[parent]."
+@inline function _backward_leaves!(F::Factor, x::Vector{Float64})
+    S = F.S; L = F.leafL; par = S.leaf_par
+    @inbounds for j in 1:S.nleaf
+        x[j] = muladd(-L[j], x[par[j]], x[j])
+    end
+    return nothing
 end
 
 """

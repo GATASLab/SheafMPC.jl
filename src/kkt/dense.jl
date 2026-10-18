@@ -127,10 +127,11 @@ end
     _front_update!(U, uo, r, Lx, off, h, w, d, f, T)
 
 U[1:r, 1:r] (lower triangle, at `U[uo+1]`, leading dimension r) -=
-L21 * D * L21', with L21 the last r rows of the panel at `Lx[off]`.
+L21 * D * L21', with L21 the last r rows of the panel at `Lx[off]`
+(`overwrite`: U = -L21 * D * L21').
 """
 function _front_update!(U::Vector{Float64}, uo::Int, r::Int, Lx::Vector{Float64}, off::Int, h::Int, w::Int,
-                        d::Vector{Float64}, f::Int, T::Vector{Float64})
+                        d::Vector{Float64}, f::Int, T::Vector{Float64}; overwrite::Bool = false)
     o = off - 1 + w                               # L21[i, k] = Lx[o + (k-1)*h + i]
     @inbounds if r * r * w >= 2 * BLAS_THRESHOLD[]
         for k in 1:w
@@ -142,13 +143,19 @@ function _front_update!(U::Vector{Float64}, uo::Int, r::Int, Lx::Vector{Float64}
             end
         end
         GC.@preserve U Lx T begin
-            _gemmt!(UInt8('N'), UInt8('T'), r, w, -1.0, pointer(T), r, pointer(Lx, o + 1), h, 1.0,
+            _gemmt!(UInt8('N'), UInt8('T'), r, w, -1.0, pointer(T), r, pointer(Lx, o + 1), h, overwrite ? 0.0 : 1.0,
                     pointer(U, uo + 1), r)
         end
     else
         for j in 1:r
             cj = uo + (j - 1) * r
-            for k in 1:w
+            if overwrite
+                c = Lx[o+j] * d[f]
+                @simd for i in j:r
+                    U[cj+i] = -Lx[o+i] * c
+                end
+            end
+            for k in (overwrite ? 2 : 1):w
                 ck = o + (k - 1) * h
                 c = Lx[ck+j] * d[f+k-1]
                 c == 0.0 && continue

@@ -27,6 +27,7 @@ mutable struct Factor
     nreg::Int
     sched::Any                          # parallel schedule (or nothing)
     nthreads::Int
+    leafL::Vector{Float64}              # L entry of every leaf pivot (contiguous copy for the solves)
 end
 
 function Factor(S::Symbolic; delta::Float64 = 1e-12, nthreads::Int = 1)
@@ -41,7 +42,7 @@ function Factor(S::Symbolic; delta::Float64 = 1e-12, nthreads::Int = 1)
     ntask = sched === nothing ? 1 : length(sched.tasks) + 1
     return Factor(S, zeros(S.nlx), zeros(S.N), zeros(S.N), zeros(nu),
                   [zeros(tsz) for _ in 1:ntask], [zeros(max(S.max_r^2, 1)) for _ in 1:ntask],
-                  delta, 0, sched, nt)
+                  delta, 0, sched, nt, zeros(S.nleaf))
 end
 
 "Copy the stored entries of `K` (the matrix analysed by `symbolic`) into the panels."
@@ -73,36 +74,45 @@ end
         inplace = c1 > c2
         Ub = inplace ? U : W
         ub = inplace ? uo : 0
-        if r > 0 && uo >= 0
-            @simd for k in (ub+1):(ub+r*r)
-                Ub[k] = 0.0
-            end
-        end
+        rel = S.rel_idx
+        # children's entries in the panel (their first columns, rel <= w)
         for c in c1:c2
             ch = S.child_idx[c]
             rc = S.str_ptr[ch+1] - S.str_ptr[ch]
-            rc == 0 && continue
             co = uoffs[ch]
             rb = S.str_ptr[ch] - 1
             for jj in 1:rc
-                pj = S.rel_idx[rb+jj]
+                pj = rel[rb+jj]
+                pj > w && break
                 cj = co + (jj - 1) * rc
-                if pj <= w
-                    tgt = o + (pj - 1) * h
-                    for ii in jj:rc
-                        Lx[tgt+S.rel_idx[rb+ii]] += U[cj+ii]
-                    end
-                else
-                    tgt = ub + (pj - w - 1) * r - w
-                    for ii in jj:rc
-                        Ub[tgt+S.rel_idx[rb+ii]] += U[cj+ii]
-                    end
+                tgt = o + (pj - 1) * h
+                for ii in jj:rc
+                    Lx[tgt+rel[rb+ii]] += U[cj+ii]
                 end
             end
         end
         nreg = _ldlt_front!(Lx, off, h, w, F.d, f, S.signs, F.delta, T)
         if r > 0 && uo >= 0
-            _front_update!(Ub, ub, r, Lx, off, h, w, F.d, f, T)
+            # U_s = -L21 D L21' (written, not accumulated), then the children's trailing entries
+            _front_update!(Ub, ub, r, Lx, off, h, w, F.d, f, T; overwrite = true)
+            for c in c1:c2
+                ch = S.child_idx[c]
+                rc = S.str_ptr[ch+1] - S.str_ptr[ch]
+                co = uoffs[ch]
+                rb = S.str_ptr[ch] - 1
+                j0 = 1
+                while j0 <= rc && rel[rb+j0] <= w
+                    j0 += 1
+                end
+                for jj in j0:rc
+                    pj = rel[rb+jj]
+                    cj = co + (jj - 1) * rc
+                    tgt = ub + (pj - w - 1) * r - w
+                    for ii in jj:rc
+                        Ub[tgt+rel[rb+ii]] += U[cj+ii]
+                    end
+                end
+            end
             if !inplace
                 copyto!(U, uo + 1, W, 1, r * r)
             end
@@ -120,11 +130,11 @@ symbolic analysis of `F`. Sequential, or over the parallel schedule when
 """
 function factor!(F::Factor, K::SparseMatrixCSC)
     assemble!(F, K)
-    F.nreg = 0
+    F.nreg = _factor_leaves!(F)
     if F.sched === nothing
         S = F.S
         T = F.T[1]; W = F.W[1]
-        for s in 1:S.nsup
+        for s in (S.nleaf+1):S.nsup
             uo = S.parent[s] == 0 ? -1 : S.upd_off[s]
             F.nreg += _factor_supernode!(F, s, uo, S.upd_off, T, W)
         end
@@ -136,6 +146,28 @@ function factor!(F::Factor, K::SparseMatrixCSC)
         di[i] = 1.0 / d[i]
     end
     return F
+end
+
+"""
+Leaf pivots (columns 1:nleaf, one off-diagonal entry each): pivot, L entry, and
+the Schur complement update of the neighbour's diagonal, in one pass.
+"""
+function _factor_leaves!(F::Factor)
+    S = F.S; Lx = F.Lx; d = F.d; L = F.leafL
+    delta = F.delta; nreg = 0
+    @inbounds for j in 1:S.nleaf
+        o = S.lx_ptr[j]
+        dj = Lx[o]
+        sg = S.signs[j]
+        if !(sg * dj > delta)
+            dj = sg * delta; nreg += 1
+        end
+        t = Lx[o+1]
+        l = t / dj
+        d[j] = dj; Lx[o+1] = l; L[j] = l
+        Lx[S.leaf_dpos[j]] -= t * l
+    end
+    return nreg
 end
 
 "Inertia check: number of pivots whose sign differs from the expected one (0 for a quasi-definite matrix)."

@@ -48,6 +48,7 @@ function rank1_diagonal!(F::Factor, j::Int, alpha::Float64, w::Vector{Float64})
                 wi = muladd(-p, Lx[cb+i], w[gi]); w[gi] = wi
                 Lx[cb+i] = muladd(beta, wi, Lx[cb+i])
             end
+            kk <= S.nleaf && (F.leafL[kk] = Lx[cb+1])          # the contiguous copy of a leaf's entry
         end
         (r == 0 || alpha == 0.0) && break
         k = si[rb+1]
