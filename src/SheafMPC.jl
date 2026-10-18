@@ -19,8 +19,11 @@ Pushforward".
   ADMM over agents or teams.
 * The solver: an operator-splitting (ADMM) conic QP solver for sheaf programs
   (OSQP's algorithm with second-order cones, a quasi-definite KKT matrix
-  factored once, an active-set polish), with `update!` and warm starts that
-  keep every factorization.
+  factored once, an active-set and semismooth Newton polish, a duality gap
+  test), with `update!` and warm starts that keep every factorization, and a
+  primal-dual interior-point method (Mehrotra, Nesterov-Todd scaling,
+  homogeneous embedding) on the same KKT pattern, chosen automatically or by
+  crossover (`method`).
 """
 module SheafMPC
 
@@ -41,9 +44,12 @@ include("linsys.jl")
 include("kkt/system.jl")
 include("settings.jl")
 include("anderson.jl")
+include("termination.jl")
+include("ipm.jl")
 include("solver.jl")
 include("polish.jl")
 include("rho.jl")
+include("method.jl")
 
 include("program.jl")
 include("fiber.jl")

@@ -45,58 +45,70 @@
 
 const ACT_SOC_APEX = Int8(5)
 
-"Classify SOC block `k` (rows `B`) from the slack `b - w` and multiplier `y`; set its boundary parameters."
-function _soc_classify!(s::Solver, k::Int, B::UnitRange{Int}, w::Vector{Float64}, y::Vector{Float64})
+"""
+    _soc_classify!(s, k, B, w, y, old, band) -> class
+
+Classify SOC block `k` (rows `B`) from the slack `s_B = b_B - w_B` and the
+multiplier `y_B`, by the Moreau decomposition of `v = s - y`: at a solution
+`s = Proj_K(v)` and `-y = Proj_{-K}(v)` (complementarity), so `v` interior to
+the cone means an inactive block (`y = 0`), `v` in the polar cone an active
+apex (`s = 0`), and otherwise the block is on its boundary with
+`u = v_1 / ||v_1||`, `s = tau (1, u)`, `y = eta (1, -u)`. This is the cone
+version of the rule `y + (z - u) > 0` of the interval rows (a primal-dual
+active-set step), and unlike a test on `y` alone it moves a block whose slack
+the last polish pushed outside the cone back onto the boundary. `band`
+(relative to the size of `s` and `y`) is a hysteresis: a block keeps its
+previous class `old` (inactive or boundary) while `v` is within the band of
+the boundary, which stops weakly active blocks (both `s` on the boundary and
+`y ~ 0`) from flipping between iterations and blocking the polish entry.
+"""
+function _soc_classify!(s::Solver, k::Int, B::UnitRange{Int}, w::Vector{Float64}, y::Vector{Float64},
+                        old::Int8 = ACT_NONE, band::Float64 = 0.0)
     i0 = first(B)
     s0 = s.socb[i0] - w[i0]; y0 = y[i0]
-    ns = 0.0; nyv = 0.0
+    ns = 0.0; ny = 0.0; nv = 0.0
     @inbounds for i in (i0+1):last(B)
-        d = s.socb[i] - w[i]
-        ns += d * d
-        nyv += y[i] * y[i]
+        si = s.socb[i] - w[i]; yi = y[i]
+        ns += si * si; ny += yi * yi; nv += (si - yi)^2
     end
-    ns = sqrt(ns); nyv = sqrt(nyv)
-    ynorm = sqrt(y0 * y0 + nyv * nyv)
-    gap = s0 - ns
-    if ynorm <= max(gap, 0.0)
-        return ACT_SOC_IN
-    end
-    tau = max(0.5 * (s0 + ns), 0.0)
-    eta = max(0.5 * (y0 + nyv), 0.0)
-    if tau <= 1e-8 * max(1.0, eta)
-        return ACT_SOC_APEX
-    end
-    # the multiplier along (1, -u_s), u_s = s_1/||s_1||: a negative value means
-    # the boundary constraint pulls the wrong way and the block is inactive
-    if ns > 0
-        ys = y0
+    ns = sqrt(ns); ny = sqrt(ny); nv = sqrt(nv)
+    v0 = s0 - y0
+    scale = max(abs(s0) + ns, abs(y0) + ny)
+    hb = band * scale
+    thr = old == ACT_SOC_IN ? -hb : (old == ACT_SOC_ON ? hb : 0.0)
+    v0 - nv > thr && return ACT_SOC_IN
+    # the parts along e_s = (1, u)/sqrt 2 (slack) and e_y = (1, -u)/sqrt 2 (multiplier)
+    tauv = 0.5 * (v0 + nv)
+    tauv <= 1e-8 * max(1.0, scale) && return ACT_SOC_APEX
+    if nv > 0
         @inbounds for i in (i0+1):last(B)
-            ys -= (s.socb[i] - w[i]) / ns * y[i]
-        end
-        ys <= 0 && return ACT_SOC_IN
-    end
-    # u along s_1 / tau - y_1 / eta (both point along u at a boundary solution)
-    nu = 0.0
-    ft = 1.0 / tau; fe = eta > 1e-12 * tau ? 1.0 / eta : 0.0
-    @inbounds for i in (i0+1):last(B)
-        v = (s.socb[i] - w[i]) * ft - y[i] * fe
-        s.soc_u[i] = v
-        nu += v * v
-    end
-    nu = sqrt(nu)
-    if nu > 0
-        @inbounds for i in (i0+1):last(B)
-            s.soc_u[i] /= nu
+            s.soc_u[i] = ((s.socb[i] - w[i]) - y[i]) / nv
         end
     elseif length(B) > 1
+        @inbounds for i in (i0+1):last(B)
+            s.soc_u[i] = 0.0
+        end
         s.soc_u[i0+1] = 1.0
     end
-    s.soc_tau[k] = tau
-    s.soc_eta[k] = eta
+    su = 0.0; yu = 0.0
+    @inbounds for i in (i0+1):last(B)
+        su += s.soc_u[i] * (s.socb[i] - w[i])
+        yu += s.soc_u[i] * y[i]
+    end
+    tau = 0.5 * (s0 + su)
+    eta = 0.5 * (y0 - yu)
+    s.soc_tau[k] = tau > 0 ? tau : tauv
+    s.soc_eta[k] = max(eta, 0.0)
     return ACT_SOC_ON
 end
 
-function _guess_active!(s::Solver, z::Vector{Float64}, y::Vector{Float64})
+"""
+Guess the active set from a point `(z, y)` (an ADMM iterate, or an
+interior-point solution in the ADMM convention). `band` is the hysteresis of
+the SOC classification (`polish_soc_band` during the ADMM iterations, where
+the guess must be stable to trigger the polish).
+"""
+function _guess_active!(s::Solver, z::Vector{Float64}, y::Vector{Float64}, band::Float64 = 0.0)
     act = s.act; l = s.l; u = s.u; rt = s.rowtype
     @inbounds for i in 1:s.m
         t = rt[i]
@@ -110,7 +122,7 @@ function _guess_active!(s::Solver, z::Vector{Float64}, y::Vector{Float64})
         end
     end
     @inbounds for (k, B) in enumerate(s.socs)
-        a = _soc_classify!(s, k, B, z, y)
+        a = _soc_classify!(s, k, B, z, y, act[first(B)], band)
         for i in B
             act[i] = a
         end
@@ -194,8 +206,12 @@ end
     return nothing
 end
 
-"Solve the polish system for the current `act` into `px`, `py` (scaled)."
-function _polish_solve!(s::Solver)
+"""
+Solve the polish system for the current `act` into `px`, `py` (scaled), by
+`refine` steps of iterative refinement against the unregularized target
+system for the current active set and boundary parameters.
+"""
+function _polish_solve!(s::Solver; refine::Int = s.settings.polish_refine_iter)
     n, m = s.n, s.m
     act = s.act
     rhs = s.prhs; sol = s.psol; res = s.pres
@@ -210,7 +226,7 @@ function _polish_solve!(s::Solver)
     end
     copyto!(sol, rhs)
     solve!(s.pol, sol)
-    for _ in 1:s.settings.polish_refine_iter
+    for _ in 1:refine
         # residual of the unregularized target system
         @inbounds for j in 1:n
             s.px[j] = sol[j]
@@ -294,8 +310,12 @@ function _polish_check(s::Solver)
         sv = max(sv, abs(sy) / max(1.0, smax))
     end
     es = st.eps_abs + st.eps_rel * ny
-    ok = pr <= _eps_prim(st, pn) && dr <= _eps_dual(st, dn) && sv <= es
-    merit = max(pr / _eps_prim(st, pn), dr / _eps_dual(st, dn), sv / es)
+    gap, gtol = _polish_gap(s)
+    gmerit = st.check_gap ? gap / gtol : 0.0
+    viol, vtol = _violation(s, s.pAx)          # the constraints' own metric (termination.jl)
+    ok = pr <= _eps_prim(st, pn) && dr <= _eps_dual(st, dn) && sv <= es && gmerit <= 1 && viol <= vtol
+    merit = max(pr / _eps_prim(st, pn), dr / _eps_dual(st, dn), sv / es, gmerit, viol / vtol)
+    ok && (s.info.gap = gap)
     return ok, pr, dr, merit
 end
 
@@ -315,21 +335,26 @@ function _correct_active!(s::Solver)
     return changed
 end
 
-"Newton update of the SOC blocks from the polished point; returns true if any block is on its boundary or changed class."
+"""
+Newton update of the SOC blocks from the polished point: reclassify every
+block (no hysteresis) and read the boundary parameters off the new point.
+Returns `(class_changed, any_on)`.
+"""
 function _correct_soc!(s::Solver)
-    changed = false
+    changed = false; anyon = false
     @inbounds for (k, B) in enumerate(s.socs)
         old = s.act[first(B)]
         a = _soc_classify!(s, k, B, s.pAx, s.py)
-        (a != old || a == ACT_SOC_ON) && (changed = true)
+        a != old && (changed = true)
+        a == ACT_SOC_ON && (anyon = true)
         for i in B
             s.act[i] = a
         end
     end
-    return changed
+    return changed, anyon
 end
 
-function _try_polish!(s::Solver; restart::Bool = true, corrections::Int = s.settings.polish_corrections)
+function _try_polish!(s::Solver; restart::Bool = true, corrections::Int = s.settings.polish_corrections, newton::Int = -1)
     t0 = time_ns()
     info = s.info
     st = s.settings
@@ -340,37 +365,53 @@ function _try_polish!(s::Solver; restart::Bool = true, corrections::Int = s.sett
     copyto!(s.act_fail, s.act)       # remembered as failed unless accepted below
     ok = false
     last_merit = Inf
-    maxc = has_on ? max(corrections, st.polish_soc_newton) : corrections
+    maxc = isempty(s.socs) ? corrections : max(corrections, newton >= 0 ? newton : st.polish_soc_newton)
     prev = Inf
     prev_merit = Inf
+    # A semismooth Newton method on the KKT conditions of every cone: each
+    # attempt solves the polish system for the current active set and boundary
+    # parameters, then reclassifies the interval rows (primal-dual active-set
+    # step) and the SOC blocks (Moreau rule, new boundary parameters).
+    #   * a new classification needs a factorization; after the first
+    #     correction, corrections continue only while they halve the KKT merit;
+    #   * the same classification with new boundary parameters is a Newton step
+    #     (a factorization: the system's 1/delta terms along e_s make an
+    #     outdated factorization a poor preconditioner, so chord steps are kept
+    #     for the tightening of an accepted point, `_polish_tighten!`); a step
+    #     that does not cut the primal residual tenfold ends the polish.
+    # At most `maxc` steps; on failure the caller falls back (ADMM restart,
+    # more ADMM or IPM iterations).
+    chord = false
     for attempt in 0:maxc
-        _polish_factor!(s)
-        _polish_solve!(s)
+        chord || _polish_factor!(s)
+        _polish_solve!(s; refine = chord ? 3 * max(st.polish_refine_iter, 1) : st.polish_refine_iter)
         info.polish_attempts += 1
         ok, pr, dr, merit = _polish_check(s)
+        st.verbose && @printf("      polish %d%s: ok %s  pr %.2e  dr %.2e  merit %.2e\n", attempt, chord ? " (chord)" : "", ok, pr, dr, merit)
         last_merit = merit
-        st.verbose && @printf("    polish attempt %d: merit %.2e, %d active rows\n", attempt, merit, count(s.pol_act))
-        # Newton on the SOC boundary converges fast near the solution or not at
-        # all: give up when a step does not cut the primal residual tenfold
-        if !ok && has_on && attempt >= corrections
-            pr > 0.1 * prev && break
-        end
-        # an active-set correction that does not halve the merit will not converge
-        # within the budget: stop paying factorizations for it
-        !ok && attempt >= 1 && merit > 0.5 * prev_merit && break
-        prev = pr
-        prev_merit = merit
         if ok
             copyto!(s.x, s.px); copyto!(s.y, s.py); copyto!(s.z, s.pz)
             info.prim_res = pr; info.dual_res = dr
             info.polish = :success
             info.polish_iter = info.iter
+            _polish_tighten!(s, pr)
             break
         end
         attempt == maxc && break
-        changed = isempty(s.socs) ? false : _correct_soc!(s)
-        attempt < corrections && (changed |= _correct_active!(s))
-        changed || break
+        cs, anyon = isempty(s.socs) ? (false, false) : _correct_soc!(s)
+        ci = attempt < corrections ? _correct_active!(s) : false
+        if cs || ci
+            attempt >= 1 && merit > 0.5 * prev_merit && break
+            chord = false
+        elseif anyon
+            # same classes, new boundary parameters: a Newton step, which must
+            # cut the primal residual tenfold to continue
+            pr > 0.1 * prev && break
+        else
+            break
+        end
+        prev = pr
+        prev_merit = merit
     end
     s.has_fail = !ok
     if !ok && restart && st.polish_restart
@@ -382,6 +423,36 @@ function _try_polish!(s::Solver; restart::Bool = true, corrections::Int = s.sett
     end
     info.polish_time += (time_ns() - t0) / 1e9
     return ok
+end
+
+"""
+An accepted polish with boundary SOC blocks is exact only up to the Newton
+linearization: when its primal residual `pr` is above 10% of the tolerance, one
+chord step (new boundary parameters, the same factorization, solves only)
+usually gains several digits; it is kept if it passes the check and is better.
+"""
+function _polish_tighten!(s::Solver, pr::Float64)
+    st = s.settings
+    mul!(s.Ax, s.A, s.x)
+    pn = 0.0
+    @inbounds for i in 1:s.m
+        pn = max(pn, abs(s.scl.Einv[i] * s.Ax[i]))
+    end
+    viol, vtol = _violation(s, s.Ax)
+    pr <= 0.1 * _eps_prim(st, pn) && viol <= 0.1 * vtol && return false
+    any(B -> s.act[first(B)] == ACT_SOC_ON, s.socs) || return false
+    cs, _ = _correct_soc!(s)
+    cs && return false                    # a class changed: the accepted point stays
+    _polish_solve!(s; refine = 2 * max(st.polish_refine_iter, 1))
+    s.info.polish_attempts += 1
+    ok2, pr2, dr2, _ = _polish_check(s)
+    st.verbose && @printf("      polish tighten: ok %s  pr %.2e\n", ok2, pr2)
+    if ok2 && pr2 < pr
+        copyto!(s.x, s.px); copyto!(s.y, s.py); copyto!(s.z, s.pz)
+        s.info.prim_res = pr2; s.info.dual_res = dr2
+        return true
+    end
+    return false
 end
 
 """
