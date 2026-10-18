@@ -79,13 +79,14 @@ mutable struct DualWork
     budget::Float64              # its budget
     t_build::Float64             # seconds spent building Z in setup
     iters::Int                   # active-set iterations of the last solve
-    fails::Int                   # consecutive failed attempts seeded from xbar
+    fails::Int                   # consecutive solves in which the path failed (the backoff)
     toobig::Bool                 # an attempt of this solve ran out of budget: the sparse polish takes over
     accepted::Bool               # this solve's point came from the dense path
     tried::Bool                  # this solve made an attempt
     spent_solve::Float64         # work of this solve's attempts (shares one budget of two attempts)
     last_dense::Bool             # so did the last accepted one (its factor is cached)
     cols::Int                    # factor columns computed in the last solve (statistics)
+    lastchg::Int                 # changes of the last active-set iteration of an attempt
 end
 
 "Multiply-adds per second of a sparse triangular solve assumed by the setup budget."
@@ -152,7 +153,7 @@ function _dual_setup!(s::Solver)
     w = DualWork(sys, At, rows, zeros(mi, mi), fill(false, mi), zeros(mi, mi), zeros(Int, mi), 0, 0, zeros(Int, mi),
                  fill(false, mi), zeros(Int8, mi), zeros(Int8, mi), zeros(Int8, mi),
                  zeros(mi), zeros(mi), zeros(mi), zeros(mi), zeros(mi),
-                 zeros(N), zeros(N), zeros(N), false, t_fac, Inf, ffma, sfma, 0.0, 0.0, 0.0, 0, 0, false, 0, false, false, false, 0.0)
+                 zeros(N), zeros(N), zeros(N), false, t_fac, Inf, ffma, sfma, 0.0, 0.0, 0.0, 0, 0, false, 0, false, false, false, 0.0, 0)
     # Z costs one solve per inequality row: all of them in setup when that fits
     # the budget (`dual_setup_budget` seconds), otherwise each column when its
     # row first enters an active set (kept for later solves)
@@ -467,10 +468,11 @@ function _dual_iterate!(s::Solver, w::DualWork, maxit::Int)
     tau = 0.1 * min(s.settings.eps_abs, s.settings.eps_rel)
     lim = typemax(Int)              # changes allowed per iteration (see below)
     pchg = typemax(Int)
+    w.lastchg = typemax(Int)        # stays so unless the iterations stop at `maxit`
     while true
         it += 1
         w.iters += 1
-        _dual_factor!(w, del) || return false
+        _dual_factor!(w, del) || (w.lastchg = typemax(Int); return false)
         copyto!(side, nside)
         # y_A from the factor, v = g - Z_IA y_A
         @inbounds for p in 1:w.na
@@ -516,9 +518,10 @@ function _dual_iterate!(s::Solver, w::DualWork, maxit::Int)
             end
         end
         s.settings.verbose && @printf("      active-set iteration %d: %d active, %d changes\n", it, w.na, nchg)
+        w.lastchg = nchg
         same && return true
         w.spent += DUAL_DENSE_WEIGHT * (w.na + 2) * mi
-        w.spent > w.budget && (w.toobig = true; return false)
+        w.spent > w.budget && (w.toobig = true; w.lastchg = typemax(Int); return false)
         it >= maxit && return false
         # safeguards of the plain iteration, which can oscillate near a
         # degenerate solution: once the changes are few (at most 5% of the rows)
@@ -658,20 +661,33 @@ function _dual_refine!(s::Solver, w::DualWork, tol::Float64, steps::Int)
     return taken
 end
 
+"The active set of `w.side` (and the equality rows) as `s.act`."
+function _dual_sides_to_act!(s::Solver, w::DualWork)
+    @inbounds for i in 1:s.m
+        s.act[i] = s.rowtype[i] == ROWT_EQ ? ACT_EQ : ACT_NONE
+    end
+    @inbounds for (r, i) in enumerate(w.rows)
+        sd = w.side[r]
+        sd != 0 && (s.act[i] = sd > 0 ? ACT_UPPER : ACT_LOWER)
+    end
+    return nothing
+end
+
 """
     _try_dual!(s, seed) -> Bool
 
 One attempt of the dense path: active-set iterations seeded from xbar
 (`seed = :xbar`: the rows xbar violates), from `s.act` (`:act`: an ADMM guess
-or the last accepted active set), then the refined point and the polish check.
+or the last accepted active set), then the refined point and the polish check;
+`frac` scales the budget of the attempt.
 An accepted point becomes the iterate, like an accepted polish.
 """
-function _try_dual!(s::Solver, seed::Symbol)
+function _try_dual!(s::Solver, seed::Symbol; frac::Float64 = 1.0)
     s.dual === nothing && return false
-    return _try_dual!(s, s.dual::DualWork, seed)
+    return _try_dual!(s, s.dual::DualWork, seed, frac)
 end
 
-function _try_dual!(s::Solver, w::DualWork, seed::Symbol)
+function _try_dual!(s::Solver, w::DualWork, seed::Symbol, frac::Float64)
     t0 = time_ns()
     st = s.settings
     info = s.info
@@ -694,7 +710,7 @@ function _try_dual!(s::Solver, w::DualWork, seed::Symbol)
     # attempts of a solve draw on twice that
     w.spent = 0.0
     full = st.dual_budget * (w.fac_fma + 20 * w.solve_fma)
-    w.budget = min(full, 2 * full - w.spent_solve)
+    w.budget = min(frac * full, 2 * full - w.spent_solve)
     if w.budget <= 0
         w.toobig = true
         return false
@@ -719,6 +735,14 @@ function _try_dual!(s::Solver, w::DualWork, seed::Symbol)
         st.verbose && @printf("    dense active set (%s): %d rows, %s\n", seed, w.na, ok ? "accepted" : "rejected")
     else
         st.verbose && @printf("    dense active set (%s): no convergence after %d iterations\n", seed, w.iters)
+        # an iteration that stopped a few changes short of a fixed point (a
+        # nearly degenerate solution, where it oscillates): the sparse polish
+        # with its primal-dual corrections from that active set
+        if w.lastchg <= max(3, length(w.rows) ÷ 50)
+            _dual_sides_to_act!(s, w)
+            ok = _try_polish!(s; restart = false)
+            st.verbose && @printf("    sparse polish from the dense active set: %s\n", ok ? "accepted" : "rejected")
+        end
     end
     info.polish_time += (time_ns() - t0) / 1e9
     return ok

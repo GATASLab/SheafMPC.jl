@@ -118,10 +118,13 @@ Dense active-set path (small polyhedral problems, see dual.jl)
   operation count) allowed in `setup` to build all of Z; beyond it a column of
   Z is computed when its row first enters an active set, and kept;
 * `dual_iter = 12` iterations per attempt, and `dual_budget = 1.0`: the work
-  of an attempt (dense updates and new columns of Z) is bounded by this many
-  sparse factorizations of K11 plus 20 solves; an attempt that stops (no
-  convergence, a cycle, the budget) costs no factorization, and after two
-  attempts of a solve exceed the budget the solve uses the sparse polish;
+  of an attempt (dense updates and new columns of Z, by operation count) is
+  bounded by this many sparse factorizations of K11 plus 20 solves, and all
+  the attempts of a solve by twice that; an attempt that stops (no
+  convergence, the budget) costs no factorization, and once an attempt seeded
+  by a guess runs out of budget the solve continues with the sparse polish;
+  after a solve in which the path failed it is retried after 4, 8, 16, ...
+  solves;
 * `dual_delta = 1e-8`: regularization of K11 and of the dense factor
   (iterative refinement against the exact system removes it).
 

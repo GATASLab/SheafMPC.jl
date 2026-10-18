@@ -483,9 +483,9 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
         dw.toobig = false
         dw.accepted = false; dw.tried = false
         dw.spent_solve = 0.0
-        # after solves in which the dense path failed, it is tried only every
-        # 4th solve (the sparse polish serves the others)
-        dw.fails == 0 || dw.fails % 4 == 0 || (dw.toobig = true)
+        # after solves in which the dense path failed, it is tried again only
+        # after 4, 8, 16, ... more solves (the sparse polish serves the others)
+        dw.fails == 0 || (dw.fails >= 4 && ispow2(dw.fails)) || (dw.toobig = true)
     end
     warm = !cold && st.polish && st.polish_warm && s.m > 0
     retry = max(st.polish_warm_retry, 1)
@@ -504,20 +504,25 @@ function _admm_solve!(s::Solver, t0::UInt64, budget::Int)
         end
         st.verbose && @printf("  warm polish (last active set) %s\n", ok ? "accepted" : "rejected")
     end
-    # 2. the dense path: from the warm iterate's guess (with a shifted warm
-    # start, the shifted active set), then from the last accepted active set
-    # unshifted, then from the equality-only solution (after repeated
-    # failures, every 4th solve)
+    # 2. the dense path: warm, from the warm iterate's guess (with a shifted
+    # warm start, the shifted active set), then from the last accepted active
+    # set unshifted; cold, from the equality-only solution
     if !ok && dw !== nothing && !dw.toobig
         if warm
+            # a warm start that is close needs few changes (and its factor is
+            # cached): a quarter of the budget each, so that a poor one costs
+            # little before the sparse paths
             _guess_active!(s, s.z, s.y)
-            ok = _try_dual!(s, :act)
-            if !ok && s.has_last && s.act != s.act_last
+            ok = _try_dual!(s, :act; frac = 0.25)
+            if !ok && !dw.toobig && s.has_last && s.act != s.act_last
                 copyto!(s.act, s.act_last)
-                ok = _try_dual!(s, :act)
+                ok = _try_dual!(s, :act; frac = 0.25)
             end
+            # these attempts stand for the warm polish of the last active set:
+            # a failure delays its next sparse attempt in the same way
+            s.has_last && dw.last_dense && (s.last_fails = ok ? 0 : s.last_fails + 1)
         end
-        ok || (ok = _try_dual!(s, :xbar))
+        cold && !ok && (ok = _try_dual!(s, :xbar; frac = 0.5))
     end
     # 3. the sparse polish of the warm iterate's guess, without the dense path
     # or when it found the active sets too large (every `polish_warm_retry`-th
