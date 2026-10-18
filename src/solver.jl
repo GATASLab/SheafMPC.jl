@@ -181,7 +181,7 @@ function setup(p::ConicQP; settings::Settings = Settings(), kwargs...)
             end
         end
     else
-        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering, upd_idx = upd_idx)
+        kkt = make_system(kind, copy(K), diag_idx, n; ordering = st.ordering, upd_idx = upd_idx, settings = st)
     end
     pol = _polish_system(kkt, copy(K), n)
     s = Solver(st, Info(), n, m, P, q, A, l, u, socb, copy(p.socs), copy(p.kinds), rowtype, p.c, scl, Pdiag,

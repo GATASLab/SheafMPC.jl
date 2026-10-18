@@ -206,6 +206,7 @@ end
     include("certificates.jl")
     include("controller.jl")
     include("distributed.jl")
+    include(joinpath(@__DIR__, "kkt.jl"))
 
     if isdir(PAPER)
         include(joinpath(@__DIR__, "paper.jl"))

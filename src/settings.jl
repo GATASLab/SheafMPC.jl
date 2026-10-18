@@ -56,6 +56,19 @@ Linear algebra
   orderings AMD, MMD and AMF) in `setup` and keeps the fastest;
 * `ordering = :amd`: the fill-reducing ordering when `linsys = :qdldl`
   (`:amd`, `:mmd`, `:amf`, `:mf`).
+
+Structured KKT kernel (`linsys = :blockldl`, see `BlockLDL`)
+* `kkt_ordering = :auto`: picked by the cost model among `:amd`, `:amf`,
+  `:metis` (with Metis.jl loaded) and, given `kkt_structure`, the
+  structure-given `:stage` (time-major, Riccati-like), `:chain` (per-agent
+  chain condensing, then the agent coupling) and `:nd2`, `:nd4`, `:nd8`,
+  `:nd16` (nested dissection of the agent graph, leaves of that many agents);
+* `kkt_threads = 1`: threads for the factorization and the solves (subtrees
+  of the elimination tree in parallel);
+* `kkt_relax = :exact`: supernode relaxation (`:exact` no explicit zeros,
+  `:light`, `:cholmod`);
+* `kkt_structure = nothing`: `(agent = ..., block = ...)` labels of the
+  variables (agent index, time instant or block).
 """
 Base.@kwdef mutable struct Settings
     rho::Float64 = 0.03
@@ -89,6 +102,10 @@ Base.@kwdef mutable struct Settings
     warm_reset_rho::Bool = true
     linsys::Symbol = :auto
     ordering::Symbol = :amd
+    kkt_ordering::Symbol = :auto
+    kkt_threads::Int = 1
+    kkt_relax::Symbol = :exact
+    kkt_structure::Any = nothing
     verbose::Bool = false
 end
 

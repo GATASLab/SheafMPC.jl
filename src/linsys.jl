@@ -249,13 +249,14 @@ or one of CliqueTrees' `:mmd` (multiple minimum degree), `:amf` (approximate
 minimum fill), `:mf` (minimum fill).
 """
 function make_system(kind::Symbol, K::SpMat, diag_idx::Vector{Int}, n::Int; ordering::Symbol = :amd,
-                     upd_idx::Vector{Int} = diag_idx)
+                     upd_idx::Vector{Int} = diag_idx, settings = nothing)
+    kind == :blockldl && return BlockLDLSystem(K, diag_idx, n; settings = settings)
     if kind == :qdldl
         ordering == :amd && return QDLDLSystem(K, diag_idx, upd_idx)
         return QDLDLSystem(K, diag_idx, upd_idx; perm = fill_ordering(K, ordering))
     end
     kind == :cliquetrees && return ChordalSystem(K, diag_idx, n)
-    throw(ArgumentError("unknown linear system backend $kind (use :qdldl or :cliquetrees)"))
+    throw(ArgumentError("unknown linear system backend $kind (use :qdldl, :cliquetrees or :blockldl)"))
 end
 
 "A fill-reducing permutation of the symmetric matrix with upper triangle `K`."
