@@ -14,6 +14,7 @@
 #   BENCH_THREADS     thread counts of the threads set (default 1,2,4,8)
 #   BENCH_BUDGET      seconds of repeats per measurement (default 0.5)
 #   BENCH_TAG         suffix of the result file
+#   BENCH_RELAX       supernode relaxation: exact, light (default), cholmod
 #
 # Every measurement: one warm-up, then repeats until BENCH_BUDGET seconds (at
 # least 5, at most 2000); min and median. The load average is recorded before
@@ -41,6 +42,8 @@ const RICCATI_MAX = parse(Int, get(ENV, "BENCH_RICCATI_MAX", "256"))
 const THREADS = parse.(Int, envlist("BENCH_THREADS", "1,2,4,8"))
 const BUDGET = parse(Float64, get(ENV, "BENCH_BUDGET", "0.5"))
 const TAG = get(ENV, "BENCH_TAG", "")
+# supernode relaxation of BlockLDL: exact, light (the package default) or cholmod
+const RELAX = Dict("exact" => BL.EXACT, "light" => BL.LIGHT, "cholmod" => BL.Relax())[get(ENV, "BENCH_RELAX", "light")]
 const HN = 24
 const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
 "reduced" in SETS && include(joinpath(PAPER, "scripts", "resolution", "experiments", "common_spatial.jl"))
@@ -96,7 +99,7 @@ function bench_kkt(K::SparseMatrixCSC, n::Int; structure = nothing, riccati = no
     for (nm, p, tord) in (("blockldl", perm, to), ("blockldl_amd", nothing, 0.0))
         tsy = @elapsed begin
             pp = p === nothing ? BL.order_amd(K) : p
-            S = BL.symbolic(K, pp, signs; relax = BL.EXACT)
+            S = BL.symbolic(K, pp, signs; relax = RELAX)
         end
         F = BL.Factor(S)
         BL.factor!(F, K)
@@ -226,7 +229,7 @@ function threads_set(rows)
             nt <= Threads.nthreads() || continue
             pm, name, _ = BL.choose_ordering(K; structure = st, cost = BL.CostModel(nthreads = nt))
             for (ord, perm) in [collect(perms); [:model => pm]]
-                S = BL.symbolic(K, perm, signs; relax = BL.EXACT)
+                S = BL.symbolic(K, perm, signs; relax = RELAX)
                 F = BL.Factor(S; nthreads = nt)
                 tf = timeit(() -> BL.factor!(F, K))
                 tso = timeit(() -> (copyto!(x, bb); BL.ldiv!(F, x, w)))
@@ -254,7 +257,7 @@ function lowrank_set(rows)
         K, nv, di = kkt_matrix(qp)
         N = size(K, 1)
         perm, name, _ = BL.choose_ordering(K; structure = nothing)
-        S = BL.symbolic(K, perm, kkt_signs(N, nv); relax = BL.EXACT)
+        S = BL.symbolic(K, perm, kkt_signs(N, nv); relax = RELAX)
         F = BL.Factor(S); BL.factor!(F, K)
         tref = timeit(() -> BL.factor!(F, K)).min
         w = zeros(N)

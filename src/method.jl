@@ -12,7 +12,9 @@
 # cancelling costs). With `method = :auto`:
 #
 #   * a cold solve of a problem with second-order cones at a tolerance
-#     `<= ipm_eps_direct` goes to the IPM directly;
+#     `<= ipm_eps_direct` goes to the IPM directly, and so does a cold solve
+#     whose estimated IPM cost is below that of an ADMM solve of a prior
+#     iteration count (`_ipm_first`: large problems at loose tolerances);
 #   * otherwise ADMM runs with a budget of iterations worth `crossover` times
 #     the estimated cost of an IPM solve (the cost model: seconds per ADMM
 #     iteration, per ADMM solve and per IPM solve, measured in `setup` and
@@ -36,8 +38,7 @@
 The cost model at setup, with no timing and no factorization: seconds per ADMM
 iteration and per IPM solve estimated by the kernel's cost model (src/kkt)
 from the statistics of the ADMM system's own factor (nnz(L) and flops of its
-ordering), an IPM solve as about 12 iterations of one factorization and six
-solves, 30% outside the linear algebra. Both estimates are replaced by
+ordering), see `_ipm_cost_estimate`. Both estimates are replaced by
 measured times as solves run. The IPM system itself is built on the first
 crossover (`_run_ipm!`); `method = :ipm` builds it here, since every solve
 needs it.
@@ -46,9 +47,10 @@ function _cost_setup!(s)
     st = s.settings
     (s.m == 0 || st.method == :admm) && return nothing
     st.method == :ipm && (s.ipm = _ipm_work(s))
-    t_ipm, t_it = _ipm_cost_estimate(s)
+    t_ipm, t_it, tf = _ipm_cost_estimate(s)
     s.cost.t_ipm = t_ipm
     s.cost.t_admm_iter = t_it
+    s.cost.t_factor = tf
     return nothing
 end
 
@@ -71,14 +73,58 @@ function _factor_stats(S::LinearSystem)
     return (nnzL = st.nnzL, flops = st.flops, critical = st.critical), :multifrontal
 end
 
-"Estimated seconds of an IPM solve and of an ADMM iteration (the kernel's cost model)."
+"""
+Interior-point iterations to the tolerance `eps` (Mehrotra predictor-corrector
+from the homogeneous starting point, measured on the benchmark families):
+with second-order cones about 5 at 1e-3, 8 at 1e-6 and 11 at 1e-9;
+polyhedral problems (box constraints, many of them active) two more.
+"""
+_ipm_iters(eps::Float64, cones::Bool) = clamp((cones ? 2.5 : 4.0) + 0.9 * log10(1 / max(eps, 1e-16)), 4.0, 16.0)
+
+"""
+Estimated seconds of an IPM solve, of an ADMM iteration and of a factorization from the kernel's
+estimates of one factorization `tf` and one solve `ts` and the vector work
+`v = N + nnz(A) + nnz(P)` (relative least-squares fits of measured solves
+of the benchmark families, n = 4 to 1024 fleets, random MPC, chains, reduced
+programs, against the kernel's estimates, EPYC 7702, one thread):
+
+    IPM   (k + 1) 0.85 tf + k (21 ts + 22e-9 v),   k = `_ipm_iters(eps, cones)`
+          (a factorization per iteration and one for the starting point; three
+          Newton systems per iteration with about 1.2 refinement steps each,
+          every refinement a product with K; the cone scalings and step lengths;
+          the solves of large factors run slower than the kernel's estimate,
+          which the solve coefficient absorbs)
+    ADMM  1.6 ts + 5e-10 v per iteration.
+"""
 function _ipm_cost_estimate(s)
     S = s.kkt
     N = size(S.K, 1)
     stats, eng = _factor_stats(S)
-    t_lin = BlockLDL.estimate(BlockLDL.CostModel(factors = 1.0, solves = 6.0), stats, N, eng)
-    t_solve = BlockLDL.estimate(BlockLDL.CostModel(factors = 0.0, solves = 1.0), stats, N, eng)
-    return 12 * 1.3 * t_lin, 1.5 * t_solve + 1e-7
+    tf = BlockLDL.estimate(BlockLDL.CostModel(factors = 1.0, solves = 0.0), stats, N, eng)
+    ts = BlockLDL.estimate(BlockLDL.CostModel(factors = 0.0, solves = 1.0), stats, N, eng)
+    v = N + nnz(s.A) + nnz(s.P)
+    k = _ipm_iters(min(s.settings.eps_abs, s.settings.eps_rel), !isempty(s.socs))
+    return (k + 1) * 0.85 * tf + k * (21 * ts + 22e-9 * v), 1.6 * ts + 5e-10 * v, tf
+end
+
+"""
+Prior iteration count of a cold, polished ADMM solve with `m` rows. On the
+benchmark families it grows slowly with the size: about 20 at m = 160, 55 at
+2600, 80 at 10^4, 100 to 250 at 4 10^4 to 1.7 10^5 (grid couplings at the
+top of the range).
+"""
+_admm_prior_iters(m::Int) = max(20.0, 12 * log2(m / 100))
+
+"""
+Whether a cold solve should start with the IPM: its estimated cost is below
+that of an ADMM solve of `_admm_prior_iters` iterations and two
+factorizations (a rho update and the polish). Large problems at loose
+tolerances, where the IPM needs 5 or 6 iterations and ADMM over a hundred.
+"""
+function _ipm_first(s)
+    c = s.cost
+    (isfinite(c.t_ipm) && isfinite(c.t_admm_iter) && isfinite(c.t_factor)) || return false
+    return c.t_ipm < _admm_prior_iters(s.m) * c.t_admm_iter + 2 * c.t_factor
 end
 
 _has_warm(s) = s.settings.warm_start && s.has_iterate
@@ -99,6 +145,7 @@ function _choose_method(s)
     if !warm && !isempty(s.socs) && min(st.eps_abs, st.eps_rel) <= st.ipm_eps_direct
         return :ipm, 0
     end
+    !warm && !s.cost.prefer_ipm && _ipm_first(s) && return :ipm, 0
     c = s.cost
     if c.prefer_ipm
         c.since += 1

@@ -75,7 +75,7 @@ function _kkt_structure(K::SpMat, n::Int, st)
 end
 
 _kkt_threads(settings) = settings === nothing ? 1 : settings.kkt_threads
-_kkt_relax(settings) = settings === nothing ? BlockLDL.EXACT : (settings.kkt_relax == :exact ? BlockLDL.EXACT :
+_kkt_relax(settings) = settings === nothing ? BlockLDL.LIGHT : (settings.kkt_relax == :exact ? BlockLDL.EXACT :
                        settings.kkt_relax == :light ? BlockLDL.LIGHT : BlockLDL.Relax())
 
 function BlockLDLSystem(K::SpMat, diag_idx::Vector{Int}, n::Int; settings = nothing, perm = nothing,
