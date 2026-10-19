@@ -301,6 +301,61 @@ function node_constraints(P::SheafProgram)
     return sparse(I, J, V, noderows(P), c0dim(P)), b, cones
 end
 
+"""
+Copy the values of `src` onto the stored entries of `dst` (same size; the
+entries of `dst` that `src` does not store become zero). Throws when `src` has
+a nonzero outside the pattern of `dst`: the pattern of a constraint matrix is
+fixed once a solver has been set up on it.
+"""
+function _copy_values!(dst::SparseMatrixCSC, src::SparseMatrixCSC)
+    size(dst) == size(src) || throw(DimensionMismatch("sizes $(size(dst)) and $(size(src)) differ"))
+    rd = rowvals(dst); vd = nonzeros(dst); rs = rowvals(src); vs = nonzeros(src)
+    @inbounds for j in 1:size(dst, 2)
+        kd = first(nzrange(dst, j)); ed = last(nzrange(dst, j))
+        for k in kd:ed
+            vd[k] = 0.0
+        end
+        for k in nzrange(src, j)
+            v = vs[k]
+            r = rs[k]
+            while kd <= ed && rd[kd] < r
+                kd += 1
+            end
+            if kd <= ed && rd[kd] == r
+                vd[kd] = v
+            elseif v != 0
+                throw(ArgumentError("a nonzero at ($r, $j) lies outside the fixed sparsity pattern"))
+            end
+        end
+    end
+    return dst
+end
+
+"""
+Refresh the rows of the vertices `verts` in `An`, the matrix of
+`node_constraints(P)` (or one with its pattern), from the current node
+matrices of `P` (changed in place on their patterns).
+"""
+function _refresh_node_rows!(An::SparseMatrixCSC, P::SheafProgram, verts)
+    rv = rowvals(An); nz = nonzeros(An)
+    for v in verts
+        A = P.nodes[v].A
+        r0 = P.row_offsets[v]; c0 = P.offsets[v]
+        ra = rowvals(A); va = nonzeros(A)
+        @inbounds for j in 1:size(A, 2)
+            rng = nzrange(An, c0 + j)
+            for k in nzrange(A, j)
+                r = r0 + ra[k]
+                p = searchsortedfirst(view(rv, rng), r)
+                (p <= length(rng) && rv[rng[p]] == r) ||
+                    throw(ArgumentError("the node matrix of vertex $v left its sparsity pattern"))
+                nz[rng[p]] = va[k]
+            end
+        end
+    end
+    return An
+end
+
 """Violation of one cone by the slack `s` (0 when `s` lies in the cone)."""
 function cone_violation(kind::ConeKind, s::AbstractVector)
     isempty(s) && return 0.0

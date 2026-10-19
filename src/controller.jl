@@ -9,6 +9,14 @@
 # program, pushes them through the reduction (`update!`, a few sparse
 # products), refreshes the reduced QP's linear cost and right-hand side, and
 # solves warm, with every factorization kept.
+#
+# State constraints may also change in place (re-linearized keep-out
+# half-spaces, `set_state_set!` or `step!(...; states)`): new values of a node
+# matrix on its fixed sparsity pattern. The step then recomputes the coarse
+# matrices of the blocks that hold the changed vertices, copies them into the
+# reduced QP's constraint matrix, and hands its values to the solver
+# (`update!(solver; A)`: the scaling and the symbolic factorization are kept,
+# the KKT matrix is refactored numerically).
 
 """
     StepInfo
@@ -213,16 +221,20 @@ function _setup!(C::MPCController)
 end
 
 """
-    step!(ctrl, x, refs; terminal = nothing, targets = nothing, drift = nothing) -> StepInfo
+    step!(ctrl, x, refs; terminal = nothing, targets = nothing, drift = nothing, states = nothing) -> StepInfo
 
 One receding-horizon step from the measured states `x[i]` with the references
 `refs[i]` (and terminal references, see `set_references!`), optionally new
-formation targets (`p x nedges x H`) and drifts: update the fine data in place,
-push them through the reduction, solve the reduced QP warm, lift, and return
-the inputs to apply with the diagnostics (`StepInfo`).
+formation targets (`p x nedges x H`), drifts and state sets (`states`, one
+entry per agent as in `set_state_sets!`: `nothing`, a `Polyhedron` for every
+instant, or one per instant; each on the rows and pattern the controller was
+built with): update the fine data in place, push them through the reduction,
+solve the reduced QP warm, lift, and return the inputs to apply with the
+diagnostics (`StepInfo`). State sets changed directly with `set_state_set!(ctrl.fp, ...)`
+are picked up too.
 """
 function step!(C::MPCController, x::AbstractVector, refs::AbstractVector; terminal = nothing, targets = nothing,
-               drift = nothing)
+               drift = nothing, states = nothing)
     t0 = time_ns()
     info = C.info
     fp = C.fp
@@ -230,6 +242,16 @@ function step!(C::MPCController, x::AbstractVector, refs::AbstractVector; termin
     set_references!(fp, refs; terminal = terminal)
     targets === nothing || set_targets!(fp, targets)
     drift === nothing || set_drift!(fp, drift)
+    states === nothing || set_state_sets!(fp, states)
+    # constraint matrices changed in place: the coarse matrices of every level, then the QP's
+    verts = fp.changed
+    newA = !isempty(verts)
+    if newA
+        C.cert === nothing || update_matrices!(C.cert, verts)
+        for R in C.chain
+            verts = update_matrices!(R, verts)
+        end
+    end
     feasible = true
     for R in C.chain
         update!(R)
@@ -237,6 +259,8 @@ function step!(C::MPCController, x::AbstractVector, refs::AbstractVector; termin
     end
     Pq = reduced_program(C)
     refresh!(C.qmap, Pq)
+    newA && refresh_matrices!(C.qmap, Pq, verts)
+    empty!(fp.changed)
     if !C.qmap.valid
         # merged duplicate rows stopped agreeing: rebuild the QP without merging
         C.qmap = QPMap(Pq; dedup = false)
@@ -252,7 +276,7 @@ function step!(C::MPCController, x::AbstractVector, refs::AbstractVector; termin
         s = C.solver
     else
         s = C.solver
-        update!(s; q = M.q, b = M.b, c = M.c)
+        newA ? update!(s; q = M.q, b = M.b, c = M.c, A = M.qp.A) : update!(s; q = M.q, b = M.b, c = M.c)
         if C.warm == :cold || s.info.status != :solved
             reset!(s)
         elseif C.warm == :shift && !isempty(C.xmap)

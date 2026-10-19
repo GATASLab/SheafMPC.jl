@@ -38,6 +38,10 @@ mutable struct QPMap
     fd::FlatData
     tmp::Vector{Float64}
     valid::Bool                 # false when the duplicate rows stopped agreeing
+    # in-place node matrices (built on first use): per vertex, the position in nonzeros(qp.A) of every
+    # stored entry of its node matrix (0 for a merged row), and the full rows behind every kept row
+    apos::Vector{Vector{Int}}
+    gmembers::Vector{Vector{Int}}
 end
 
 function QPMap(P::SheafProgram; dedup::Bool = true)
@@ -96,8 +100,84 @@ function QPMap(P::SheafProgram; dedup::Bool = true)
     end
     M = QPMap(qp, Ls, Ws, hard_rows, length(hard_rows), dedup, keep, group, groupsize, copy(full.kinds),
               socblock, copy(full.socs), copy(qp.q), qp.c, zeros(m), zeros(nrows(qp)), FlatData(P),
-              zeros(c1dim(P)), true)
+              zeros(c1dim(P)), true, Vector{Int}[], Vector{Int}[])
     refresh!(M, P)
+    return M
+end
+
+function _node_positions!(M::QPMap, P::SheafProgram)
+    A = M.qp.A
+    rv = rowvals(A)
+    M.apos = Vector{Vector{Int}}(undef, nvertices(P))
+    for v in 1:nvertices(P)
+        Av = P.nodes[v].A
+        ra = rowvals(Av)
+        out = zeros(Int, nnz(Av))
+        for j in 1:size(Av, 2), k in nzrange(Av, j)
+            full = M.nh + P.row_offsets[v] + ra[k]
+            g = M.group[full]
+            M.keep[g] == full || continue
+            rng = nzrange(A, P.offsets[v] + j)
+            p = searchsortedfirst(view(rv, rng), g)
+            (p <= length(rng) && rv[rng[p]] == g) || error("the QP does not store the node entries of vertex $v")
+            out[k] = rng[p]
+        end
+        M.apos[v] = out
+    end
+    M.gmembers = [Int[] for _ in M.keep]
+    for i in eachindex(M.group)
+        push!(M.gmembers[M.group[i]], i)
+    end
+    return M
+end
+
+"The nonzero entries `(column, value)` of full node row `i` of the QP, read off the node matrices of `P`."
+function _full_row_entries(M::QPMap, P::SheafProgram, i::Int)
+    r = i - M.nh
+    v = searchsortedlast(P.row_offsets, r - 1)
+    Av = P.nodes[v].A
+    rl = r - P.row_offsets[v]
+    out = Tuple{Int,Float64}[]
+    for j in 1:size(Av, 2), k in nzrange(Av, j)
+        (rowvals(Av)[k] == rl && nonzeros(Av)[k] != 0) && push!(out, (P.offsets[v] + j, nonzeros(Av)[k]))
+    end
+    return out
+end
+
+"""
+    refresh_matrices!(map::QPMap, P, verts) -> map
+
+Copy the node constraint matrices of the vertices `verts` of `P` (changed in
+place on their patterns) into the QP's constraint matrix. Merged duplicate
+rows must stay duplicates; when they stop agreeing `map.valid` becomes false
+(then the QP must be rebuilt without merging, as when their right-hand sides
+disagree).
+"""
+function refresh_matrices!(M::QPMap, P::SheafProgram, verts)
+    isempty(verts) && return M
+    length(M.apos) == nvertices(P) || _node_positions!(M, P)
+    nz = nonzeros(M.qp.A)
+    merged = length(M.keep) < length(M.group)
+    for v in verts
+        pos = M.apos[v]
+        vals = nonzeros(P.nodes[v].A)
+        length(vals) == length(pos) || throw(ArgumentError("the node matrix of vertex $v left its sparsity pattern"))
+        @inbounds for k in eachindex(pos)
+            pos[k] > 0 && (nz[pos[k]] = vals[k])
+        end
+        merged || continue
+        for r in rrange(P, v)
+            g = M.group[M.nh+r]
+            mem = M.gmembers[g]
+            length(mem) > 1 || continue
+            if any(<=(M.nh), mem)
+                M.valid = false                      # a node row merged with a hard edge row: rebuild
+                continue
+            end
+            ref = sort!(_full_row_entries(M, P, mem[1]))
+            all(i -> sort!(_full_row_entries(M, P, i)) == ref, mem) || (M.valid = false)
+        end
+    end
     return M
 end
 

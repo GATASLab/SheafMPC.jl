@@ -102,7 +102,18 @@ ADMM (Boyd et al. 2011; Summers and Lygeros 2012): every agent or team solves
 its own QP with half of each formation spring and a consensus penalty, and
 exchanges with each neighbour the positions its springs read, once per
 iteration. Teams cut the messages: rigid rows of the grid exchange one
-planar trajectory per pair of rows instead of one per vehicle.
+planar trajectory per pair of rows instead of one per vehicle. Each step
+starts from the previous plan and scaled duals moved one instant earlier
+(`warm = :shift`), which is what makes a budget of one or a few iterations per
+step close to coordinated MPC. Every step ends with a status (`:max_iter`,
+`:time_limit`, `:numerical_error` or an infeasible local QP stop it).
+
+**Changing constraints.** State sets can change in place on the pattern the
+controller was built with (`Polyhedron(G, h; pattern)`, then
+`set_state_set!` or `step!(...; states)`): re-linearized keep-out half-spaces
+whose normals rotate every step update the affected coarse matrices and the
+solver's values (one numerical refactorization) instead of rebuilding the
+controller.
 
 **The gap kernel.** For an equality-constrained QP the gap of hardening any set
 of soft edges is `(1/2) s' K^+ s`, with `s` their defects at the fine optimum
@@ -116,14 +127,14 @@ formula is a lower bound.
 
 | | |
 |---|---|
-| modelling | `Agent(A, B; C, Q, R, Cr, g, Cf, Qf, input, state)`, `BallSet`, `BoxSet`, `Polyhedron`, `Fleet(agents, edges; H, offsets, targets, weights, present)`, `FleetProgram(fleet; x0, references, terminal)`, `set_state!`, `set_references!`, `set_targets!`, `set_drift!`, `set_state_bound!`, `trajectories`, `first_inputs`, `plant_step` |
+| modelling | `Agent(A, B; C, Q, R, Cr, g, Cf, Qf, input, state)`, `BallSet`, `BoxSet`, `Polyhedron(G, h; pattern)`, `Fleet(agents, edges; H, offsets, targets, weights, present)`, `FleetProgram(fleet; x0, references, terminal)`, `set_state!`, `set_references!`, `set_targets!`, `set_drift!`, `set_state_bound!`, `set_state_set!`, `set_state_sets!`, `trajectories`, `first_inputs`, `plant_step`, `shift_plan`, `free_response!` |
 | the paper's agents | `quadrotor(h)`, `ground_vehicle(h)`, `grid_graph`, `GridScenario`, `fleet`, `references`, `formation_start`, `row_teams`, `strip_teams`, `block_teams` |
 | programs | `SheafProgram(nodes, edges)`, `NodeData`, `SheafEdge`, `objective`, `quadratic_form`, `coboundary`, `feasibility`, `harden`, `solve` |
 | resolutions | `Fine`, `TimeBlocking`, `partial_condensing`, `full_condensing`, `Teams`, `⊠` / `Product`, `Mixed`, `VertexPartition` |
-| reductions | `reduce(program, resolution; basis, reuse)`, `update!(R)`, `lift`, `restrict`, `reduction_chain`, `composite_partition` |
+| reductions | `reduce(program, resolution; basis, reuse)`, `update!(R)`, `update_matrices!(R, verts)`, `lift`, `restrict`, `restrict!`, `reduction_chain`, `composite_partition` |
 | certificates | `gap_bounds(fine, R, sol; fine_solution)`, `Certifier`, `gap_kernel(program, xstar)`, `gap(K, teams)`, `team_front`, `select_teams(K; k, budget, beam, refine)` |
-| receding horizon | `MPCController(fleet, resolution; certify, settings...)`, `step!(ctrl, x, refs; terminal, targets, drift)`, `plan`, `StepInfo` |
-| distributed | `DistributedMPC(fleet, teams; rho, eps_abs, eps_rel, budget)`, `step!`, `floats_per_iteration` |
+| receding horizon | `MPCController(fleet, resolution; certify, settings...)`, `step!(ctrl, x, refs; terminal, targets, drift, states)`, `plan`, `StepInfo` |
+| distributed | `DistributedMPC(fleet, teams; rho, eps_abs, eps_rel, maxit, budget, warm, time_limit)`, `step!`, `floats_per_iteration` |
 
 Every exported function has a docstring (`?reduce` in the REPL).
 
