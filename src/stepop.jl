@@ -88,7 +88,10 @@ end
 
 SparseArrays.nnz(F::ChainedMap) = nnz(F.C) + nnz(F.Ct)
 
-function apply!(out::AbstractVector, F::ChainedMap, x::AbstractVector)
+apply!(out::AbstractVector, F::ChainedMap, x::AbstractVector) = _apply!(out, _differences!(F, x))
+
+"The change of the inputs since `x0`, in double length, and (with classes) its departure from them."
+function _differences!(F::ChainedMap, x::AbstractVector)
     dx, dxl, x0 = F.dx, F.dxl, F.x0
     @inbounds for j in eachindex(dx)
         a, b = x[j], -x0[j]
@@ -97,11 +100,6 @@ function apply!(out::AbstractVector, F::ChainedMap, x::AbstractVector)
         dx[j] = d
         dxl[j] = (a - (d - bb)) + (b - bb)
     end
-    copyto!(out, F.c)
-    mul!(out, F.C, dx, 1.0, 1.0)
-    isempty(F.crows) && return out
-    hi, lo = F.hi, F.lo
-    dxp, dxpl = dx, dxl
     if !isempty(F.rep)
         # the departure of every input's change from that of its class's first input
         dxp, dxpl, rp = F.dxp, F.dxpl, F.rep
@@ -115,6 +113,17 @@ function apply!(out::AbstractVector, F::ChainedMap, x::AbstractVector)
             end
         end
     end
+    return F
+end
+
+"The map applied to the differences in `F`'s buffers."
+function _apply!(out::AbstractVector, F::ChainedMap)
+    dx, dxl = F.dx, F.dxl
+    copyto!(out, F.c)
+    mul!(out, F.C, dx, 1.0, 1.0)
+    isempty(F.crows) && return out
+    hi, lo = F.hi, F.lo
+    dxp, dxpl = isempty(F.rep) ? (dx, dxl) : (F.dxp, F.dxpl)
     _compensated!(hi, lo, out, F.Ct, F.Ctlo, F.crows, dx, dxl, dxp, dxpl, F.devrows)
     prev = F.prev
     @inbounds for i in F.order
@@ -896,15 +905,22 @@ end
     lift!(x, op::StepOperator, y) -> x
 
 The coordinates `op.lift_rows` of the finest plan lifted from a solution `y`
-of the last level, with the active data of the last `update!(op)`: equal to
-`lift(reduced, y)[op.lift_rows]` after `sync!`.
+of the last level, with the active data of the last `update!(op)` (whose
+differences it reuses): equal to `lift(reduced, y)[op.lift_rows]` after
+`sync!`.
 """
 function lift!(x::AbstractVector, op::StepOperator, y::AbstractVector)
     op.lift === nothing && throw(ArgumentError("the operator lifts no coordinates (keyword lift)"))
     ny = length(op.ya) - length(op.a)
     length(y) == ny || throw(DimensionMismatch("y must have $ny entries"))
-    ya = op.ya
-    copyto!(ya, 1, y, 1, ny)
-    copyto!(ya, ny + 1, op.a, 1, length(op.a))
-    return apply!(x, op.lift, ya)
+    # the data's part of the differences is the one `update!(op)` computed (same reference, same classes)
+    L, Q, na = op.lift, op.qb, length(op.a)
+    copyto!(L.dx, 1, y, 1, ny); fill!(view(L.dxl, 1:ny), 0.0)
+    copyto!(L.dx, ny + 1, Q.dx, 1, na); copyto!(L.dxl, ny + 1, Q.dxl, 1, na)
+    if !isempty(L.rep)
+        copyto!(L.dxp, 1, y, 1, ny); fill!(view(L.dxpl, 1:ny), 0.0)
+        copyto!(L.dxp, ny + 1, isempty(Q.rep) ? Q.dx : Q.dxp, 1, na)
+        copyto!(L.dxpl, ny + 1, isempty(Q.rep) ? Q.dxl : Q.dxpl, 1, na)
+    end
+    return _apply!(x, L)
 end
