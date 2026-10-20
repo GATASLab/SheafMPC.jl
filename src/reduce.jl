@@ -43,17 +43,17 @@ mutable struct ReducedProgram
     cross::Vector{Int}
     coarse_offsets::Vector{Int}
     N::SpMat
-    Nt::SpMat
-    X::SpMat
-    Cons::SpMat
+    Nt::SparseMatrixCSC{Float64}
+    X::SparseMatrixCSC{Float64}
+    Cons::SparseMatrixCSC{Float64}
     layout::Union{FleetLayout,Nothing}
     feasible::Bool
     consistency::Float64
     consistency_tol::Float64
     # in-place update: operators and buffers
-    Qn::SpMat
-    An::SpMat
-    Dx::SpMat
+    Qn::SparseMatrixCSC{Float64}
+    An::SparseMatrixCSC{Float64}
+    Dx::SparseMatrixCSC{Float64}
     xrows::Vector{Int}
     rowmap::Vector{Int}
     vertex_block::Vector{Int}
@@ -68,6 +68,28 @@ mutable struct ReducedProgram
     # restrict: per fiber, the factorization of its basis (built on first use, `nothing` for an orthonormal basis)
     rfac::Vector{Any}
     rbuf::Vector{Float64}
+    # flat copies of the coarse vectors (node rows, edge targets): the input of the next level of a chain
+    bnc::Vector{Float64}
+    bec::Vector{Float64}
+    shared::Bool    # reads its parent's flat vectors instead of gathering them from the parent's program
+    lazy::Bool      # a child reads the flat vectors, so `program` is written only when read (see `getproperty`)
+    stale::Bool     # `program` is behind the flat vectors
+end
+
+"""32-bit indices for the operators applied at every step (a step is memory bound: 12 instead of 16 bytes per entry)."""
+_compact(A::SparseMatrixCSC{Float64}) =
+    max(nnz(A), size(A, 1), size(A, 2)) < typemax(Int32) ? SparseMatrixCSC{Float64,Int32}(A) : A
+
+# `program` of a level whose child reads the flat vectors is written when it is asked for.
+function Base.getproperty(R::ReducedProgram, s::Symbol)
+    if s === :program && getfield(R, :stale)
+        _scatter!(R)
+    end
+    if s === :fine
+        par = getfield(R, :parent)
+        par isa ReducedProgram && getfield(par, :stale) && _scatter!(par)
+    end
+    return getfield(R, s)
 end
 
 _sheaf(P::SheafProgram) = P
@@ -231,9 +253,11 @@ function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int},
     An, _, _ = node_constraints(P)
     Dx = coboundary(P, cross)
     R = ReducedProgram(parent, P, Pc, res, basis, Pi, local_index, fibers, collapsed, cross, coarse_offsets,
-                       N, SpMat(transpose(N)), X, Cons, clayout, true, 0.0, Float64(consistency_tol),
-                       Qn, An, Dx, xrows, rowmap, vertex_block, FlatData(P), zeros(n), zeros(n), zeros(noderows(P)),
-                       zeros(c1dim(Pc)), zeros(c0dim(Pc)), zeros(nb), zeros(size(Cons, 1)), Any[], zeros(n))
+                       N, _compact(SpMat(transpose(N))), _compact(X), _compact(Cons), clayout, true, 0.0, Float64(consistency_tol),
+                       _compact(Qn), _compact(An), _compact(Dx), xrows, rowmap, vertex_block, FlatData(P), zeros(n), zeros(n), zeros(noderows(P)),
+                       zeros(c1dim(Pc)), zeros(c0dim(Pc)), zeros(nb), zeros(size(Cons, 1)), Any[], zeros(n),
+                       zeros(noderows(Pc)), zeros(c1dim(Pc)), false, false, false)
+    _link!(R)
     update!(R)
     return R
 end
@@ -262,7 +286,8 @@ function _reuse_structure(parent, P::SheafProgram, res::Resolution, R0::ReducedP
                        R0.coarse_offsets, R0.N, R0.Nt, R0.X, R0.Cons, clayout, true, 0.0, R0.consistency_tol,
                        R0.Qn, R0.An, R0.Dx, R0.xrows, R0.rowmap, R0.vertex_block, FlatData(P), zeros(n), zeros(n),
                        zeros(noderows(P)), zeros(c1dim(Pc)), zeros(c0dim(Pc)), zeros(nvertices(Pc)), zeros(size(R0.Cons, 1)),
-                       R0.rfac, zeros(n))
+                       R0.rfac, zeros(n), zeros(noderows(Pc)), zeros(c1dim(Pc)), false, false, false)
+    _link!(R)
     update!(R)
     return R
 end
@@ -279,8 +304,10 @@ products only, no allocation. Also re-checks that every affine fiber is
 nonempty (`reduced.feasible`).
 """
 function update!(R::ReducedProgram)
-    P, Pc = R.fine, R.program
-    fd = gather!(R.fd, P)
+    P = getfield(R, :fine)
+    shared = R.shared
+    fd = shared ? R.fd : gather!(R.fd, P)
+    cpar = shared ? (R.parent::ReducedProgram).cc : Float64[]
     be = fd.be
     if size(R.Cons, 1) > 0
         mul!(R.cons, R.Cons, be)
@@ -298,8 +325,9 @@ function update!(R::ReducedProgram)
     # constants: sum_v (1/2) xbar_v'Q_v xbar_v + q_v'xbar_v + c_v, per block
     cc = R.cc
     fill!(cc, 0.0)
+    nodes = P.nodes
     @inbounds for v in 1:nvertices(P)
-        s = P.nodes[v].c
+        s = shared ? cpar[v] : nodes[v].c
         for j in vrange(P, v)
             s += (0.5 * w[j] + fd.q[j]) * xbar[j]
         end
@@ -308,11 +336,30 @@ function update!(R::ReducedProgram)
     @inbounds for j in eachindex(w)
         w[j] += fd.q[j]
     end
-    qc = R.qc
-    mul!(qc, R.Nt, w)
+    mul!(R.qc, R.Nt, w)
     mul!(R.Anx, R.An, xbar)
     mul!(R.Dxx, R.Dx, xbar)
-    # scatter into the coarse program
+    # flat coarse vectors (the next level reads these)
+    bnc, bec, rowmap, xrows, Anx, Dxx = R.bnc, R.bec, R.rowmap, R.xrows, R.Anx, R.Dxx
+    @inbounds for i in eachindex(bnc)
+        j = rowmap[i]
+        bnc[i] = fd.bn[j] - Anx[j]
+    end
+    @inbounds for i in eachindex(bec)
+        bec[i] = be[xrows[i]] - Dxx[i]
+    end
+    if R.lazy
+        R.stale = true
+    else
+        _scatter!(R)
+    end
+    return R
+end
+
+"""Write the flat coarse vectors into the coarse program's nodes and edges."""
+function _scatter!(R::ReducedProgram)
+    Pc = getfield(R, :program)
+    qc, cc, bnc, bec = R.qc, R.cc, R.bnc, R.bec
     row = 0
     @inbounds for (b, nd) in enumerate(Pc.nodes)
         o = Pc.offsets[b]
@@ -321,17 +368,27 @@ function update!(R::ReducedProgram)
         end
         nd.c = cc[b]
         for k in eachindex(nd.b)
-            j = R.rowmap[row+k]
-            nd.b[k] = fd.bn[j] - R.Anx[j]
+            nd.b[k] = bnc[row+k]
         end
         row += length(nd.b)
     end
     @inbounds for (k, E) in enumerate(Pc.edges)
         o = Pc.edge_offsets[k]
         for a in eachindex(E.b)
-            E.b[a] = be[R.xrows[o+a]] - R.Dxx[o+a]
+            E.b[a] = bec[o+a]
         end
     end
+    R.stale = false
+    return R
+end
+
+"""A reduction of a reduction reads its parent's flat vectors, so the parent writes its program only when it is read."""
+function _link!(R::ReducedProgram)
+    par = R.parent
+    par isa ReducedProgram || return R
+    R.fd = FlatData(par.qc, 0.0, par.bnc, par.bec)
+    R.shared = true
+    par.lazy = true
     return R
 end
 
