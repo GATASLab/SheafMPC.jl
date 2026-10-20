@@ -203,6 +203,12 @@ function refresh!(M::QPMap, P::SheafProgram)
     @inbounds for k in eachindex(fd.bn)
         bf[M.nh+k] = fd.bn[k]
     end
+    return _collapse_b!(M)
+end
+
+"The kept right-hand sides from `bfull` (tightest copy of a merged half-space row; `valid` false if copies disagree)."
+function _collapse_b!(M::QPMap)
+    bf = M.bfull
     if length(M.keep) == length(bf)
         copyto!(M.b, bf)
         return M

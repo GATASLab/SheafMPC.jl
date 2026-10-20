@@ -12,7 +12,8 @@ Pushforward".
 * Reductions: `TimeBlocking` (condensing, exact), `Teams` (agreement
   subspaces), products `teams ⊠ blocking`, `Mixed` resolutions;
   `reduce(program, resolution)` is the pushforward, `lift` maps reduced plans
-  back, and reductions compose (teams of teams).
+  back, and reductions compose (teams of teams); `StepOperator` precomposes a
+  chain's map from the changing data to the reduced QP vectors.
 * Certificates: `gap_bounds` (from the reduced solve, and the fine one when
   available), `gap_kernel`, `gap` and `select_teams`.
 * Receding horizon: `MPCController` and `step!`; `DistributedMPC`, consensus
@@ -57,6 +58,7 @@ include("fiber.jl")
 include("resolutions.jl")
 include("reduce.jl")
 include("qpmap.jl")
+include("stepop.jl")
 include("fleet.jl")
 include("scenarios.jl")
 include("certificates.jl")
@@ -83,6 +85,7 @@ export FleetLayout, Resolution, Fine, TimeBlocking, full_condensing, partial_con
 export Mixed, VertexPartition, canonical_partition
 export ReducedProgram, Fiber, fiberdim, lift, lift!, restrict, restrict!, update_matrices!, reduction_chain, root_program, composite_partition, fiber_kinds
 export QPMap, refresh!, refresh_matrices!, ProgramSolution, solve, isoptimal
+export StepOperator, data_index, sync!
 # certificates
 export gap_bounds, gap_lower_bound, Certifier, certify!, multipliers
 export GapKernel, gap_kernel, gap, team_front, select_teams

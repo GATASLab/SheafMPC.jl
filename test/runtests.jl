@@ -278,6 +278,7 @@ end
 
     include("structured_basis.jl")
     include("reductions.jl")
+    include("stepop.jl")
     include("certificates.jl")
     include("controller.jl")
     include("distributed.jl")
