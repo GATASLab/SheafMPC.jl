@@ -80,6 +80,10 @@ struct ChainedMap
     hi::Vector{Float64}
     lo::Vector{Float64}
     iscomp::BitVector
+    rep::Vector{Int32}            # per input: the first input of its class (0: in none, its whole change); empty: no deviations
+    devrows::BitVector            # the rows applied to the deviations (the links)
+    dxp::Vector{Float64}
+    dxpl::Vector{Float64}
 end
 
 SparseArrays.nnz(F::ChainedMap) = nnz(F.C) + nnz(F.Ct)
@@ -97,7 +101,21 @@ function apply!(out::AbstractVector, F::ChainedMap, x::AbstractVector)
     mul!(out, F.C, dx, 1.0, 1.0)
     isempty(F.crows) && return out
     hi, lo = F.hi, F.lo
-    _compensated!(hi, lo, out, F.Ct, F.Ctlo, F.crows, dx, dxl)
+    dxp, dxpl = dx, dxl
+    if !isempty(F.rep)
+        # the departure of every input's change from that of its class's first input
+        dxp, dxpl, rp = F.dxp, F.dxpl, F.rep
+        @inbounds for j in eachindex(dx)
+            r = rp[j]
+            if r == 0
+                dxp[j] = dx[j]; dxpl[j] = dxl[j]
+            else
+                h, l = _dd_add(dx[j], dxl[j], -dx[r], -dxl[r])
+                dxp[j] = h; dxpl[j] = l
+            end
+        end
+    end
+    _compensated!(hi, lo, out, F.Ct, F.Ctlo, F.crows, dx, dxl, dxp, dxpl, F.devrows)
     prev = F.prev
     @inbounds for i in F.order
         p = prev[i]
@@ -109,11 +127,15 @@ function apply!(out::AbstractVector, F::ChainedMap, x::AbstractVector)
     return out
 end
 
-"Rows `crows` of `c` plus their compensated parts (columns of `Ct`, `Ctlo`) times `dx + dxl`, by dot2, as `hi + lo`."
-function _compensated!(hi, lo, c, Ct::SparseMatrixCSC, Ctlo::SparseMatrixCSC, crows, dx, dxl)
+"""
+Rows `crows` of `c` plus their compensated parts (columns of `Ct`, `Ctlo`) times `dx + dxl`
+(the rows `devrows`: times `dxp + dxpl`), by dot2, as `hi + lo`.
+"""
+function _compensated!(hi, lo, c, Ct::SparseMatrixCSC, Ctlo::SparseMatrixCSC, crows, dx0, dxl0, dxp, dxpl, devrows)
     rv, nz = rowvals(Ct), nonzeros(Ct)
     rl, nl = rowvals(Ctlo), nonzeros(Ctlo)
     @inbounds for (t, i) in enumerate(crows)
+        dx, dxl = devrows[i] ? (dxp, dxpl) : (dx0, dxl0)
         e = 0.0
         for k in nzrange(Ctlo, t)
             e += nl[k] * dx[rl[k]]
@@ -145,7 +167,7 @@ end
 
 """
     StepOperator(reduced, qmap, active; lift_rows = Int[], chains = :auto, lift_chains = :auto,
-                 droptol = 1e-15, chunk = :auto)
+                 droptol = 1e-15, chunk = :auto, invariant = nothing, link_droptol = droptol)
 
 The QP vectors of the last level of the chain of reductions `reduced` (as
 `qmap = QPMap(reduced.program)` computes them: `q` and the right-hand sides of
@@ -172,6 +194,18 @@ output differs from the exact composition by at most `op.dust` times the
 largest change of an active entry since the build, plus round-off. The
 composition runs in double-double arithmetic over blocks of `chunk` active
 entries (`:auto`: 64 blocks, of at least 2048 entries).
+
+`invariant = W`: directions of the data (one row per active entry, each
+column the indicator of a class of entries, a team's data moving as one, say)
+along which the differences of chained copies do not change. The links are
+then applied to the departure of the data from these directions (every entry's
+change minus that of the first entry of its class), which is small when the
+data move nearly along them, and lose their entries while these sum to at
+most `link_droptol` times the rows' scale over the chain's length. A chained
+QP row is off by at most `op.linkbound[i] * dev + op.linkboundW[i] * tau`, plus
+round-off, with `dev` the largest departure and `tau` the largest change of a
+class's first entry since the build (`linkboundW`, the size of the links along
+`W`, is round-off when `W` is right).
 """
 mutable struct StepOperator
     chain::Vector{ReducedProgram}
@@ -195,6 +229,9 @@ mutable struct StepOperator
     ya::Vector{Float64}
     feasible::Bool
     dust::Float64
+    deviation::Bool               # links applied to the data's departure from the invariant directions,
+    linkbound::Vector{Float64}    # a chained QP row off by at most linkbound[i] * dev + linkboundW[i] * tau
+    linkboundW::Vector{Float64}
     build_seconds::Float64
 end
 
@@ -257,7 +294,7 @@ end
 function _ddmul(A, B::DDMat)
     m, k = _dims(A)
     k == B.m || throw(DimensionMismatch("inner dimensions $k and $(B.m)"))
-    acph, acpl = zeros(m), zeros(m)
+    acph, acpl = Vector{Float64}(undef, m), Vector{Float64}(undef, m)       # read only where marked
     mark = zeros(Int, m)
     rows = Int[]
     cpA, rvA, hA, lA = _cp(A), _rv(A), _hi(A), _lo(A)
@@ -408,7 +445,8 @@ end
 
 """
 The rows of `K` in chained form, rounded, and the rounding errors of the anchors' entries:
-a row with `prev[i] > 0` becomes `K[i] - K[prev[i]]`.
+a row with `prev[i] > 0` becomes `K[i] - K[prev[i]]` (dropped down to `linktol`, and its
+products with the columns of `W`, if any, pushed to `dws`).
 From every row the smallest entries are dropped as long as their absolute sum stays below
 `droptol` times the row's scale (the largest entry of `K[i]`, or of `K[prev[i]]`) divided
 by the length `clen[i]` of its chain, and the sum is added to `dust[i]`: along a chain the
@@ -416,10 +454,14 @@ dropped entries sum to at most `droptol` times the rows' scale, and an output mo
 most that times the largest change of an active entry.
 """
 function _chain_rows(Kd::DDMat, prev::Vector{Int32}, droptol::Float64, dust::Vector{Float64},
-                     S::SparseMatrixCSC, clen::Vector{Int32}, anchors::BitVector)
+                     S::SparseMatrixCSC, clen::Vector{Int32}, anchors::BitVector; linktol::Float64 = droptol,
+                     W::Union{SparseMatrixCSC,Nothing} = nothing, dws::Vector = [])
     K = _ddround(Kd)
     Klo = _ddresidual(Kd, anchors)
-    D = nnz(S) == 0 ? K : _ddround(_ddadd(Kd, _ddmul(S, Kd), -1.0))
+    Dd = nnz(S) == 0 ? Kd : _ddadd(Kd, _ddmul(S, Kd), -1.0)
+    D = _ddround(Dd)
+    # the links' products with the invariant directions, for their bound
+    W === nothing || push!(dws, _ddround(_ddmul(Dd, DDMat(W))))
     m, n = size(K)
     sc = zeros(m)
     rk, nk = rowvals(K), nonzeros(K)
@@ -435,7 +477,7 @@ function _chain_rows(Kd::DDMat, prev::Vector{Int32}, droptol::Float64, dust::Vec
         r = nzrange(Dt, i)
         isempty(r) && continue
         p = prev[i]
-        budget = droptol * max(sc[i], p > 0 ? sc[p] : 0.0) / clen[i]
+        budget = (p > 0 ? linktol : droptol) * max(sc[i], p > 0 ? sc[p] : 0.0) / clen[i]
         resize!(mags, length(r))
         for (t, k) in enumerate(r)
             mags[t] = abs(nz[k])
@@ -563,12 +605,14 @@ end
 
 "A chained map from its column blocks (outputs x inputs, and the anchors' rounding errors) and its value `truth` at the inputs `x0` (in chained form)."
 function _chained_map(pairs::Vector, prev::Vector{Int32}, dust::Vector{Float64}, truth::Vector{Float64},
-                      x0::Vector{Float64}; head::Int = 8)
+                      x0::Vector{Float64}; head::Int = 8, rep::Vector{Int32} = Int32[])
     C = SparseMatrixCSC{Float64,Int}(reduce(hcat, [p[1] for p in pairs]))
     Clo = SparseMatrixCSC{Float64,Int}(reduce(hcat, [p[2] for p in pairs]))
     tv = copy(truth)
-    # the rows of chains are summed with compensation: anchors whole, links in their `head` largest entries
+    # the rows of chains are summed with compensation: anchors whole, links in their `head` largest
+    # entries (whole when they are applied to the deviations)
     anchor = _anchors(prev)
+    devrows = isempty(rep) ? falses(length(prev)) : prev .> 0
     inchain = anchor .| (prev .> 0)
     crows = Int32.(findall(inchain))
     Ct = SparseMatrixCSC{Float64,Int}(sparse(transpose(C)))
@@ -576,7 +620,7 @@ function _chained_map(pairs::Vector, prev::Vector{Int32}, dust::Vector{Float64},
     comp = falses(nnz(Ct))
     for i in crows
         r = nzrange(Ct, i)
-        if anchor[i] || length(r) <= head
+        if anchor[i] || devrows[i] || length(r) <= head
             comp[r] .= true
         else
             p = partialsortperm(abs.(view(nz, r)), 1:head; rev = true)
@@ -589,12 +633,14 @@ function _chained_map(pairs::Vector, prev::Vector{Int32}, dust::Vector{Float64},
     Ctc = sparse(rv[c], pos[J[c]], nz[c], size(Ct, 1), length(crows))
     C = _compact(sparse(J[.!c], rv[.!c], nz[.!c], size(C)...))
     Ctlo = _compact(SparseMatrixCSC{Float64,Int}(sparse(transpose(Clo[crows, :]))))
-    return ChainedMap(C, _compact(Ctc), Ctlo, crows, tv, copy(x0), zeros(length(x0)), zeros(length(x0)), prev,
-                      _chain_order(prev), dust, zeros(length(prev)), zeros(length(prev)), inchain)
+    nx = length(x0)
+    return ChainedMap(C, _compact(Ctc), Ctlo, crows, tv, copy(x0), zeros(nx), zeros(nx), prev, _chain_order(prev), dust,
+                      zeros(length(prev)), zeros(length(prev)), inchain, rep, devrows, zeros(nx), zeros(nx))
 end
 
 function StepOperator(Rtop::ReducedProgram, M::QPMap, active::AbstractVector{<:Integer}; lift_rows = Int[],
-                      chains = :auto, lift_chains = :auto, droptol::Real = 1e-15, chunk = :auto)
+                      chains = :auto, lift_chains = :auto, droptol::Real = 1e-15, chunk = :auto,
+                      invariant::Union{AbstractMatrix,Nothing} = nothing, link_droptol::Real = droptol)
     t0 = time_ns()
     chain = reduction_chain(Rtop)
     P0 = getfield(chain[1], :fine)
@@ -602,6 +648,21 @@ function StepOperator(Rtop::ReducedProgram, M::QPMap, active::AbstractVector{<:I
     nz0 = c0dim(P0) + noderows(P0) + c1dim(P0)
     act = collect(Int, active)
     allunique(act) && all(j -> 1 <= j <= nz0, act) || throw(ArgumentError("active entries must be distinct positions in 1:$nz0"))
+    Winv = invariant === nothing ? nothing : SparseMatrixCSC{Float64,Int}(sparse(invariant))
+    rep = Int32[]
+    if Winv !== nothing
+        size(Winv, 1) == length(act) || throw(DimensionMismatch("invariant must have one row per active entry"))
+        # class indicators: the first entry of every class is the one the others are measured from
+        rep = zeros(Int32, length(act))
+        cnt = zeros(Int, length(act))
+        for c in 1:size(Winv, 2)
+            r = rowvals(Winv)[nzrange(Winv, c)]
+            isempty(r) && continue
+            all(==(1.0), nonzeros(Winv)[nzrange(Winv, c)]) || throw(ArgumentError("invariant must have 0/1 columns"))
+            rep[r] .= minimum(r); cnt[r] .+= 1
+        end
+        all(<=(1), cnt) || throw(ArgumentError("every active entry may be in one class of invariant only"))
+    end
     # where every active entry is read from
     n0, r0 = c0dim(P0), noderows(P0)
     kind = Vector{Int8}(undef, length(act)); owner = similar(act, Int32); loc = similar(act, Int32)
@@ -706,13 +767,14 @@ function StepOperator(Rtop::ReducedProgram, M::QPMap, active::AbstractVector{<:I
         K = _ddvcat(_ddadd(Zq, _ddmul(M.Ls, Ze), -1.0), _ddmul(_selection(M.hard_rows, Ze.m), Ze), Zb)
         return K, L, C
     end
-    qblocks = Any[]; lblocks = Any[]; cblocks = Any[]
+    qblocks = Any[]; lblocks = Any[]; cblocks = Any[]; dws = SparseMatrixCSC{Float64,Int}[]
     for c0 in 1:chunk:max(na, 1)
         na == 0 && break
         cols = c0:min(na, c0 + chunk - 1)
         nc = length(cols)
         K, L, C = compose(DDMat(nz0, nc, collect(1:(nc+1)), act[cols], ones(nc), Float64[]))   # column t: the unit vector of act[t]
-        push!(qblocks, _chain_rows(K, prev, Float64(droptol), qdust, Sq, cq, aq))
+        push!(qblocks, _chain_rows(K, prev, Float64(droptol), qdust, Sq, cq, aq; linktol = Float64(link_droptol),
+                                   W = Winv === nothing ? nothing : Winv[cols, :], dws = dws))
         L === nothing || push!(lblocks, _chain_rows(L, lprev, Float64(droptol), ldust, Sl, cl, al))
         isempty(C) || push!(cblocks, reduce(vcat, C))
     end
@@ -723,12 +785,32 @@ function StepOperator(Rtop::ReducedProgram, M::QPMap, active::AbstractVector{<:I
     chained0(K, S) = vec(Matrix(nnz(S) == 0 ? _ddround(K) : _ddround(_ddadd(K, _ddmul(S, K), -1.0))))
     na == 0 && (push!(qblocks, (spzeros(nout, 0), spzeros(nout, 0))); isempty(sel) || push!(lblocks, (spzeros(length(sel), 0), spzeros(length(sel), 0)));
                 ncons > 0 && push!(cblocks, spzeros(ncons, 0)))
-    qb = _chained_map(qblocks, prev, qdust, chained0(K0, Sq), a0)
+    qb = _chained_map(qblocks, prev, qdust, chained0(K0, Sq), a0; rep = rep)
+    # links on deviations: bounds of the error of every chained row (cumulated along its chain)
+    linkbound = zeros(nout); linkboundW = zeros(nout)
+    deviation = Winv !== nothing
+    if deviation
+        linked = prev .> 0
+        linkbound[linked] .= qdust[linked]
+        if !isempty(dws)
+            DW = reduce(+, dws)
+            DWt = SparseMatrixCSC(transpose(DW))
+            for i in findall(linked)
+                linkboundW[i] = sum(abs, view(nonzeros(DWt), nzrange(DWt, i)); init = 0.0)
+            end
+        end
+        for i in qb.order
+            linkbound[i] += linkbound[prev[i]]
+            linkboundW[i] += linkboundW[prev[i]]
+        end
+        qb.dust[linked] .= 0.0
+    end
     dust = _chain_dust(qb)
     lmap = nothing
     if !isempty(sel)
         Lyc = _chain_rows(Nsel[end], lprev, Float64(droptol), ldust, Sl, cl, al)
-        lmap = _chained_map(Any[Lyc, lblocks...], lprev, ldust, chained0(L0, Sl), [zeros(ny); a0])
+        lmap = _chained_map(Any[Lyc, lblocks...], lprev, ldust, chained0(L0, Sl), [zeros(ny); a0];
+                            rep = isempty(rep) ? rep : [zeros(Int32, ny); Int32[r == 0 ? 0 : r + ny for r in rep]])
         dust = max(dust, _chain_dust(lmap))
     end
     cmap = nothing
@@ -738,7 +820,7 @@ function StepOperator(Rtop::ReducedProgram, M::QPMap, active::AbstractVector{<:I
     end
     tol = minimum(R.consistency_tol for R in chain)
     op = StepOperator(chain, M, P0, act, kind, owner, loc, sn, sd, a0, nq, qb, zeros(nout), cmap, tol, zeros(ncons), sel, lmap,
-                      zeros(ny + na), all(R.feasible for R in chain), dust, 0.0)
+                      zeros(ny + na), all(R.feasible for R in chain), dust, deviation, linkbound, linkboundW, 0.0)
     op.build_seconds = (time_ns() - t0) / 1e9
     return op
 end

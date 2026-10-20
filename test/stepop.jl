@@ -78,6 +78,17 @@ end
             @test relerr(u, lift(R3, y)[inputs]) < 1e-12
         end
     end
+    # links applied to departures from classes of entries: with every entry its own class the links drop out,
+    # and their bound (along the classes) covers the copies' error
+    W = sparse(1:length(active), 1:length(active), 1.0)
+    opw = StepOperator(R3, M, active; chains = chains, invariant = W)
+    @test opw.deviation && maximum(opw.linkboundW) > 0
+    set_state!(fp, [x .+ 0.3 for x in d.x0])
+    update!(opw)
+    b = copy(M.bfull); da = maximum(abs, opw.a - opw.qb.x0)
+    sync!(opw)
+    @test all(abs.(b - M.bfull) .<= opw.linkboundW[opw.nq+1:end] .* da .+ 1e-12)       # no departures: dev = 0
+    @test_throws ArgumentError StepOperator(R3, M, active; invariant = 2 .* W)
     @test_throws ArgumentError StepOperator(R3, M, [0])
     @test_throws ArgumentError StepOperator(R3, M, active; chains = [i == 1 ? 2 : (i == 2 ? 1 : 0) for i in 1:nb])
 end
