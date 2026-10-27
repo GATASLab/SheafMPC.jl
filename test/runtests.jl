@@ -276,6 +276,7 @@ end
         @test nwarm >= 2
     end
 
+    include("teams.jl")
     include("structured_basis.jl")
     include("reductions.jl")
     include("stepop.jl")

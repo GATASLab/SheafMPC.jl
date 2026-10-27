@@ -154,6 +154,71 @@ function canonical_partition(labels::AbstractVector)
     return out
 end
 
+"""
+    colour_refinement(n, edges, weights, classes; within = false, rtol = 1e-9) -> alpha
+    colour_refinement(fleet, classes; t = 1, within = false, rtol = 1e-9) -> alpha
+
+Lossless teams by colour refinement (the paper's Sec. IV). Start from the
+partition `classes` of the `n` agents (agents with the same slot-relative data
+share a class) and split a team whenever its members have different total
+formation weights into some other team; stop when no team splits. The result
+`alpha` is the coarsest almost equitable partition (the paper's Def. 4,
+Cardoso et al. 2007) that refines `classes`: for any two teams `c != c'`, every
+member of `c` has the same total weight of edges into `c'`. With coherent data
+its teams are lossless (the paper's Thm. 3).
+
+With `within = true` the edges inside a member's own team count too, which is
+ordinary colour refinement (Grohe et al. 2014) and returns the coarsest
+equitable partition, a finer one. On a grid whose rows start in their own
+classes, the almost equitable partition is the rows; the equitable partition
+also separates a row's end members (one in-row neighbour) from its middle ones
+(two), and ends with mirror pairs of columns, 512 teams at 32 x 32.
+
+`edges` are pairs `(i, j)`, `weights` one number or one weight per edge
+(parallel edges add, zero weights count as no edge). Totals are compared after
+rounding to multiples of `rtol` times the largest weight. Each round costs
+O(n + |edges|), and there are at most `n` rounds. For a fleet, the edges present
+at instant `t` (from 1) with their weights.
+"""
+function colour_refinement(n::Integer, edges::AbstractVector, weights, classes::AbstractVector;
+                           within::Bool = false, rtol::Real = 1e-9)
+    length(classes) == n || throw(DimensionMismatch("classes must have one entry per agent ($n)"))
+    w = weights isa Real ? fill(Float64(weights), length(edges)) : Vector{Float64}(weights)
+    length(w) == length(edges) || throw(DimensionMismatch("weights must have one entry per edge"))
+    nbr = [Tuple{Int,Float64}[] for _ in 1:n]
+    for ((i, j), wk) in zip(edges, w)
+        (1 <= i <= n && 1 <= j <= n && i != j) || throw(ArgumentError("bad edge ($i, $j)"))
+        push!(nbr[i], (j, wk)); push!(nbr[j], (i, wk))
+    end
+    unit = rtol * maximum(abs, w; init = 0.0)
+    level(s) = unit == 0 ? 0 : round(Int, s / unit)
+    alpha = canonical_partition(classes)
+    total = Dict{Int,Float64}()
+    while true
+        sig = Vector{Tuple{Int,Vector{Pair{Int,Int}}}}(undef, n)
+        for i in 1:n
+            empty!(total)
+            for (j, wk) in nbr[i]
+                (within || alpha[j] != alpha[i]) || continue
+                total[alpha[j]] = get(total, alpha[j], 0.0) + wk
+            end
+            sig[i] = (alpha[i], sort!([c => level(s) for (c, s) in total if level(s) != 0]))
+        end
+        refined = canonical_partition(sig)
+        maximum(refined; init = 0) == maximum(alpha; init = 0) && return alpha
+        alpha = refined
+    end
+end
+
+"""
+    is_almost_equitable(n, edges, weights, alpha; rtol = 1e-9)
+
+Whether the teams `alpha` form an almost equitable partition: colour refinement
+started from `alpha` splits no team.
+"""
+is_almost_equitable(n::Integer, edges::AbstractVector, weights, alpha::AbstractVector; rtol::Real = 1e-9) =
+    colour_refinement(n, edges, weights, alpha; rtol) == canonical_partition(alpha)
+
 nblocks(Pi::AbstractVector{<:Integer}) = isempty(Pi) ? 0 : maximum(Pi)
 
 """Members of each block of a canonical partition, ascending (counting sort)."""
