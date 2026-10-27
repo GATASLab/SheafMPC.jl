@@ -1,0 +1,13 @@
+[deps]
+Clarabel = "61c947e1-3e6d-4ee4-985a-eec8c727bd6e"
+CliqueTrees = "60701a23-6482-424a-84db-faee86b9b1f8"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Metis = "2679e427-3c69-5b7f-982b-ece356f1e94b"
+OSQP = "ab2f91bb-94b4-55e3-9ba0-7f65df51de79"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+QDLDL = "bfc457fd-c171-5ab7-bd9e-d5dbfc242d63"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SheafMPC = "8f3c2a61-5d4e-4b7a-9c1e-2a6b0d9e7f13"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"

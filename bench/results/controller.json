@@ -1,0 +1,250 @@
+{
+ "H": 10,
+ "cols": 8,
+ "eps": 1.0e-7,
+ "host": "itaykadosh-Legion-5-15AKP10",
+ "rows": 8,
+ "steps": 30,
+ "timings": [
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 7.722212,
+   "level": "fine",
+   "lift_ms": 0.007344000000000001,
+   "pipeline": "research",
+   "setup_ms": 0.027943,
+   "solve_ms": 1.5688360000000001,
+   "total_ms": 9.326335
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 4.914371,
+   "level": "fine",
+   "lift_ms": 0.0038580000000000003,
+   "pipeline": "rebuild",
+   "setup_ms": 0.02112,
+   "solve_ms": 1.224337,
+   "total_ms": 6.163686
+  },
+  {
+   "certify_ms": 0.00012100000000000001,
+   "construct_ms": 0.17005,
+   "level": "fine",
+   "lift_ms": 0.002745,
+   "pipeline": "controller",
+   "setup_ms": 0.039674,
+   "solve_ms": 1.051782,
+   "total_ms": 1.2643719999999998
+  },
+  {
+   "certify_ms": 0.00013,
+   "construct_ms": 0.169269,
+   "level": "fine",
+   "lift_ms": 0.002665,
+   "pipeline": "certified",
+   "setup_ms": 0.035397,
+   "solve_ms": 1.046352,
+   "total_ms": 1.253813
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 14.675295,
+   "level": "teams k=8 (rows)",
+   "lift_ms": 0.034103999999999995,
+   "pipeline": "research",
+   "setup_ms": 0.023283,
+   "solve_ms": 0.7474689999999999,
+   "total_ms": 15.480151000000001
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 7.0782989999999995,
+   "level": "teams k=8 (rows)",
+   "lift_ms": 0.024707,
+   "pipeline": "rebuild",
+   "setup_ms": 0.023183000000000002,
+   "solve_ms": 0.911899,
+   "total_ms": 8.038088
+  },
+  {
+   "certify_ms": 2.9999999999999997e-5,
+   "construct_ms": 0.19536799999999999,
+   "level": "teams k=8 (rows)",
+   "lift_ms": 0.009768,
+   "pipeline": "controller",
+   "setup_ms": 0.031229000000000003,
+   "solve_ms": 0.524158,
+   "total_ms": 0.760553
+  },
+  {
+   "certify_ms": 0.307991,
+   "construct_ms": 0.23626499999999998,
+   "level": "teams k=8 (rows)",
+   "lift_ms": 0.011822,
+   "pipeline": "certified",
+   "setup_ms": 0.042581,
+   "solve_ms": 0.563462,
+   "total_ms": 1.162121
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 14.944163,
+   "level": "teams k=4",
+   "lift_ms": 0.022362,
+   "pipeline": "research",
+   "setup_ms": 0.020098,
+   "solve_ms": 0.600402,
+   "total_ms": 15.587024999999999
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 6.0692569999999995,
+   "level": "teams k=4",
+   "lift_ms": 0.020759,
+   "pipeline": "rebuild",
+   "setup_ms": 0.017844000000000002,
+   "solve_ms": 0.589381,
+   "total_ms": 6.697241000000001
+  },
+  {
+   "certify_ms": 2.9999999999999997e-5,
+   "construct_ms": 0.182394,
+   "level": "teams k=4",
+   "lift_ms": 0.008977,
+   "pipeline": "controller",
+   "setup_ms": 0.028113,
+   "solve_ms": 0.49608499999999994,
+   "total_ms": 0.7155989999999999
+  },
+  {
+   "certify_ms": 0.266853,
+   "construct_ms": 0.181062,
+   "level": "teams k=4",
+   "lift_ms": 0.009979,
+   "pipeline": "certified",
+   "setup_ms": 0.033562999999999996,
+   "solve_ms": 0.492528,
+   "total_ms": 0.9839849999999999
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 17.444214,
+   "level": "teams k=2",
+   "lift_ms": 0.028113,
+   "pipeline": "research",
+   "setup_ms": 0.02124,
+   "solve_ms": 0.825977,
+   "total_ms": 18.319543999999997
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 7.753752,
+   "level": "teams k=2",
+   "lift_ms": 0.028013,
+   "pipeline": "rebuild",
+   "setup_ms": 0.022894,
+   "solve_ms": 1.068603,
+   "total_ms": 8.873262
+  },
+  {
+   "certify_ms": 7.000000000000001e-5,
+   "construct_ms": 0.346303,
+   "level": "teams k=2",
+   "lift_ms": 0.017834,
+   "pipeline": "controller",
+   "setup_ms": 0.05855,
+   "solve_ms": 0.9781839999999999,
+   "total_ms": 1.400941
+  },
+  {
+   "certify_ms": 0.384305,
+   "construct_ms": 0.253297,
+   "level": "teams k=2",
+   "lift_ms": 0.012313000000000001,
+   "pipeline": "certified",
+   "setup_ms": 0.046448,
+   "solve_ms": 0.540067,
+   "total_ms": 1.23643
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 16.817252,
+   "level": "fleet (k=1)",
+   "lift_ms": 0.024927,
+   "pipeline": "research",
+   "setup_ms": 0.019447,
+   "solve_ms": 0.616172,
+   "total_ms": 17.477798000000003
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 6.717207999999999,
+   "level": "fleet (k=1)",
+   "lift_ms": 0.023885,
+   "pipeline": "rebuild",
+   "setup_ms": 0.020279,
+   "solve_ms": 0.579161,
+   "total_ms": 7.340533
+  },
+  {
+   "certify_ms": 8.999999999999999e-5,
+   "construct_ms": 0.214614,
+   "level": "fleet (k=1)",
+   "lift_ms": 0.009689,
+   "pipeline": "controller",
+   "setup_ms": 0.030758,
+   "solve_ms": 0.493911,
+   "total_ms": 0.749062
+  },
+  {
+   "certify_ms": 0.467612,
+   "construct_ms": 0.22697799999999999,
+   "level": "fleet (k=1)",
+   "lift_ms": 0.012524,
+   "pipeline": "certified",
+   "setup_ms": 0.038392,
+   "solve_ms": 0.463122,
+   "total_ms": 1.208628
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 16.543055000000003,
+   "level": "full condensing",
+   "lift_ms": 0.041387999999999994,
+   "pipeline": "research",
+   "setup_ms": 0.019537,
+   "solve_ms": 1.099302,
+   "total_ms": 17.703282
+  },
+  {
+   "certify_ms": 0.0,
+   "construct_ms": 9.259459,
+   "level": "full condensing",
+   "lift_ms": 0.036869,
+   "pipeline": "rebuild",
+   "setup_ms": 0.023323999999999998,
+   "solve_ms": 1.197867,
+   "total_ms": 10.517519
+  },
+  {
+   "certify_ms": 2.9999999999999997e-5,
+   "construct_ms": 0.318821,
+   "level": "full condensing",
+   "lift_ms": 0.018745,
+   "pipeline": "controller",
+   "setup_ms": 0.00548,
+   "solve_ms": 0.8464250000000001,
+   "total_ms": 1.189501
+  },
+  {
+   "certify_ms": 3.1e-5,
+   "construct_ms": 0.213031,
+   "level": "full condensing",
+   "lift_ms": 0.014588,
+   "pipeline": "certified",
+   "setup_ms": 0.0028049999999999998,
+   "solve_ms": 0.786432,
+   "total_ms": 1.0168869999999999
+  }
+ ]
+}
