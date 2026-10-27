@@ -82,7 +82,7 @@ export quadrotor, ground_vehicle, grid_graph, GridScenario, fleet, slots, refere
 export agent_kind, row_teams, strip_teams, block_teams
 # resolutions and reductions
 export FleetLayout, Resolution, Fine, TimeBlocking, full_condensing, partial_condensing, Teams, Product, ⊠
-export Mixed, VertexPartition, canonical_partition
+export Mixed, VertexPartition, canonical_partition, colour_refinement, is_almost_equitable
 export ReducedProgram, Fiber, fiberdim, lift, lift!, restrict, restrict!, update_matrices!, reduction_chain, root_program, composite_partition, fiber_kinds
 export QPMap, refresh!, refresh_matrices!, ProgramSolution, solve, isoptimal
 export StepOperator, data_index, sync!

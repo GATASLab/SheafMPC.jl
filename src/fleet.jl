@@ -177,6 +177,9 @@ end
 Base.length(f::Fleet) = length(f.agents)
 nagents(f::Fleet) = length(f.agents)
 
+colour_refinement(fl::Fleet, classes::AbstractVector; t::Integer = 1, kw...) =
+    colour_refinement(nagents(fl), fl.edges, fl.weights[:, t] .* fl.present[:, t], classes; kw...)
+
 """
     FleetProgram(fleet; x0 = nothing, references = nothing, terminal = nothing, absent = :omit)
 
