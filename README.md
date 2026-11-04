@@ -1,6 +1,6 @@
 # SheafMPC.jl
 
-The open-source companion of "Real-Time Team MPC of Large Fleets with Certified
+The open-source companion of "Team MPC of Large Fleets with Certified
 Optimality Gaps by Sheaf Pushforward" (Kadosh, Samuelson and Fairbanks).
 
 Model predictive control of a fleet solves, at every sampling instant, one
@@ -24,6 +24,65 @@ reduces it by sheaf pushforward along a quotient of that graph:
   pushforward, each agent or team solving its own small QP.
 
 The solver underneath is an ADMM conic QP solver for sheaf programs (below).
+
+## Install
+
+```julia
+using Pkg
+Pkg.add(url = "https://github.com/GATASLab/SheafMPC.jl")   # not registered yet
+```
+
+## Team MPC in four steps
+
+The paper's method (Algorithm 1): group vehicles that share their data into
+rigid teams, plan one input sequence per team on a much smaller QP, lift it
+back, and certify the cost of the teams.
+
+```julia
+using SheafMPC
+
+sc = GridScenario(rows = 16, cols = 16, H = 10, coherence = :rows)   # quadrotor and ground-vehicle rows
+fl = fleet(sc)
+
+# 1. teams: the coarsest lossless teams (colour refinement from the data classes),
+#    or coarser, lossy ones by quasi-stable colouring
+classes = [2 * (div(i - 1, sc.cols) + 1) + (agent_kind(sc, i) == :quadrotor ? 0 : 1) for i in 1:nagents(fl)]
+lab = lossless_teams(fl; classes)              # here the 16 rows
+# lab = quasi_stable_teams(fl; q = 0.5)        # lossy, coarser
+
+# 2. the controller: the quotient program (one agent per team), projection onto the
+#    formation, broadcast, and local LQR feedback inside teams
+ctrl = TeamMPC(fl, lab; offsets = slot_offsets(fl, slots(sc)))
+
+# 3. the receding horizon
+let x = formation_start(sc)
+    for k in 0:29
+        refs, term = references(sc, k * sc.h)
+        u = step!(ctrl, x, refs; terminal = term)    # one input per vehicle
+        # 4. the certificate of Thm. 2: an upper bound on the gap to coordinated MPC
+        k == 0 && @show certificate(ctrl, x, refs; terminal = term)[1]
+        x = plant_step(fl, x, u)
+    end
+end
+```
+
+For almost equitable teams (the lossless ones) and coherent data started in
+formation, team MPC applies exactly the inputs of coordinated MPC (Thm. 1);
+for other teams the certificate bounds the loss from the team solve alone.
+`examples/team_mpc.jl` reproduces both at small size (a 16 x 16 grid: the same
+inputs as coordinated MPC to 1e-11 at a 30 times faster step; a perturbed
+6 x 6 grid: quasi-stable teams with certificates within 1.2 times the gap).
+
+**What the sheaf layer is.** Each vehicle is a vertex with its own state space
+(a quadrotor in 3D, a ground vehicle in 2D), and each formation edge carries
+the maps that compare the coordinates the two ends share. On the
+time-expanded graph, dynamics are hard edges and the formation soft edges.
+Condensing (eliminating the states) and team planning (merging the members of
+each team) are the same operation, a pushforward along a graph morphism, so
+they compose and their optimality gaps add. Everything above is also plain
+matrix algebra (`CondensedQP` is the condensed QP of eq. (4)); the sheaf view
+is the bookkeeping that keeps heterogeneous vehicles and composed reductions
+correct.
 
 ## Example
 
@@ -135,6 +194,8 @@ formula is a lower bound.
 | certificates | `gap_bounds(fine, R, sol; fine_solution)`, `Certifier`, `gap_kernel(program, xstar)`, `gap(K, teams)`, `team_front`, `select_teams(K; k, budget, beam, refine)` |
 | receding horizon | `MPCController(fleet, resolution; certify, settings...)`, `step!(ctrl, x, refs; terminal, targets, drift, states)`, `plan`, `StepInfo` |
 | distributed | `DistributedMPC(fleet, teams; rho, eps_abs, eps_rel, maxit, budget, warm, time_limit)`, `step!`, `floats_per_iteration` |
+| team MPC (Algorithm 1) | `data_classes(fleet)`, `lossless_teams(fleet; classes)`, `quasi_stable_teams(fleet; q, classes)`, `team_spread`, `colour_refinement`, `TeamMPC(fleet, teams; offsets, gains, resolution)`, `step!(ctrl, x, refs; terminal)`, `project`, `slot_offsets`, `QuotientFleet`, `lqr_gain` |
+| team certificate (Thm. 2) | `certificate(ctrl, x, refs; terminal)`, `CondensedQP(fleet, x, refs; terminal)`, `team_certificate(cq, teams, u)`, `team_kappa(cq, teams)`, `team_plan(ctrl)`, `stack_inputs` |
 
 Every exported function has a docstring (`?reduce` in the REPL).
 

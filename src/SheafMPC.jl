@@ -4,8 +4,12 @@
 Multi-agent model predictive control as a homological program on a cellular
 sheaf over the time-expanded graph, its reduced-order models and condensations
 by sheaf pushforward, and certificates of their optimality gap; the companion
-of "Reduced-Order Models and Condensation of Multi-Agent MPC by Sheaf
+of "Team MPC of Large Fleets with Certified Optimality Gaps by Sheaf
 Pushforward".
+
+* Team MPC (the paper's Algorithm 1): `lossless_teams`, `quasi_stable_teams`,
+  `TeamMPC` (quotient program, projection, broadcast, local feedback), and the
+  per-team certificate of Thm. 2 (`certificate`, `team_certificate`).
 
 * Modelling: `Agent`, `Fleet`, `FleetProgram` (formation edges soft, dynamics
   edges hard, the initial state pinned).
@@ -64,10 +68,13 @@ include("scenarios.jl")
 include("certificates.jl")
 include("controller.jl")
 include("distributed.jl")
+include("teammpc.jl")
+include("teams.jl")
+include("teamcert.jl")
 
-# the conic QP solver
-export ConicQP, RowKind, ROW_INTERVAL, ROW_EQ, ROW_LEQ, ROW_SOC
-export nvars, nrows, objective, violation, sheaf_qp, dedup_rows
+# the conic QP solver (row kinds, `dedup_rows` and `soc_twins` are internal: `SheafMPC.ROW_SOC`, ...)
+export ConicQP
+export nvars, nrows, objective, violation, sheaf_qp
 export Settings, Info, Solver, setup, solve!, update!, warm_start!, warm_start_shifted!, solution, reset!
 # programs
 export ConeKind, ZERO_CONE, NONNEG_CONE, SOC_CONE, ConeBlock, zero_cone, nonneg_cone, soc_cone
@@ -75,7 +82,7 @@ export NodeData, EdgeTag, SheafEdge, SheafProgram
 export nvertices, nedges, c0dim, c1dim, vrange, erange, edgedim, hard_edges, soft_edges
 export coboundary, targets, quadratic_form, node_constraints, feasibility, harden, edge_defect
 # fleets
-export Agent, BallSet, BoxSet, Polyhedron, Fleet, FleetProgram, nagents
+export Agent, BallSet, BoxSet, Polyhedron, Fleet, FleetProgram, nagents, edge_maps, edge_residual
 export set_state!, set_references!, set_targets!, set_drift!, set_state_bound!, set_state_set!, set_state_sets!
 export trajectories, first_inputs, plant_step, shift_plan, shift_plan!, free_response!
 export quadrotor, ground_vehicle, grid_graph, GridScenario, fleet, slots, references, formation_start
@@ -93,5 +100,9 @@ export GapKernel, gap_kernel, gap, team_front, select_teams
 export MPCController, StepInfo, step!, plan, reduced_program
 # distributed MPC
 export DistributedMPC, floats_per_iteration
+# team MPC (Algorithm 1)
+export TeamMPC, QuotientFleet, slot_offsets, same_data, lqr_gain, project, teams, stepinfo
+export data_classes, lossless_teams, quasi_stable_teams, team_spread
+export CondensedQP, stack_inputs, team_certificate, team_kappa, team_plan, certificate
 
 end

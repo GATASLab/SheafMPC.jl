@@ -158,7 +158,7 @@ end
         p = random_qp(rng, 15, 12)
         A2 = [p.A; p.A[3:4, :]]
         p2 = ConicQP(p.P, p.q, A2, [p.l; p.l[3:4] .- 1], [p.u; p.u[3:4] .+ 1]; c = p.c)
-        p3, keep = dedup_rows(p2)
+        p3, keep = SheafMPC.dedup_rows(p2)
         @test nrows(p3) == nrows(p) && keep == collect(1:nrows(p))
         @test relgap(solve!(setup(p3; eps_abs = 1e-7, eps_rel = 1e-7)).obj, clarabel_ref(p)[1]) <= 1e-8
     end
@@ -282,6 +282,9 @@ end
     include("stepop.jl")
     include("certificates.jl")
     include("controller.jl")
+    include("teammpc.jl")
+    include("team_choice.jl")
+    include("teamcert.jl")
     include("distributed.jl")
     include("conic.jl")
     include("dual.jl")

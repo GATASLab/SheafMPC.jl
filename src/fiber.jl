@@ -123,8 +123,10 @@ function _structured_fiber(P::SheafProgram, members::Vector{Int}, internal::Vect
     m = roffs[end]
     epos = Dict(e => k for (k, e) in enumerate(internal))
     # pass 1: forward substitution along a spanning forest of the dynamics edges
+    # Without dynamics edges (a block of condensed vertices or of teams) every member is its own tree, so
+    # that pass 2 stacks all the edges between two members (one per instant) and recognises identical
+    # members exactly; a forest of single instants would leave the other instants to the dense SVD below.
     chain = [e for e in internal if P.edges[e].tag.kind == :dyn]
-    isempty(chain) && (chain = internal)
     adj = [Tuple{Int,Int}[] for _ in 1:nm]
     for e in chain
         E = P.edges[e]
