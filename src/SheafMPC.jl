@@ -66,6 +66,7 @@ include("controller.jl")
 include("distributed.jl")
 include("teammpc.jl")
 include("teams.jl")
+include("teamcert.jl")
 
 # the conic QP solver
 export ConicQP, RowKind, ROW_INTERVAL, ROW_EQ, ROW_LEQ, ROW_SOC
@@ -98,5 +99,6 @@ export DistributedMPC, floats_per_iteration
 # team MPC (Algorithm 1)
 export TeamMPC, QuotientFleet, slot_offsets, same_data, lqr_gain, project, teams, stepinfo
 export data_classes, lossless_teams, quasi_stable_teams, team_spread
+export CondensedQP, stack_inputs, team_certificate, team_kappa, team_plan, certificate
 
 end
