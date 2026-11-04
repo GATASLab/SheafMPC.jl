@@ -196,6 +196,8 @@ mutable struct TeamMPC
     tq::Vector{Vector{Float64}}
     u::Vector{Vector{Float64}}
     dev::Vector{Vector{Float64}}
+    CrD::Vector{Vector{Float64}}          # Cr Delta_i and Cf Delta_i, precomputed
+    CfD::Vector{Vector{Float64}}
     t_team::Float64
 end
 
@@ -222,7 +224,9 @@ function TeamMPC(fl::Fleet, teams::AbstractVector; offsets = nothing, gains = :l
     tq = [zeros(size(fl.agents[m[1]].Cf, 1)) for m in Q.teams]
     u = [zeros(ag.nu) for ag in fl.agents]
     dev = [zeros(ag.nx) for ag in fl.agents]
-    return TeamMPC(fl, Q, inner, K, xq, rq, tq, u, dev, 0.0)
+    CrD = [ag.Cr * Q.offsets[i] for (i, ag) in enumerate(fl.agents)]
+    CfD = [ag.Cf * Q.offsets[i] for (i, ag) in enumerate(fl.agents)]
+    return TeamMPC(fl, Q, inner, K, xq, rq, tq, u, dev, CrD, CfD, 0.0)
 end
 
 function Base.show(io::IO, C::TeamMPC)
@@ -277,10 +281,10 @@ function step!(C::TeamMPC, x::AbstractVector, refs::AbstractVector; terminal = n
     t0 = time_ns()
     _team_means!(C, x)
     @inbounds for (c, m) in enumerate(Q.teams)
-        ag = fl.agents[m[1]]; w = 1.0 / length(m)
+        w = 1.0 / length(m)
         Rc = C.rq[c]; fill!(Rc, 0.0)
         for i in m
-            Ri = refs[i]; CD = ag.Cr * Q.offsets[i]
+            Ri = refs[i]; CD = C.CrD[i]
             size(Ri, 2) >= fl.H || throw(DimensionMismatch("agent $i: references need $(fl.H + 1) columns"))
             for t in 1:min(size(Ri, 2), fl.H + 1), a in axes(Rc, 1)
                 Rc[a, t] += w * (Ri[a, t] - CD[a])
@@ -289,8 +293,10 @@ function step!(C::TeamMPC, x::AbstractVector, refs::AbstractVector; terminal = n
         if terminal !== nothing
             tc = C.tq[c]; fill!(tc, 0.0)
             for i in m
-                CfD = ag.Cf * Q.offsets[i]
-                tc .+= w .* (terminal[i] .- CfD)
+                Ti = terminal[i]; CfD = C.CfD[i]
+                for a in eachindex(tc)
+                    tc[a] += w * (Ti[a] - CfD[a])
+                end
             end
         end
     end
