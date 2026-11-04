@@ -4,8 +4,12 @@
 Multi-agent model predictive control as a homological program on a cellular
 sheaf over the time-expanded graph, its reduced-order models and condensations
 by sheaf pushforward, and certificates of their optimality gap; the companion
-of "Reduced-Order Models and Condensation of Multi-Agent MPC by Sheaf
+of "Team MPC of Large Fleets with Certified Optimality Gaps by Sheaf
 Pushforward".
+
+* Team MPC (the paper's Algorithm 1): `lossless_teams`, `quasi_stable_teams`,
+  `TeamMPC` (quotient program, projection, broadcast, local feedback), and the
+  per-team certificate of Thm. 2 (`certificate`, `team_certificate`).
 
 * Modelling: `Agent`, `Fleet`, `FleetProgram` (formation edges soft, dynamics
   edges hard, the initial state pinned).
@@ -68,9 +72,9 @@ include("teammpc.jl")
 include("teams.jl")
 include("teamcert.jl")
 
-# the conic QP solver
-export ConicQP, RowKind, ROW_INTERVAL, ROW_EQ, ROW_LEQ, ROW_SOC
-export nvars, nrows, objective, violation, sheaf_qp, dedup_rows, soc_twins
+# the conic QP solver (row kinds, `dedup_rows` and `soc_twins` are internal: `SheafMPC.ROW_SOC`, ...)
+export ConicQP
+export nvars, nrows, objective, violation, sheaf_qp
 export Settings, Info, Solver, setup, solve!, update!, warm_start!, warm_start_shifted!, solution, reset!
 # programs
 export ConeKind, ZERO_CONE, NONNEG_CONE, SOC_CONE, ConeBlock, zero_cone, nonneg_cone, soc_cone
