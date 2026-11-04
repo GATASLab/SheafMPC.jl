@@ -283,6 +283,7 @@ end
     include("certificates.jl")
     include("controller.jl")
     include("teammpc.jl")
+    include("team_choice.jl")
     include("distributed.jl")
     include("conic.jl")
     include("dual.jl")

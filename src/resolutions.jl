@@ -176,12 +176,131 @@ also separates a row's end members (one in-row neighbour) from its middle ones
 
 `edges` are pairs `(i, j)`, `weights` one number or one weight per edge
 (parallel edges add, zero weights count as no edge). Totals are compared after
-rounding to multiples of `rtol` times the largest weight. Each round costs
-O(n + |edges|), and there are at most `n` rounds. For a fleet, the edges present
-at instant `t` (from 1) with their weights.
+rounding to multiples of `rtol` times the largest weight. For a fleet, the
+edges present at instant `t` (from 1) with their weights.
+
+The refinement is Hopcroft's partition refinement for weighted lumpability
+(Derisavi, Hermanns and Sanders 2003): a queue of splitter blocks, each split
+of a block that already served as a splitter queues all its pieces but the
+largest, so every vertex is in O(log n) splitters and the cost is
+O((n + |edges|) log n) up to the sorting of the touched vertices. The almost
+equitable partition is the equitable partition of the Laplacian (diagonal
+`-deg`), which keeps the rule valid inside a split block.
 """
 function colour_refinement(n::Integer, edges::AbstractVector, weights, classes::AbstractVector;
                            within::Bool = false, rtol::Real = 1e-9)
+    length(classes) == n || throw(DimensionMismatch("classes must have one entry per agent ($n)"))
+    w = weights isa Real ? fill(Float64(weights), length(edges)) : Vector{Float64}(weights)
+    length(w) == length(edges) || throw(DimensionMismatch("weights must have one entry per edge"))
+    n == 0 && return Int[]
+    # adjacency in compressed form, plus the diagonal of the matrix refined (Laplacian or adjacency)
+    deg = zeros(Int, n)
+    for ((i, j), wk) in zip(edges, w)
+        (1 <= i <= n && 1 <= j <= n && i != j) || throw(ArgumentError("bad edge ($i, $j)"))
+        wk == 0 && continue
+        deg[i] += 1; deg[j] += 1
+    end
+    ptr = zeros(Int, n + 1); ptr[1] = 1
+    for v in 1:n
+        ptr[v+1] = ptr[v] + deg[v]
+    end
+    adj = Vector{Int}(undef, ptr[n+1] - 1); aw = Vector{Float64}(undef, ptr[n+1] - 1)
+    fillp = copy(ptr)
+    diag = zeros(n)
+    for ((i, j), wk) in zip(edges, w)
+        wk == 0 && continue
+        adj[fillp[i]] = j; aw[fillp[i]] = wk; fillp[i] += 1
+        adj[fillp[j]] = i; aw[fillp[j]] = wk; fillp[j] += 1
+        within || (diag[i] -= wk; diag[j] -= wk)
+    end
+    unit = rtol * maximum(abs, w; init = 0.0)
+    level(x) = unit == 0 ? 0 : round(Int, x / unit)
+    # blocks as ranges of a permutation
+    alpha0 = canonical_partition(classes)
+    nb = maximum(alpha0)
+    elems = sortperm(alpha0)
+    pos = invperm(elems)
+    blk = copy(alpha0)
+    bstart = zeros(Int, nb); bend = zeros(Int, nb)
+    for (k, v) in enumerate(elems)
+        b = blk[v]
+        bstart[b] == 0 && (bstart[b] = k)
+        bend[b] = k
+    end
+    queue = collect(1:nb); inq = trues(nb)
+    sums = zeros(n); touched = falses(n)
+    tv = Int[]; tblocks = Int[]; members = Int[]; keys_ = Int[]
+    while !isempty(queue)
+        B = pop!(queue); inq[B] = false
+        empty!(members); append!(members, @view elems[bstart[B]:bend[B]])
+        empty!(tv)
+        for u in members
+            for p in ptr[u]:(ptr[u+1]-1)
+                v = adj[p]
+                touched[v] || (touched[v] = true; push!(tv, v))
+                sums[v] += aw[p]
+            end
+            if diag[u] != 0
+                touched[u] || (touched[u] = true; push!(tv, u))
+                sums[u] += diag[u]
+            end
+        end
+        # move the touched vertices with a nonzero level to the back of their block
+        empty!(tblocks)
+        moved = Dict{Int,Int}()                     # block -> number moved
+        for v in tv
+            level(sums[v]) == 0 && continue
+            P = blk[v]
+            k = get(moved, P, 0)
+            k == 0 && push!(tblocks, P)
+            # swap v to position bend[P] - k
+            q = bend[P] - k; u = elems[q]; pv = pos[v]
+            elems[q] = v; elems[pv] = u; pos[v] = q; pos[u] = pv
+            moved[P] = k + 1
+        end
+        for P in tblocks
+            k = moved[P]
+            lo = bend[P] - k + 1
+            seg = @view elems[lo:bend[P]]
+            sort!(seg; by = v -> level(sums[v]))
+            for (o, v) in enumerate(seg)
+                pos[v] = lo + o - 1
+            end
+            # pieces: the untouched front (if any), then runs of equal level
+            starts = Int[]; stops = Int[]
+            lo > bstart[P] && (push!(starts, bstart[P]); push!(stops, lo - 1))
+            q = lo
+            while q <= bend[P]
+                l = level(sums[elems[q]]); r = q
+                while r < bend[P] && level(sums[elems[r+1]]) == l
+                    r += 1
+                end
+                push!(starts, q); push!(stops, r); q = r + 1
+            end
+            length(starts) == 1 && continue
+            big = argmax(stops .- starts)            # Hopcroft: the largest piece keeps P's id and place
+            for (pidx, (s0, s1)) in enumerate(zip(starts, stops))
+                if pidx == big
+                    bstart[P] = s0; bend[P] = s1
+                    continue
+                end
+                nb += 1
+                push!(bstart, s0); push!(bend, s1); push!(inq, true); push!(queue, nb)
+                for q2 in s0:s1
+                    blk[elems[q2]] = nb
+                end
+            end
+        end
+        for v in tv
+            sums[v] = 0.0; touched[v] = false
+        end
+    end
+    return canonical_partition(blk)
+end
+
+"""Colour refinement by rounds of signatures (the reference implementation, O(n (n + |edges|)))."""
+function colour_refinement_rounds(n::Integer, edges::AbstractVector, weights, classes::AbstractVector;
+                                  within::Bool = false, rtol::Real = 1e-9)
     length(classes) == n || throw(DimensionMismatch("classes must have one entry per agent ($n)"))
     w = weights isa Real ? fill(Float64(weights), length(edges)) : Vector{Float64}(weights)
     length(w) == length(edges) || throw(DimensionMismatch("weights must have one entry per edge"))
