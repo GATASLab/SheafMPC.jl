@@ -64,6 +64,7 @@ include("scenarios.jl")
 include("certificates.jl")
 include("controller.jl")
 include("distributed.jl")
+include("teammpc.jl")
 
 # the conic QP solver
 export ConicQP, RowKind, ROW_INTERVAL, ROW_EQ, ROW_LEQ, ROW_SOC
@@ -93,5 +94,7 @@ export GapKernel, gap_kernel, gap, team_front, select_teams
 export MPCController, StepInfo, step!, plan, reduced_program
 # distributed MPC
 export DistributedMPC, floats_per_iteration
+# team MPC (Algorithm 1)
+export TeamMPC, QuotientFleet, slot_offsets, same_data, lqr_gain, project, teams, stepinfo
 
 end
