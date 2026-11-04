@@ -138,11 +138,41 @@ function violation(p::ConicQP, x::AbstractVector)
 end
 
 """
+    soc_twins(p) -> rep
+
+For every SOC block `k` of `p`, the first block `rep[k]` with exactly the same
+rows of `A` and the same right-hand side up to rounding (`|b_B - b_B'| <=
+1e-9 max(1, |b_B|)`): the same cone, so all but one copy can be dropped. A
+pushforward along a team of identical members creates such copies (one input
+ball per member per instant), whose centers agree up to the rounding of the
+particular solution.
+"""
+function soc_twins(p::ConicQP)
+    At = SpMat(sparse(transpose(p.A)))
+    rowkey(i) = (rowvals(At)[nzrange(At, i)], nonzeros(At)[nzrange(At, i)])
+    rep = collect(eachindex(p.socs))
+    byrows = Dict{Any,Vector{Int}}()
+    for (k, B) in enumerate(p.socs)
+        cands = get!(byrows, [rowkey(i) for i in B], Int[])
+        bB = view(p.socb, B)
+        tol = 1e-9 * max(1.0, maximum(abs, bB; init = 0.0))
+        for r in cands
+            if maximum(abs.(bB .- view(p.socb, p.socs[r])); init = 0.0) <= tol
+                rep[k] = r
+                break
+            end
+        end
+        rep[k] == k && push!(cands, k)
+    end
+    return rep
+end
+
+"""
     dedup_rows(p::ConicQP) -> (p2, keep)
 
 Drop exact duplicate constraints: interval rows with the same row of `A` and
 the same bounds (the tightest bounds are kept when only the row repeats), and
-second-order cone blocks with the same rows and shift. A pushforward along
+second-order cone blocks with the same rows and shift (up to rounding, `soc_twins`). A pushforward along
 rigid teams repeats every member's identical input cone; duplicates make the
 active constraint gradients linearly dependent (the polish system singular,
 the multipliers non-unique). `keep` lists the kept rows of `p`.
@@ -151,6 +181,7 @@ function dedup_rows(p::ConicQP)
     m = nrows(p)
     At = SpMat(sparse(transpose(p.A)))
     rowkey(i) = (rowvals(At)[nzrange(At, i)], nonzeros(At)[nzrange(At, i)])
+    socrep = soc_twins(p)
     insoc = falses(m)
     for B in p.socs
         insoc[B] .= true
@@ -170,14 +201,8 @@ function dedup_rows(p::ConicQP)
             keep[i] = false
         end
     end
-    seenb = Dict{Any,Int}()
-    for B in p.socs
-        k = ([rowkey(i) for i in B], p.socb[B])
-        if haskey(seenb, k)
-            keep[B] .= false
-        else
-            seenb[k] = first(B)
-        end
+    for (k, B) in enumerate(p.socs)
+        socrep[k] == k || (keep[B] .= false)
     end
     all(keep) && return p, collect(1:m)
     idx = findall(keep)

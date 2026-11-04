@@ -76,10 +76,7 @@ function QPMap(P::SheafProgram; dedup::Bool = true)
             for i in keep
                 socblock[i] == 0 && (first_of[key(i)] = i)
             end
-            firstb = Dict{Any,Int}()
-            for (k, B) in enumerate(full.socs)
-                pos[first(B)] > 0 && (firstb[([key(i) for i in B], full.socb[B])] = k)
-            end
+            socrep = soc_twins(full)
             for i in 1:m
                 if pos[i] > 0
                     group[i] = pos[i]
@@ -87,7 +84,7 @@ function QPMap(P::SheafProgram; dedup::Bool = true)
                     group[i] = pos[first_of[key(i)]]
                 else
                     B = full.socs[socblock[i]]
-                    Bk = full.socs[firstb[([key(j) for j in B], full.socb[B])]]
+                    Bk = full.socs[socrep[socblock[i]]]
                     group[i] = pos[Bk[i-first(B)+1]]
                 end
             end
@@ -223,7 +220,7 @@ function _collapse_b!(M::QPMap)
         kd = M.kinds_full[i]
         if kd == ROW_LEQ
             b[g] = min(b[g], bf[i])
-        elseif abs(b[g] - bf[i]) > 1e-12 * max(1.0, abs(bf[i]))
+        elseif abs(b[g] - bf[i]) > 1e-9 * max(1.0, abs(bf[i]))
             M.valid = false
         end
     end

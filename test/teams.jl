@@ -63,6 +63,57 @@ end
     @test colour_refinement(n, edges[setdiff(1:end, findfirst(between))], 1.0, r) == colour_refinement(n, edges, w3, r)
 end
 
+@testset "drones and cars" begin
+    # rows alternate drones and cars, one lane per type: the data classes are the two types, and
+    # colour refinement splits them into the rows (an even number of rows)
+    for (R, C) in ((4, 5), (8, 8), (32, 32))
+        edges, _ = grid_graph(R, C)
+        n = R * C
+        rows = rowsof(R, C)
+        kind = [isodd(r) ? 1 : 2 for r in rows]
+        @test colour_refinement(n, edges, 1.0, kind) == canonical_partition(rows)
+        @test is_almost_equitable(n, edges, 1.0, rows)
+    end
+    # columns alternate the types (a mixed fleet): rows split by type are not almost equitable (the ends of a
+    # row see one neighbour of the other type in the row, the others two), and colour refinement returns a
+    # finer, almost equitable partition
+    R, C = 8, 8
+    edges, _ = grid_graph(R, C)
+    n = R * C
+    r, c = rowsof(R, C), colof(R, C)
+    kind = [isodd(c[i]) ? 1 : 2 for i in 1:n]
+    split = canonical_partition([(r[i], kind[i]) for i in 1:n])
+    @test !is_almost_equitable(n, edges, 1.0, split)
+    cr = colour_refinement(n, edges, 1.0, kind)
+    @test is_almost_equitable(n, edges, 1.0, cr)
+    @test all(length(unique(kind[cr .== b])) == 1 for b in 1:maximum(cr))
+    # a fleet whose drone-car and car-car edges compare only the horizontal position
+    h = 0.2
+    I2 = Matrix(1.0I, 2, 2); I3 = Matrix(1.0I, 3, 3)
+    drone = Agent([I3 h*I3; zeros(3, 3) I3], [0.5h^2*I3; h*I3]; C = [I3 zeros(3, 3)], Q = I3, R = 0.1I3,
+                  input = BallSet(4.0), kind = :drone)
+    car = Agent([I2 h*I2; zeros(2, 2) 0.9I2], [0.5h^2*I2; h*I2]; C = [I2 zeros(2, 2); zeros(1, 4)], Cr = [I2 zeros(2, 2)],
+                Q = I2, R = 0.2I2, input = BallSet(1.0), kind = :car)
+    edges, sl = grid_graph(2, 3)
+    ags = [i <= 3 ? drone : car for i in 1:6]
+    horiz = [1.0 0 0; 0 1 0]
+    sel = [(ags[i].kind == :drone && ags[j].kind == :drone) ? Matrix(1.0I, 3, 3) : horiz for (i, j) in edges]
+    fl = Fleet(ags, edges; H = 4, offsets = [[s; 0.0] for s in sl], select = sel)
+    F = FleetProgram(fl)
+    for (k, (i, j)) in enumerate(fl.edges)
+        e = F.program.edges[F.form[k, 1]]
+        @test size(e.b) == (size(sel[k], 1),)
+        Mi, Mj = edge_maps(fl, k)
+        @test size(Mi) == (size(sel[k], 1), ags[i].nx) && size(Mj) == (size(sel[k], 1), ags[j].nx)
+    end
+    T = randn(3, length(edges), 4)
+    set_targets!(F, T)
+    @test all(F.program.edges[F.form[k, t]].b ≈ sel[k] * T[:, k, t] for k in eachindex(edges), t in 1:4)
+    xi = [randn(ag.nx) for ag in ags]
+    @test edge_residual(fl, 1, xi[1], xi[2], 2) ≈ sel[1] * (ags[2].C * xi[2] - ags[1].C * xi[1] - fl.targets[:, 1, 2])
+    @test_throws DimensionMismatch Fleet(ags, edges; H = 4, select = sel[1:end-1])
+end
+
 @testset "fleets" begin
     sc = GridScenario(rows = 4, cols = 5, H = 4)
     fl = fleet(sc)

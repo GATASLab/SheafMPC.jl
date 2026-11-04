@@ -67,7 +67,7 @@ include("distributed.jl")
 
 # the conic QP solver
 export ConicQP, RowKind, ROW_INTERVAL, ROW_EQ, ROW_LEQ, ROW_SOC
-export nvars, nrows, objective, violation, sheaf_qp, dedup_rows
+export nvars, nrows, objective, violation, sheaf_qp, dedup_rows, soc_twins
 export Settings, Info, Solver, setup, solve!, update!, warm_start!, warm_start_shifted!, solution, reset!
 # programs
 export ConeKind, ZERO_CONE, NONNEG_CONE, SOC_CONE, ConeBlock, zero_cone, nonneg_cone, soc_cone
@@ -75,7 +75,7 @@ export NodeData, EdgeTag, SheafEdge, SheafProgram
 export nvertices, nedges, c0dim, c1dim, vrange, erange, edgedim, hard_edges, soft_edges
 export coboundary, targets, quadratic_form, node_constraints, feasibility, harden, edge_defect
 # fleets
-export Agent, BallSet, BoxSet, Polyhedron, Fleet, FleetProgram, nagents
+export Agent, BallSet, BoxSet, Polyhedron, Fleet, FleetProgram, nagents, edge_maps, edge_residual
 export set_state!, set_references!, set_targets!, set_drift!, set_state_bound!, set_state_set!, set_state_sets!
 export trajectories, first_inputs, plant_step, shift_plan, shift_plan!, free_response!
 export quadrotor, ground_vehicle, grid_graph, GridScenario, fleet, slots, references, formation_start

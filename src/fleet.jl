@@ -124,14 +124,19 @@ dynamics(ag::Agent, t::Int) = (_at(ag.A, t), _at(ag.B, t), _at(ag.g, t))
 _state_set(ag::Agent, t::Int) = t == 0 ? nothing : (length(ag.state) == 1 ? ag.state[1] : ag.state[t])
 
 """
-    Fleet(agents, edges; H, offsets = nothing, targets = nothing, weights = 1.0, present = nothing)
+    Fleet(agents, edges; H, offsets = nothing, targets = nothing, weights = 1.0, present = nothing, select = nothing)
 
 A fleet over a horizon of `H` steps: the agents, the union formation graph
 `edges` (pairs `(i, j)`), and per instant `t = 1, ..., H` which edges are
 present (`present[k, t]`, a switching topology; all by default), their targets
 `targets[:, k, t]` (the desired `C_j x_j - C_i x_i`; by default `o_j - o_i` from
 the slot positions `offsets`, or zero) and weights `weights[k, t]` (a number
-for all).
+for all). `select[k]` (`p_k x p`, by default the identity) picks the
+coordinates of the formation output that edge `k` compares: the edge's
+restriction maps are `S_k C_i` and `S_k C_j`, its target `S_k targets[:, k, t]`
+and its stiffness `weights[k, t] I`. A drone (output its 3D position) and a car
+(its planar position, altitude row zero) compare only their horizontal
+positions with `S_k = [I_2 0]`.
 """
 struct Fleet
     agents::Vector{Agent}
@@ -140,10 +145,11 @@ struct Fleet
     present::BitMatrix
     targets::Array{Float64,3}
     weights::Matrix{Float64}
+    select::Vector{Matrix{Float64}}
 end
 
 function Fleet(agents::Vector{Agent}, edges::AbstractVector; H::Integer, offsets = nothing, targets = nothing,
-               weights = 1.0, present = nothing)
+               weights = 1.0, present = nothing, select = nothing)
     n = length(agents)
     p = size(agents[1].C, 1)
     all(ag -> size(ag.C, 1) == p, agents) || throw(DimensionMismatch("every formation output must have $p rows"))
@@ -171,8 +177,18 @@ function Fleet(agents::Vector{Agent}, edges::AbstractVector; H::Integer, offsets
     end
     Wm = weights isa Real ? fill(Float64(weights), ne, H) : Matrix{Float64}(weights)
     size(Wm) == (ne, H) || throw(DimensionMismatch("weights must be $ne x $H"))
-    return Fleet(agents, Int(H), E, pres, T, Wm)
+    S = select === nothing ? [Matrix{Float64}(I, p, p) for _ in 1:ne] : [Matrix{Float64}(m) for m in select]
+    length(S) == ne || throw(DimensionMismatch("select needs one matrix per edge ($ne)"))
+    all(m -> size(m, 2) == p, S) || throw(DimensionMismatch("every select matrix must have $p columns"))
+    return Fleet(agents, Int(H), E, pres, T, Wm, S)
 end
+
+"""`edge_maps(fl, k)`: the restriction maps `(S_k C_i, S_k C_j)` of formation edge `k` on the agents' states."""
+edge_maps(fl::Fleet, k::Integer) = (fl.select[k] * fl.agents[fl.edges[k][1]].C, fl.select[k] * fl.agents[fl.edges[k][2]].C)
+
+"""`edge_residual(fl, k, xi, xj, t = 1)`: `S_k (C_j x_j - C_i x_i - targets[:, k, t])`."""
+edge_residual(fl::Fleet, k::Integer, xi::AbstractVector, xj::AbstractVector, t::Integer = 1) =
+    fl.select[k] * (fl.agents[fl.edges[k][2]].C * xj - fl.agents[fl.edges[k][1]].C * xi - fl.targets[:, k, t])
 
 Base.length(f::Fleet) = length(f.agents)
 nagents(f::Fleet) = length(f.agents)
@@ -276,14 +292,14 @@ function FleetProgram(fleet::Fleet; x0 = nothing, references = nothing, terminal
         dyn[i, t+1] = length(edges)
     end
     form = zeros(Int, length(fleet.edges), H)
-    p = size(fleet.agents[1].C, 1)
     for t in 1:H, (k, (i, j)) in enumerate(fleet.edges)
         ai, aj = fleet.agents[i], fleet.agents[j]
         di = t < H ? ai.nx + ai.nu : ai.nx
         dj = t < H ? aj.nx + aj.nu : aj.nx
         if fleet.present[k, t]
-            push!(edges, SheafEdge(vid[i, t+1], vid[j, t+1], [ai.C zeros(p, di - ai.nx)], [aj.C zeros(p, dj - aj.nx)],
-                                   false, fleet.weights[k, t] * Matrix{Float64}(I, p, p), fleet.targets[:, k, t],
+            Sk = fleet.select[k]; pk = size(Sk, 1)
+            push!(edges, SheafEdge(vid[i, t+1], vid[j, t+1], [Sk*ai.C zeros(pk, di - ai.nx)], [Sk*aj.C zeros(pk, dj - aj.nx)],
+                                   false, fleet.weights[k, t] * Matrix{Float64}(I, pk, pk), Sk * fleet.targets[:, k, t],
                                    EdgeTag(:form, i, j, t)))
             form[k, t] = length(edges)
         elseif absent == :zero
@@ -381,15 +397,22 @@ end
 """
     set_targets!(fp, targets)
 
-Set the formation targets `targets[:, k, t]` (`p x nedges x H`) in place.
+Set the formation targets `targets[:, k, t]` (`p x nedges x H`, in the
+coordinates of the formation output; edge `k` keeps `select[k]` of them) in place.
 """
 function set_targets!(F::FleetProgram, T::AbstractArray{<:Real,3})
+    S = F.fleet.select
     for t in axes(F.form, 2), k in axes(F.form, 1)
         e = F.form[k, t]
         e == 0 && continue
         b = F.program.edges[e].b
+        Sk = S[k]
         @inbounds for a in eachindex(b)
-            b[a] = T[a, k, t]
+            s = 0.0
+            for c in axes(Sk, 2)
+                s += Sk[a, c] * T[c, k, t]
+            end
+            b[a] = s
         end
     end
     return F
