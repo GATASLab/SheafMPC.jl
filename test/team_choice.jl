@@ -34,6 +34,44 @@ end
         @test maximum(colour_refinement(64^2, E, 1.0, cls)) == 64          # the rows
     end
 
+    @testset "quasi-stable teams: definition and the rounds" begin
+        rng = Xoshiro(13)
+        nnew = 0; nold = 0
+        for trial in 1:400
+            n = rand(rng, 2:60); E = rand_graph(rng, n, rand(rng, 0:4n))
+            W = rand(rng, Bool) ? ones(length(E)) : 0.1 .+ rand(rng, length(E))
+            rand(rng) < 0.2 && !isempty(E) && (W[rand(rng, 1:length(E))] = 0.0)   # a zero weight is no edge
+            cls = rand(rng, 1:rand(rng, 1:4), n)
+            q = rand(rng, (0.0, 0.05, 0.3, 1.0, 2.0, 4.0, 8.0))
+            lab = quasi_stable_teams(n, E, W, cls; q = q)
+            @test lab == canonical_partition(lab)
+            @test all(cls[i] == cls[j] for i in 1:n, j in 1:n if lab[i] == lab[j])        # refines the classes
+            @test team_spread(n, E, W, lab)[1] <= q + 1e-9                                # q-quasi-stable
+            q == 0 && @test lab == colour_refinement(n, E, W, cls)
+            old = SheafMPC.quasi_stable_teams_rounds(n, E, W, cls; q = q)
+            @test team_spread(n, E, W, old)[1] <= q + 1e-9
+            nnew += maximum(lab); nold += maximum(old)
+        end
+        @test nnew <= 1.05 * nold                         # not finer than the rounds overall
+        # geometric graphs with two large classes: as coarse as the rounds, and fast
+        for (n, seed) in ((300, 1), (1000, 2))
+            r2 = Xoshiro(seed); pts = [sqrt(n) .* rand(r2, 2) for _ in 1:n]
+            E = [(i, j) for i in 1:n for j in (i+1):n if norm(pts[i] - pts[j]) < 1.5]
+            W = [1 / norm(pts[i] - pts[j]) for (i, j) in E]
+            cls = [1 + (floor(Int, pts[i][1] / 3) % 2) for i in 1:n]
+            for q in (0.5, 2.0, 8.0)
+                lab = quasi_stable_teams(n, E, W, cls; q)
+                @test team_spread(n, E, W, lab)[1] <= q + 1e-9
+                @test maximum(lab) <= 1.1 * maximum(SheafMPC.quasi_stable_teams_rounds(n, E, W, cls; q))
+            end
+            t = @elapsed quasi_stable_teams(n, E, W, cls; q = 2.0)
+            @test t < 0.2
+        end
+        @test_throws ArgumentError quasi_stable_teams(3, [(1, 4)], 1.0, ones(Int, 3); q = 1)
+        @test_throws DimensionMismatch quasi_stable_teams(3, [(1, 2)], 1.0, ones(Int, 2); q = 1)
+        @test quasi_stable_teams(0, Tuple{Int,Int}[], 1.0, Int[]; q = 1) == Int[]
+    end
+
     @testset "lossless and quasi-stable teams" begin
         rng = Xoshiro(12)
         for trial in 1:150

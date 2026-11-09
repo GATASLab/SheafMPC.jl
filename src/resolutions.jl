@@ -145,7 +145,22 @@ end
 
 Relabel block labels by order of first appearance (blocks `1:k`).
 """
-function canonical_partition(labels::AbstractVector)
+function canonical_partition(labels::AbstractVector{<:Integer})
+    isempty(labels) && return Int[]
+    lo, hi = extrema(labels)
+    hi - lo >= 4 * length(labels) + 64 && return _canonical_partition(labels)
+    id = zeros(Int, hi - lo + 1)                # positive integer labels in a short range: an array map
+    out = Vector{Int}(undef, length(labels)); k = 0
+    for (v, l) in enumerate(labels)
+        c = id[l-lo+1]
+        c == 0 && (k += 1; c = k; id[l-lo+1] = k)
+        out[v] = c
+    end
+    return out
+end
+canonical_partition(labels::AbstractVector) = _canonical_partition(labels)
+
+function _canonical_partition(labels::AbstractVector)
     map = Dict{eltype(labels),Int}()
     out = Vector{Int}(undef, length(labels))
     for (v, l) in enumerate(labels)
@@ -227,9 +242,15 @@ function colour_refinement(n::Integer, edges::AbstractVector, weights, classes::
         bstart[b] == 0 && (bstart[b] = k)
         bend[b] = k
     end
-    queue = collect(1:nb); inq = trues(nb)
-    sums = zeros(n); touched = falses(n)
-    tv = Int[]; tblocks = Int[]; members = Int[]; keys_ = Int[]
+    # work arrays, allocated once: at most n blocks, so the block arrays get capacity n
+    sizehint!(bstart, n); sizehint!(bend, n)
+    queue = collect(1:nb); sizehint!(queue, n)
+    inq = fill(true, nb); sizehint!(inq, n)
+    sums = zeros(n); touched = falses(n); lv = zeros(Int, n)
+    tv = Int[]; tblocks = Int[]; members = Int[]
+    sizehint!(tv, n); sizehint!(tblocks, n); sizehint!(members, n)
+    moved = zeros(Int, n)                           # block -> number of its vertices moved this splitter
+    byl = let lv = lv; v -> lv[v]; end
     while !isempty(queue)
         B = pop!(queue); inq[B] = false
         empty!(members); append!(members, @view elems[bstart[B]:bend[B]])
@@ -247,49 +268,64 @@ function colour_refinement(n::Integer, edges::AbstractVector, weights, classes::
         end
         # move the touched vertices with a nonzero level to the back of their block
         empty!(tblocks)
-        moved = Dict{Int,Int}()                     # block -> number moved
         for v in tv
-            level(sums[v]) == 0 && continue
+            l = level(sums[v]); lv[v] = l
+            l == 0 && continue
             P = blk[v]
-            k = get(moved, P, 0)
+            k = moved[P]
             k == 0 && push!(tblocks, P)
-            # swap v to position bend[P] - k
             q = bend[P] - k; u = elems[q]; pv = pos[v]
             elems[q] = v; elems[pv] = u; pos[v] = q; pos[u] = pv
             moved[P] = k + 1
         end
         for P in tblocks
-            k = moved[P]
-            lo = bend[P] - k + 1
-            seg = @view elems[lo:bend[P]]
-            sort!(seg; by = v -> level(sums[v]))
-            for (o, v) in enumerate(seg)
-                pos[v] = lo + o - 1
+            k = moved[P]; moved[P] = 0
+            lo = bend[P] - k + 1; hi = bend[P]
+            if k <= 32
+                sort!(view(elems, lo:hi); by = byl, alg = InsertionSort)
+            else
+                sort!(view(elems, lo:hi); by = byl, alg = QuickSort)
             end
-            # pieces: the untouched front (if any), then runs of equal level
-            starts = Int[]; stops = Int[]
-            lo > bstart[P] && (push!(starts, bstart[P]); push!(stops, lo - 1))
+            for q in lo:hi
+                pos[elems[q]] = q
+            end
+            # pieces: the untouched front (if any), then runs of equal level; the
+            # largest keeps P's id and place (Hopcroft), the others get new ids
+            npieces = (lo > bstart[P]) + 1
+            bigs, bige = lo > bstart[P] ? (bstart[P], lo - 1) : (lo, lo - 1)
             q = lo
-            while q <= bend[P]
-                l = level(sums[elems[q]]); r = q
-                while r < bend[P] && level(sums[elems[r+1]]) == l
+            while q <= hi
+                l = lv[elems[q]]; r = q
+                while r < hi && lv[elems[r+1]] == l
                     r += 1
                 end
-                push!(starts, q); push!(stops, r); q = r + 1
-            end
-            length(starts) == 1 && continue
-            big = argmax(stops .- starts)            # Hopcroft: the largest piece keeps P's id and place
-            for (pidx, (s0, s1)) in enumerate(zip(starts, stops))
-                if pidx == big
-                    bstart[P] = s0; bend[P] = s1
-                    continue
+                if r - q > bige - bigs
+                    bigs, bige = q, r
                 end
-                nb += 1
-                push!(bstart, s0); push!(bend, s1); push!(inq, true); push!(queue, nb)
-                for q2 in s0:s1
-                    blk[elems[q2]] = nb
-                end
+                q > lo && (npieces += 1)
+                q = r + 1
             end
+            npieces == 1 && continue
+            # new blocks for every piece but the largest
+            s0 = bstart[P]
+            while s0 <= hi
+                s1 = s0 < lo ? lo - 1 : s0
+                if s0 >= lo
+                    l = lv[elems[s0]]
+                    while s1 < hi && lv[elems[s1+1]] == l
+                        s1 += 1
+                    end
+                end
+                if s0 != bigs
+                    nb += 1
+                    push!(bstart, s0); push!(bend, s1); push!(inq, true); push!(queue, nb)
+                    for q2 in s0:s1
+                        blk[elems[q2]] = nb
+                    end
+                end
+                s0 = s1 + 1
+            end
+            bstart[P] = bigs; bend[P] = bige
         end
         for v in tv
             sums[v] = 0.0; touched[v] = false

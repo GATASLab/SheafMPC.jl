@@ -1,13 +1,16 @@
-# SheafMPC.jl
+# TeamMPC.jl
 
-The open-source companion of "Team MPC of Large Fleets with Certified
-Optimality Gaps by Sheaf Pushforward" (Kadosh, Samuelson and Fairbanks).
+Code for "Exact and Certified Team Reduction for Large-Fleet Formation MPC"
+(Kadosh, Samuelson and Fairbanks, submitted to ECC 2027). Vehicles in a team
+share one input sequence, so the solver sees one vehicle per team. The package
+finds the coarsest almost equitable teams by color refinement, certifies the gap of other
+teams from the team solution, and splits teams in closed loop. The paper's runs
+used commit `baa542b` of this branch.
 
-Model predictive control of a fleet solves, at every sampling instant, one
-program whose size grows with the number of agents times the horizon. The
-package poses it as a program on a cellular sheaf over the time-expanded
+The Julia package and module are still named `SheafMPC` (`using SheafMPC`).
+Internally, each program is posed on a cellular sheaf over the time-expanded
 graph (formation preferences are soft edges, dynamics are hard edges) and
-reduces it by sheaf pushforward along a quotient of that graph:
+reduced along a quotient of that graph:
 
 * in time, blocks of instants give partial or full condensing, which is exact;
 * over agents, teams give reduced-order models: each team is one agent
@@ -29,7 +32,7 @@ The solver underneath is an ADMM conic QP solver for sheaf programs (below).
 
 ```julia
 using Pkg
-Pkg.add(url = "https://github.com/GATASLab/SheafMPC.jl")   # not registered yet
+Pkg.add(url = "https://github.com/GATASLab/SheafMPC.jl", rev = "team-mpc")   # not registered yet
 ```
 
 ## Team MPC in four steps

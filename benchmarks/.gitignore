@@ -1,0 +1,10 @@
+data/refcache/
+data/reduced/
+results/*/
+!results/baseline/
+envs/*/Manifest.toml
+data/osqprand/
+hpg/jobs/
+hpg/submitted_*.txt
+results/*.log
+results/baseline/**/*.json
