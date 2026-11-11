@@ -1,0 +1,1136 @@
+{
+ "commits": [
+  "08cfc5bcf7b421c5840fec0d4fe41602ee92ba47"
+ ],
+ "experiment": "E118: Algorithm 1 (certified refinement) enforced on E106's irregular fleets (largest connected part of 4096 random slots, one team per region to start, h = 0.2 s, H = 10, ball limits). Each sample: team solve, least certificate (NNLS per team, D = H_0), and while eta_min > eps W + delta split the teams of largest eta_c by 2-means of their members' steps -H_S,c^{-1}(g_c + N c) (own-Hessian metric), teams covering eta - (eps W + delta)/2 per round, rebuild the quotient program and re-solve cold; teams only split. W = V_N(u_hat) at the measured state, delta = delta_rel W_0. Step 0 offline (untimed); E106's shift overrun rule on a step over 200 ms.",
+ "fields": {
+  "cert_viol_total": "samples with true gap > eta (Lemma cert violated), summed over seeds; must be 0",
+  "cost_ratio_med / cost_ratio_max / cost_ratio_per_seed": "closed-loop cost (30 steps + terminal stage) over that of converged centralized MPC (coord71) of the same seed in the same job; median / worst over seeds",
+  "eta_rel0 / gap_rel0 / eta_over_gap0": "at t = 0, after the offline splits: least certificate eta_min / |J*|, true gap (V_N(u_hat) - J*) / |J*|, eta/gap; eta_first_rel0 = eta/|J*| of the initial regions before splitting",
+  "fallback_frac": "mean over seeds of the fraction of samples 1..29 on which E106's shift rule applied the previous plan shifted (step over the period)",
+  "met_frac": "mean over seeds of the fraction of samples 1..29 with step time <= 200 ms",
+  "met_frac_with_q / t_q_ms_med": "the same counting the condensed linear data q at the measured state (qc71, untimed in E106 and here) / its median time",
+  "ms_med / ms_max": "median over seeds of the per-seed median step time / worst step over seeds, ms, one pinned core, samples 1..29 (step 0 offline): team solve + least certificate (q untimed, as E106) + all split rounds (2-means, block factors, quotient rebuild, cold re-solve, re-certificate)",
+  "rows.<arm>": "arm: fix (eps = Inf, same loop without splits), ref_<eps> (Algorithm 1 enforced), suffix _nofb = without the overrun rule (no fallback, timing does not affect the loop), e106_fixed (E106's team_resp_quarter, read from results/e106_overrun_full.json)",
+  "seeds_info": "per seed: n vehicles, edges, coord closed-loop cost here and in E106's part (when available), host, job, provenance",
+  "splits_per_seed, splits_after0_per_seed, split_samples_per_seed": "number of team splits in total / at samples 1..29 (online, timed), and the samples at which splits happened",
+  "teams_after0_per_seed": "team count after the offline splits at x(0)",
+  "teams_final_med / teams_per_seed": "team count at the end of the loop (teams only split; start 337 or 339 = one per region)",
+  "uncertified_total, stalled_total": "samples whose final plan still failed eta <= eps W + delta (round cap E118_ROUNDS or no splittable team), summed over seeds"
+ },
+ "hosts": [
+  "c0711a-s30.ufhpc",
+  "c0713a-s30.ufhpc"
+ ],
+ "jobs": [
+  "50392171",
+  "50392172",
+  "50392173"
+ ],
+ "period_ms": 200.0,
+ "rows": {
+  "e106_fixed": {
+   "cost_ratio_max": 1.2863159729082088,
+   "cost_ratio_med": 1.1973515529317431,
+   "cost_ratio_per_seed": [
+    1.0336230976597003,
+    1.2863159729082088,
+    1.1346550993716116,
+    1.2216110918280023,
+    1.1973515529317431
+   ],
+   "eps": "Inf (E106, kktE71 ray certificate timed)",
+   "fallback_frac": 0.013793103448275862,
+   "met_frac": 0.9862068965517242,
+   "ms_max": 221.968626,
+   "ms_med": 107.19481999999999,
+   "source": "results/e106_overrun_full.json sizes.4096.controllers.team_resp_quarter",
+   "teams_final_med": 339.0,
+   "teams_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ]
+  },
+  "fix": {
+   "cert_viol_total": 0,
+   "cost_ratio_max": 8.884907840801057,
+   "cost_ratio_med": 1.2216460769305952,
+   "cost_ratio_per_seed": [
+    1.053493121008316,
+    3.3739212428089043,
+    1.137125674662817,
+    1.2216460769305952,
+    8.884907840801057
+   ],
+   "delta_rel": 0.0001,
+   "eps": null,
+   "eta_first_rel0_med": 0.11449724483762651,
+   "eta_over_gap0_med": 1.7146891332657899,
+   "eta_over_gap_med_med": 1.75238669261041,
+   "eta_rel0_med": 0.11449724483762651,
+   "fallback_frac": 0.5517241379310345,
+   "fallback_rule": "shift",
+   "gap_rel0_med": 0.06726827616111322,
+   "gap_rel_med_med": 0.11202273517999731,
+   "met_frac": 0.4482758620689656,
+   "met_frac_with_q": 0.0,
+   "ms_max": 1196.06339,
+   "ms_med": 184.10334900000004,
+   "ms_med_per_seed": [
+    177.704786,
+    981.736571,
+    184.10334900000004,
+    114.91316200000004,
+    786.7331880000002
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "split_samples_per_seed": [
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "splits_after0_per_seed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "splits_per_seed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "stalled_total": 0,
+   "t_q_ms_med": 350.38101700000004,
+   "t_split_when_ms_med": null,
+   "teams_after0_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "teams_final_med": 339.0,
+   "teams_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "teams_start_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "uncertified_total": 0
+  },
+  "fix_nofb": {
+   "cert_viol_total": 0,
+   "cost_ratio_max": 1.2863159729082088,
+   "cost_ratio_med": 1.1957573297999295,
+   "cost_ratio_per_seed": [
+    1.0336230976597003,
+    1.2863159729082088,
+    1.1346550993451352,
+    1.2216110918280023,
+    1.1957573297999295
+   ],
+   "delta_rel": 0.0001,
+   "eps": null,
+   "eta_first_rel0_med": 0.11449724483834225,
+   "eta_over_gap0_med": 1.7146891338695016,
+   "eta_over_gap_med_med": 1.7471145442476663,
+   "eta_rel0_med": 0.11449724483834225,
+   "fallback_frac": 0.0,
+   "fallback_rule": "none",
+   "gap_rel0_med": 0.06726827616778497,
+   "gap_rel_med_med": 0.19957328627730359,
+   "met_frac": 0.6068965517241379,
+   "met_frac_with_q": 0.0,
+   "ms_max": 519.0941449999999,
+   "ms_med": 165.410618,
+   "ms_med_per_seed": [
+    129.64530499999998,
+    300.9348519999999,
+    165.410618,
+    114.65714,
+    181.763006
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "split_samples_per_seed": [
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "splits_after0_per_seed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "splits_per_seed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "stalled_total": 0,
+   "t_q_ms_med": 353.18924699999997,
+   "t_split_when_ms_med": null,
+   "teams_after0_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "teams_final_med": 339.0,
+   "teams_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "teams_start_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "uncertified_total": 0
+  },
+  "ref_0.01": {
+   "cert_viol_total": 0,
+   "cost_ratio_max": 39.93017277551565,
+   "cost_ratio_med": 9.290494415068357,
+   "cost_ratio_per_seed": [
+    1.5383202009921861,
+    3.4048916861390506,
+    39.93017277551565,
+    20.75886303935222,
+    9.290494415068357
+   ],
+   "delta_rel": 0.0001,
+   "eps": 0.01,
+   "eta_first_rel0_med": 0.11449724483846664,
+   "eta_over_gap0_med": 1.5961446036902895,
+   "eta_over_gap_med_med": 1.7743941662082485,
+   "eta_rel0_med": 0.007686642470290526,
+   "fallback_frac": 0.9655172413793103,
+   "fallback_rule": "shift",
+   "gap_rel0_med": 0.004487832238287583,
+   "gap_rel_med_med": 0.003829872587057862,
+   "met_frac": 0.034482758620689655,
+   "met_frac_with_q": 0.0,
+   "ms_max": 7182.704087,
+   "ms_med": 833.250996,
+   "ms_med_per_seed": [
+    632.2351960000001,
+    933.16512,
+    1121.562613,
+    833.250996,
+    831.097389
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "split_samples_per_seed": [
+    [
+     0,
+     1,
+     2,
+     3,
+     22
+    ],
+    [
+     0,
+     2,
+     8
+    ],
+    [
+     0,
+     1,
+     5
+    ],
+    [
+     0,
+     2,
+     5
+    ],
+    [
+     0,
+     1,
+     2,
+     4
+    ]
+   ],
+   "splits_after0_per_seed": [
+    561,
+    308,
+    363,
+    419,
+    539
+   ],
+   "splits_per_seed": [
+    706,
+    1006,
+    1129,
+    1044,
+    912
+   ],
+   "stalled_total": 0,
+   "t_q_ms_med": 334.955156,
+   "t_split_when_ms_med": 3704.06944,
+   "teams_after0_per_seed": [
+    484,
+    1035,
+    1105,
+    964,
+    712
+   ],
+   "teams_final_med": 1343.0,
+   "teams_per_seed": [
+    1045,
+    1343,
+    1468,
+    1383,
+    1251
+   ],
+   "teams_start_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "uncertified_total": 0
+  },
+  "ref_0.01_nofb": {
+   "cert_viol_total": 0,
+   "cost_ratio_max": 1.00603088304054,
+   "cost_ratio_med": 1.005019824606915,
+   "cost_ratio_per_seed": [
+    1.002088413912436,
+    1.00603088304054,
+    1.005019824606915,
+    1.0047321253760633,
+    1.0059629708101843
+   ],
+   "delta_rel": 0.0001,
+   "eps": 0.01,
+   "eta_first_rel0_med": 0.11449724483847136,
+   "eta_over_gap0_med": 1.5961445490148103,
+   "eta_over_gap_med_med": 1.6776116156474723,
+   "eta_rel0_med": 0.007686642466365073,
+   "fallback_frac": 0.0,
+   "fallback_rule": "none",
+   "gap_rel0_med": 0.004487831725310703,
+   "gap_rel_med_med": 0.004377152004887453,
+   "met_frac": 0.041379310344827586,
+   "met_frac_with_q": 0.0,
+   "ms_max": 6971.211926,
+   "ms_med": 707.782179,
+   "ms_med_per_seed": [
+    569.222212,
+    969.548603,
+    707.782179,
+    704.934096,
+    821.175043
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "split_samples_per_seed": [
+    [
+     0,
+     1,
+     2,
+     3,
+     24
+    ],
+    [
+     0,
+     2,
+     8,
+     15
+    ],
+    [
+     0,
+     1,
+     26
+    ],
+    [
+     0,
+     2,
+     5,
+     16
+    ],
+    [
+     0,
+     1,
+     2,
+     4,
+     9
+    ]
+   ],
+   "splits_after0_per_seed": [
+    704,
+    442,
+    364,
+    591,
+    707
+   ],
+   "splits_per_seed": [
+    849,
+    1140,
+    1130,
+    1216,
+    1080
+   ],
+   "stalled_total": 0,
+   "t_q_ms_med": 351.02673899999996,
+   "t_split_when_ms_med": 4132.664522000001,
+   "teams_after0_per_seed": [
+    484,
+    1035,
+    1105,
+    964,
+    712
+   ],
+   "teams_final_med": 1469.0,
+   "teams_per_seed": [
+    1188,
+    1477,
+    1469,
+    1555,
+    1419
+   ],
+   "teams_start_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "uncertified_total": 0
+  },
+  "ref_0.03": {
+   "cert_viol_total": 0,
+   "cost_ratio_max": 39.85186039184469,
+   "cost_ratio_med": 9.149170628713911,
+   "cost_ratio_per_seed": [
+    1.401134654304675,
+    3.407188245920618,
+    39.85186039184469,
+    20.75017386422417,
+    9.149170628713911
+   ],
+   "delta_rel": 0.0001,
+   "eps": 0.03,
+   "eta_first_rel0_med": 0.11449724483838196,
+   "eta_over_gap0_med": 1.612911818079159,
+   "eta_over_gap_med_med": 1.6546941049906625,
+   "eta_rel0_med": 0.02500109622995669,
+   "fallback_frac": 0.9655172413793103,
+   "fallback_rule": "shift",
+   "gap_rel0_med": 0.015421361504661588,
+   "gap_rel_med_med": 0.009513065241830918,
+   "met_frac": 0.034482758620689655,
+   "met_frac_with_q": 0.0,
+   "ms_max": 4159.1627,
+   "ms_med": 711.132196,
+   "ms_med_per_seed": [
+    427.394303,
+    826.7362039999999,
+    963.2604599999999,
+    577.270312,
+    711.132196
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "split_samples_per_seed": [
+    [
+     1,
+     2,
+     3
+    ],
+    [
+     0,
+     1,
+     7
+    ],
+    [
+     0,
+     1,
+     5
+    ],
+    [
+     0,
+     2,
+     5
+    ],
+    [
+     0,
+     1,
+     2,
+     4,
+     10
+    ]
+   ],
+   "splits_after0_per_seed": [
+    340,
+    279,
+    328,
+    326,
+    477
+   ],
+   "splits_per_seed": [
+    340,
+    631,
+    700,
+    612,
+    594
+   ],
+   "stalled_total": 0,
+   "t_q_ms_med": 342.97913,
+   "t_split_when_ms_med": 2085.811725,
+   "teams_after0_per_seed": [
+    339,
+    689,
+    711,
+    625,
+    456
+   ],
+   "teams_final_med": 951.0,
+   "teams_per_seed": [
+    679,
+    968,
+    1039,
+    951,
+    933
+   ],
+   "teams_start_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "uncertified_total": 0
+  },
+  "ref_0.03_nofb": {
+   "cert_viol_total": 0,
+   "cost_ratio_max": 1.0177104784211026,
+   "cost_ratio_med": 1.0152607402079168,
+   "cost_ratio_per_seed": [
+    1.0062966870529126,
+    1.0177104784211026,
+    1.0091697509088287,
+    1.0152607402079168,
+    1.0173804874991053
+   ],
+   "delta_rel": 0.0001,
+   "eps": 0.03,
+   "eta_first_rel0_med": 0.11449724483863227,
+   "eta_over_gap0_med": 1.6129117935252988,
+   "eta_over_gap_med_med": 1.6058980628409496,
+   "eta_rel0_med": 0.025001096235856207,
+   "fallback_frac": 0.0,
+   "fallback_rule": "none",
+   "gap_rel0_med": 0.015421361512973757,
+   "gap_rel_med_med": 0.014469128722142496,
+   "met_frac": 0.06896551724137931,
+   "met_frac_with_q": 0.0,
+   "ms_max": 4025.2812489999997,
+   "ms_med": 503.61308800000006,
+   "ms_med_per_seed": [
+    317.969404,
+    598.2090870000001,
+    503.61308800000006,
+    460.297644,
+    530.765725
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "split_samples_per_seed": [
+    [
+     1,
+     2,
+     3,
+     24
+    ],
+    [
+     0,
+     1,
+     7,
+     18
+    ],
+    [
+     0,
+     1,
+     5
+    ],
+    [
+     0,
+     2,
+     5,
+     20
+    ],
+    [
+     0,
+     1,
+     2,
+     4,
+     9
+    ]
+   ],
+   "splits_after0_per_seed": [
+    478,
+    404,
+    323,
+    488,
+    525
+   ],
+   "splits_per_seed": [
+    478,
+    756,
+    695,
+    774,
+    642
+   ],
+   "stalled_total": 0,
+   "t_q_ms_med": 343.564949,
+   "t_split_when_ms_med": 2206.61708,
+   "teams_after0_per_seed": [
+    339,
+    689,
+    711,
+    625,
+    456
+   ],
+   "teams_final_med": 1034.0,
+   "teams_per_seed": [
+    817,
+    1093,
+    1034,
+    1113,
+    981
+   ],
+   "teams_start_per_seed": [
+    339,
+    337,
+    339,
+    339,
+    339
+   ],
+   "uncertified_total": 0
+  }
+ },
+ "script_sha256": [
+  "d6ed760364ff2ebecc40a7f7f6367d6945b1a994e490aec2cddb77b46f7180df"
+ ],
+ "seeds_info": [
+  {
+   "arm_seconds": {
+    "coord": 183.77659265,
+    "fix": 336.122779497,
+    "fix_nofb": 430.175624953,
+    "ref_0.01": 329.193141227,
+    "ref_0.01_nofb": 382.808472802,
+    "ref_0.03": 291.821577832,
+    "ref_0.03_nofb": 381.822857219
+   },
+   "coord_cost": 2417.2878460821657,
+   "coord_cost_e106": 2417.2878460821657,
+   "edges": 14224,
+   "hs_check_reldiff": 0.0,
+   "load": {
+    "before_fix": [
+     2.0,
+     1.3,
+     0.82
+    ],
+    "before_fix_nofb": [
+     2.03,
+     2.02,
+     1.64
+    ],
+    "before_ref_0.01": [
+     2.0,
+     1.96,
+     1.45
+    ],
+    "before_ref_0.01_nofb": [
+     2.05,
+     2.04,
+     1.91
+    ],
+    "before_ref_0.03": [
+     2.04,
+     1.84,
+     1.22
+    ],
+    "before_ref_0.03_nofb": [
+     2.08,
+     2.06,
+     1.82
+    ],
+    "end": [
+     2.04,
+     2.03,
+     1.96
+    ],
+    "start": [
+     1.76,
+     0.67,
+     0.54
+    ]
+   },
+   "meta": {
+    "affinity": "core 0 of exclusive node",
+    "commit": "08cfc5bcf7b421c5840fec0d4fe41602ee92ba47",
+    "commit_note": "ecc-final_HEAD_plus_untracked_e117_e118_scripts",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T06:15:56",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "BENCH_NAT_RADIUS": "",
+     "BENCH_NAT_REGION": "",
+     "E118_DELTA_REL": "",
+     "E118_EPS": "0.03:0.01",
+     "E118_ROUNDS": "",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0711a-s30.ufhpc",
+    "job": "50392171",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "d6ed760364ff2ebecc40a7f7f6367d6945b1a994e490aec2cddb77b46f7180df",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4071,
+   "seed": 1,
+   "teams_regions": 339
+  },
+  {
+   "arm_seconds": {
+    "coord": 166.833649177,
+    "fix": 363.205984921,
+    "fix_nofb": 365.795241398,
+    "ref_0.01": 402.84625806,
+    "ref_0.01_nofb": 450.867686603,
+    "ref_0.03": 412.32803018,
+    "ref_0.03_nofb": 414.803537165
+   },
+   "coord_cost": 10164.307248058216,
+   "coord_cost_e106": 10164.307248058216,
+   "edges": 13948,
+   "hs_check_reldiff": 0.0,
+   "load": {
+    "before_fix": [
+     1.99,
+     1.25,
+     0.79
+    ],
+    "before_fix_nofb": [
+     2.04,
+     2.03,
+     1.73
+    ],
+    "before_ref_0.01": [
+     2.02,
+     2.0,
+     1.54
+    ],
+    "before_ref_0.01_nofb": [
+     2.09,
+     2.05,
+     1.94
+    ],
+    "before_ref_0.03": [
+     2.03,
+     1.85,
+     1.23
+    ],
+    "before_ref_0.03_nofb": [
+     2.05,
+     2.05,
+     1.85
+    ],
+    "end": [
+     1.06,
+     1.48,
+     1.75
+    ],
+    "start": [
+     1.76,
+     0.67,
+     0.54
+    ]
+   },
+   "meta": {
+    "affinity": "core 16 of exclusive node",
+    "commit": "08cfc5bcf7b421c5840fec0d4fe41602ee92ba47",
+    "commit_note": "ecc-final_HEAD_plus_untracked_e117_e118_scripts",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T06:19:55",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "BENCH_NAT_RADIUS": "",
+     "BENCH_NAT_REGION": "",
+     "E118_DELTA_REL": "",
+     "E118_EPS": "0.03:0.01",
+     "E118_ROUNDS": "",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0711a-s30.ufhpc",
+    "job": "50392171",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "d6ed760364ff2ebecc40a7f7f6367d6945b1a994e490aec2cddb77b46f7180df",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4046,
+   "seed": 2,
+   "teams_regions": 337
+  },
+  {
+   "arm_seconds": {
+    "coord": 222.113703619,
+    "fix": 481.951908435,
+    "fix_nofb": 366.950467447,
+    "ref_0.01": 427.226330419,
+    "ref_0.01_nofb": 465.716470649,
+    "ref_0.03": 425.093428025,
+    "ref_0.03_nofb": 461.813019226
+   },
+   "coord_cost": 5286.799531278243,
+   "coord_cost_e106": 5286.79953115488,
+   "edges": 14194,
+   "hs_check_reldiff": 0.0,
+   "load": {
+    "before_fix": [
+     2.02,
+     1.55,
+     0.83
+    ],
+    "before_fix_nofb": [
+     2.11,
+     2.05,
+     1.81
+    ],
+    "before_ref_0.01": [
+     2.14,
+     2.06,
+     1.64
+    ],
+    "before_ref_0.01_nofb": [
+     2.12,
+     2.06,
+     1.98
+    ],
+    "before_ref_0.03": [
+     2.24,
+     2.01,
+     1.36
+    ],
+    "before_ref_0.03_nofb": [
+     2.05,
+     2.03,
+     1.89
+    ],
+    "end": [
+     1.05,
+     1.25,
+     1.6
+    ],
+    "start": [
+     2.2,
+     1.0,
+     0.49
+    ]
+   },
+   "meta": {
+    "affinity": "core 0 of exclusive node",
+    "commit": "08cfc5bcf7b421c5840fec0d4fe41602ee92ba47",
+    "commit_note": "ecc-final_HEAD_plus_untracked_e117_e118_scripts",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T06:24:29",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "BENCH_NAT_RADIUS": "",
+     "BENCH_NAT_REGION": "",
+     "E118_DELTA_REL": "",
+     "E118_EPS": "0.03:0.01",
+     "E118_ROUNDS": "",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0713a-s30.ufhpc",
+    "job": "50392172",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "d6ed760364ff2ebecc40a7f7f6367d6945b1a994e490aec2cddb77b46f7180df",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4071,
+   "seed": 3,
+   "teams_regions": 339
+  },
+  {
+   "arm_seconds": {
+    "coord": 143.842418989,
+    "fix": 303.755475816,
+    "fix_nofb": 343.347368544,
+    "ref_0.01": 425.271042691,
+    "ref_0.01_nofb": 365.495269243,
+    "ref_0.03": 452.166506818,
+    "ref_0.03_nofb": 348.421438565
+   },
+   "coord_cost": 5368.40300708529,
+   "coord_cost_e106": 5368.40300708529,
+   "edges": 14305,
+   "hs_check_reldiff": 0.0,
+   "load": {
+    "before_fix": [
+     2.07,
+     1.42,
+     0.73
+    ],
+    "before_fix_nofb": [
+     2.11,
+     2.05,
+     1.73
+    ],
+    "before_ref_0.01": [
+     2.02,
+     2.03,
+     1.5
+    ],
+    "before_ref_0.01_nofb": [
+     2.18,
+     2.08,
+     1.93
+    ],
+    "before_ref_0.03": [
+     2.01,
+     1.83,
+     1.11
+    ],
+    "before_ref_0.03_nofb": [
+     2.02,
+     2.03,
+     1.83
+    ],
+    "end": [
+     2.13,
+     2.06,
+     1.98
+    ],
+    "start": [
+     2.2,
+     1.0,
+     0.49
+    ]
+   },
+   "meta": {
+    "affinity": "core 16 of exclusive node",
+    "commit": "08cfc5bcf7b421c5840fec0d4fe41602ee92ba47",
+    "commit_note": "ecc-final_HEAD_plus_untracked_e117_e118_scripts",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T06:16:43",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "BENCH_NAT_RADIUS": "",
+     "BENCH_NAT_REGION": "",
+     "E118_DELTA_REL": "",
+     "E118_EPS": "0.03:0.01",
+     "E118_ROUNDS": "",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0713a-s30.ufhpc",
+    "job": "50392172",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "d6ed760364ff2ebecc40a7f7f6367d6945b1a994e490aec2cddb77b46f7180df",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4067,
+   "seed": 4,
+   "teams_regions": 339
+  },
+  {
+   "arm_seconds": {
+    "coord": 195.076336105,
+    "fix": 415.168921252,
+    "fix_nofb": 398.159003612,
+    "ref_0.01": 433.453122098,
+    "ref_0.01_nofb": 449.112645917,
+    "ref_0.03": 434.30472484,
+    "ref_0.03_nofb": 455.819199759
+   },
+   "coord_cost": 6138.895457312663,
+   "coord_cost_e106": 6138.895457312663,
+   "edges": 14347,
+   "hs_check_reldiff": 0.0,
+   "load": {
+    "before_fix": [
+     1.0,
+     1.17,
+     1.52
+    ],
+    "before_fix_nofb": [
+     1.09,
+     1.05,
+     1.15
+    ],
+    "before_ref_0.01": [
+     1.0,
+     1.03,
+     1.22
+    ],
+    "before_ref_0.01_nofb": [
+     1.12,
+     1.05,
+     1.08
+    ],
+    "before_ref_0.03": [
+     1.03,
+     1.08,
+     1.35
+    ],
+    "before_ref_0.03_nofb": [
+     1.01,
+     1.04,
+     1.1
+    ],
+    "end": [
+     1.05,
+     1.04,
+     1.05
+    ],
+    "start": [
+     1.0,
+     1.31,
+     1.64
+    ]
+   },
+   "meta": {
+    "affinity": "core 0 of exclusive node",
+    "commit": "08cfc5bcf7b421c5840fec0d4fe41602ee92ba47",
+    "commit_note": "ecc-final_HEAD_plus_untracked_e117_e118_scripts",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T07:08:29",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "BENCH_NAT_RADIUS": "",
+     "BENCH_NAT_REGION": "",
+     "E118_DELTA_REL": "",
+     "E118_EPS": "0.03:0.01",
+     "E118_ROUNDS": "",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0711a-s30.ufhpc",
+    "job": "50392173",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "d6ed760364ff2ebecc40a7f7f6367d6945b1a994e490aec2cddb77b46f7180df",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4069,
+   "seed": 5,
+   "teams_regions": 339
+  }
+ ]
+}

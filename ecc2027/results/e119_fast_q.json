@@ -1,0 +1,417 @@
+{
+ "commits": [
+  "8707b6cd4e7a2b04b97031e8b60e145c57c664fe"
+ ],
+ "cpus": [
+  "AMD EPYC 75F3 32-Core Processor"
+ ],
+ "experiment": "E119: the certificate's linear term q (condensed program at the measured state) by fastq (free responses + adjoint recursion, sparse edge sums, no fleet-sized matrices) vs qc71, on E106's irregular fleets (largest connected part of 4096 random slots, one team per region, h = 0.2 s, H = 10). Per seed one closed loop of E106's fixed-team arm (team solve + kktE71 timed, shift rule); at every sample fastq and qc71 at the measured state, checked max|fastq - qc71|/max|qc71| <= 1e-10. 'with fastq' on the e106 row is a POST-HOC sum (step time + fastq time per sample), not a rerun; the inloop row is a closed-loop rerun with fastq inside the timed step.",
+ "hosts": [
+  "c0711a-s30.ufhpc"
+ ],
+ "jobs": [
+  "50488099",
+  "50488100",
+  "50488101"
+ ],
+ "period_ms": 200.0,
+ "rows": {
+  "e106": {
+   "added_overruns": 3,
+   "closed_loop_cost_per_seed": [
+    2498.5645514025928,
+    13074.510766723963,
+    5998.69404738033,
+    6558.100658858191,
+    7350.416009098941
+   ],
+   "fallback_frac": 0.013793103448275862,
+   "fastq_ms_max": 20.32772,
+   "fastq_ms_max_per_seed": [
+    18.934701,
+    18.83255,
+    18.888935999999998,
+    19.445855,
+    20.32772
+   ],
+   "fastq_ms_med": 18.546506,
+   "fastq_ms_med_per_seed": [
+    18.384614,
+    18.374145000000002,
+    18.237609,
+    18.935081999999998,
+    18.879676
+   ],
+   "fastq_repmin_ms_med": 15.152318999999999,
+   "met_frac": 0.9862068965517241,
+   "met_frac_with_fastq": 0.9655172413793104,
+   "qc71_ms_max": 349.32235499999996,
+   "qc71_ms_med": 335.20099,
+   "relerr_max": 1.4245000179834307e-13,
+   "relerr_x0_condensedqp_max": 6.053796487923652e-14,
+   "samples": 145,
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "speedup_med": 17.9852990957115,
+   "step_ms_max": 219.09726,
+   "step_ms_med": 100.741372
+  },
+  "e106_parts_posthoc": {
+   "added_overruns": 4,
+   "met_frac_e106": 0.9862068965517241,
+   "met_frac_with_fastq": 0.9586206896551724,
+   "note": "E106's recorded per-step t_total (its HPG run) + this job's fastq time at the same sample index; post hoc sum",
+   "replay_cost_over_e106_cost": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "samples": 145,
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  "inloop": {
+   "added_overruns": 0,
+   "closed_loop_cost_per_seed": [
+    2498.6728118512015,
+    13076.263024840733,
+    5998.69404738033,
+    6558.100658858191,
+    7350.416009098941
+   ],
+   "fallback_frac": 0.034482758620689655,
+   "fastq_ms_max": 20.486596,
+   "fastq_ms_max_per_seed": [
+    18.969817,
+    18.997177,
+    18.656731999999998,
+    19.659534,
+    20.486596
+   ],
+   "fastq_ms_med": 18.540866,
+   "fastq_ms_med_per_seed": [
+    18.479440999999998,
+    18.398650999999997,
+    18.222391000000002,
+    19.019168999999998,
+    18.846194
+   ],
+   "fastq_repmin_ms_med": 15.170783,
+   "met_frac": 0.9655172413793104,
+   "met_frac_with_fastq": 0.9655172413793104,
+   "qc71_ms_max": 347.346878,
+   "qc71_ms_med": 337.48680800000005,
+   "relerr_max": 1.4245000179834307e-13,
+   "relerr_x0_condensedqp_max": 6.053796487923652e-14,
+   "samples": 145,
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "speedup_med": 18.120333500255384,
+   "step_ms_max": 235.989797,
+   "step_ms_med": 118.40652299999999
+  }
+ },
+ "script_sha256": [
+  "49287bb794427cb00c0bd076c84c48a521f911baa6e72e70ebfda8d9a4ba7485"
+ ],
+ "seeds_info": [
+  {
+   "edges": 14224,
+   "inputs": 102520,
+   "load": {
+    "before_e106": [
+     1.37,
+     0.44,
+     0.15
+    ],
+    "before_inloop": [
+     1.62,
+     0.59,
+     0.21
+    ],
+    "end": [
+     1.91,
+     0.76,
+     0.28
+    ],
+    "start": [
+     1.37,
+     0.44,
+     0.15
+    ]
+   },
+   "meta": {
+    "affinity": "core 0 of exclusive node",
+    "commit": "8707b6cd4e7a2b04b97031e8b60e145c57c664fe",
+    "commit_note": "ecc-combined",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T15:52:51",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0711a-s30.ufhpc",
+    "job": "50488099",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "49287bb794427cb00c0bd076c84c48a521f911baa6e72e70ebfda8d9a4ba7485",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4071,
+   "seconds": 69.62537002563477,
+   "seed": 1,
+   "teams": 339
+  },
+  {
+   "edges": 13948,
+   "inputs": 100850,
+   "load": {
+    "before_e106": [
+     1.37,
+     0.44,
+     0.15
+    ],
+    "before_inloop": [
+     1.62,
+     0.59,
+     0.21
+    ],
+    "end": [
+     1.91,
+     0.76,
+     0.28
+    ],
+    "start": [
+     1.37,
+     0.44,
+     0.15
+    ]
+   },
+   "meta": {
+    "affinity": "core 16 of exclusive node",
+    "commit": "8707b6cd4e7a2b04b97031e8b60e145c57c664fe",
+    "commit_note": "ecc-combined",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T15:52:52",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0711a-s30.ufhpc",
+    "job": "50488099",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "49287bb794427cb00c0bd076c84c48a521f911baa6e72e70ebfda8d9a4ba7485",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4046,
+   "seconds": 70.2617290019989,
+   "seed": 2,
+   "teams": 337
+  },
+  {
+   "edges": 14194,
+   "inputs": 101510,
+   "load": {
+    "before_e106": [
+     2.79,
+     1.4,
+     0.55
+    ],
+    "before_inloop": [
+     2.47,
+     1.46,
+     0.6
+    ],
+    "end": [
+     2.29,
+     1.52,
+     0.65
+    ],
+    "start": [
+     2.79,
+     1.4,
+     0.55
+    ]
+   },
+   "meta": {
+    "affinity": "core 0 of exclusive node",
+    "commit": "8707b6cd4e7a2b04b97031e8b60e145c57c664fe",
+    "commit_note": "ecc-combined",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T15:55:18",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0711a-s30.ufhpc",
+    "job": "50488100",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "49287bb794427cb00c0bd076c84c48a521f911baa6e72e70ebfda8d9a4ba7485",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4071,
+   "seconds": 70.51148509979248,
+   "seed": 3,
+   "teams": 339
+  },
+  {
+   "edges": 14305,
+   "inputs": 103670,
+   "load": {
+    "before_e106": [
+     2.79,
+     1.4,
+     0.55
+    ],
+    "before_inloop": [
+     2.47,
+     1.46,
+     0.6
+    ],
+    "end": [
+     2.29,
+     1.52,
+     0.65
+    ],
+    "start": [
+     2.79,
+     1.4,
+     0.55
+    ]
+   },
+   "meta": {
+    "affinity": "core 16 of exclusive node",
+    "commit": "8707b6cd4e7a2b04b97031e8b60e145c57c664fe",
+    "commit_note": "ecc-combined",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T15:55:18",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0711a-s30.ufhpc",
+    "job": "50488100",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "49287bb794427cb00c0bd076c84c48a521f911baa6e72e70ebfda8d9a4ba7485",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4067,
+   "seconds": 70.60633993148804,
+   "seed": 4,
+   "teams": 339
+  },
+  {
+   "edges": 14347,
+   "inputs": 104450,
+   "load": {
+    "before_e106": [
+     1.55,
+     1.44,
+     0.7
+    ],
+    "before_inloop": [
+     1.45,
+     1.43,
+     0.72
+    ],
+    "end": [
+     1.25,
+     1.38,
+     0.74
+    ],
+    "start": [
+     1.55,
+     1.44,
+     0.7
+    ]
+   },
+   "meta": {
+    "affinity": "core 0 of exclusive node",
+    "commit": "8707b6cd4e7a2b04b97031e8b60e145c57c664fe",
+    "commit_note": "ecc-combined",
+    "cpu": "AMD EPYC 75F3 32-Core Processor",
+    "date": "2026-11-09T15:57:51",
+    "env": {
+     "BENCH_DISC": "zoh",
+     "BENCH_FLEET": "dronecar",
+     "BENCH_INSTANCE": "natural",
+     "E71_CERT_IN_STEP": "1",
+     "E71_FALLBACK": "shift"
+    },
+    "exclusive": true,
+    "host": "c0711a-s30.ufhpc",
+    "job": "50488101",
+    "julia": "1.12.6",
+    "partition": "hpg-dev",
+    "script_sha256": "49287bb794427cb00c0bd076c84c48a521f911baa6e72e70ebfda8d9a4ba7485",
+    "teammpc": {
+     "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+     "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+     "teammpc_version": "0.1.0"
+    },
+    "threads": 1
+   },
+   "n": 4069,
+   "seconds": 73.7848551273346,
+   "seed": 5,
+   "teams": 339
+  }
+ ],
+ "tolerance": 1.0e-10
+}

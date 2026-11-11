@@ -1,0 +1,2261 @@
+{
+ "communication": {
+  "admm_full": "b rounds per sample (one per iteration), interface floats both ways per iteration (DistributedMPC.floats)",
+  "admm_quot": "b + 2 rounds per sample: gather inside every row (6 n floats), b rounds between the rows' agents (quotient interface floats), broadcast inside every row (3 n floats)",
+  "coordinated": "2 rounds per sample: states up (6 n floats), inputs down (3 n floats)",
+  "decentralized": "0 rounds (neighbours sensed)",
+  "team_central": "2 rounds per sample: states up (6 n floats), team inputs down (3 n floats); averaging and lift at the central computer"
+ },
+ "experiment": "E52 consensus ADMM on the fleet vs on the quotient of the rows",
+ "meta": {
+  "array_jobs": [
+   ""
+  ],
+  "commit": [
+   "",
+   "8549f841ddf2f9fb8e71a7d7cc847b9840bfd502"
+  ],
+  "cpus": [
+   "AMD EPYC 75F3 32-Core Processor",
+   "AMD EPYC 7702 64-Core Processor"
+  ],
+  "exclusive": [
+   "",
+   "true"
+  ],
+  "hosts": [
+   "c0703a-s3.ufhpc",
+   "c0710a-s30.ufhpc"
+  ],
+  "jobs": [
+   "49182449",
+   "50323580"
+  ],
+  "julia": [
+   "1.12.6"
+  ],
+  "partdir": "1024 and 4096: /blue/fairbanksj/itaykadosh/e52r/parts (job 50323580); 256: /blue/fairbanksj/itaykadosh/e5x/parts52 (job 49182449, shared hpg-default node, not rerun)",
+  "partition": [
+   "",
+   "hpg-dev"
+  ],
+  "rho_source": [
+   "",
+   "tuned by the November E5x run (jobs 49182450, 49182451), seed 1, cold start to 1e-3"
+  ],
+  "teammpc_repo_rev": [
+   "",
+   "baa542bf62cb2c469511469bd091ed24ad7657f7"
+  ],
+  "teammpc_version": [
+   "",
+   "0.1.0"
+  ],
+  "tree": [
+   "",
+   "/blue/fairbanksj/itaykadosh/e52r/tree"
+  ]
+ },
+ "period_ms": 200.0,
+ "sizes": {
+  "1024": {
+   "coord_ms_med": 485.413642,
+   "loops": {
+    "full_b1": {
+     "agents": 1024,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0541087777077354,
+     "cost_ratio_med": 1.0239037246365656,
+     "cost_ratio_seeds": [
+      1.0239037246365656,
+      1.019023958759592,
+      1.0170778349018863,
+      1.053237257234493,
+      1.0541087777077354
+     ],
+     "floats_med": 178560.0,
+     "local_failures": 0,
+     "par_ms_max": 40.55243792675781,
+     "par_ms_med": 0.2536428457031249,
+     "par_ms_seeds": [
+      0.25556476855468735,
+      0.22069837500000009,
+      0.2536428457031249,
+      0.2226958945312502,
+      0.3115645859375001
+     ],
+     "rounds": 1,
+     "seq_ms_med": 131.999794,
+     "seq_ms_seeds": [
+      138.25721099999998,
+      131.999794,
+      106.979055,
+      126.51300800000001,
+      156.769624
+     ],
+     "sub_max": 0.7690080111254921,
+     "sub_med": 0.011248793908607377
+    },
+    "full_b10": {
+     "agents": 1024,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000342256164425,
+     "cost_ratio_med": 1.0000054504081335,
+     "cost_ratio_seeds": [
+      0.9999926153572056,
+      1.0000230697570318,
+      1.0000054504081335,
+      0.9999352736225721,
+      1.0000342256164425
+     ],
+     "floats_med": 1785600.0,
+     "local_failures": 0,
+     "par_ms_max": 48.724865952148434,
+     "par_ms_med": 1.4938292763671923,
+     "par_ms_seeds": [
+      1.4070183632812492,
+      1.6142810966796852,
+      1.2434306152343737,
+      1.4938292763671923,
+      1.5495261923828074
+     ],
+     "rounds": 10,
+     "seq_ms_med": 923.183159,
+     "seq_ms_seeds": [
+      923.183159,
+      1109.607677,
+      897.305421,
+      897.512263,
+      1095.247047
+     ],
+     "sub_max": 0.00020547575905837667,
+     "sub_med": 2.879727134279781e-07
+    },
+    "full_b2": {
+     "agents": 1024,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0115926939611768,
+     "cost_ratio_med": 1.0065017964684198,
+     "cost_ratio_seeds": [
+      1.006040968157041,
+      1.0065017964684198,
+      1.0046491900051508,
+      1.0115926939611768,
+      1.0106448006089541
+     ],
+     "floats_med": 357120.0,
+     "local_failures": 0,
+     "par_ms_max": 50.34573589355469,
+     "par_ms_med": 0.3858910556640625,
+     "par_ms_seeds": [
+      0.3796276259765628,
+      0.3858910556640625,
+      0.3573298193359375,
+      0.38780900195312495,
+      0.4009820195312495
+     ],
+     "rounds": 2,
+     "seq_ms_med": 243.84017599999999,
+     "seq_ms_seeds": [
+      243.84017599999999,
+      243.99249,
+      190.46739200000002,
+      192.85175099999998,
+      273.533589
+     ],
+     "sub_max": 0.17359919739772892,
+     "sub_med": 0.002082620998180313
+    },
+    "full_b20": {
+     "agents": 1024,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.000000465597642,
+     "cost_ratio_med": 0.999998937058988,
+     "cost_ratio_seeds": [
+      0.9999997036293781,
+      1.000000465597642,
+      0.999998937058988,
+      0.9999977647997534,
+      0.9999949900474367
+     ],
+     "floats_med": 3571200.0,
+     "local_failures": 0,
+     "par_ms_max": 59.923759860351566,
+     "par_ms_med": 2.838260410156248,
+     "par_ms_seeds": [
+      2.544514120117191,
+      3.286961708984376,
+      2.838260410156248,
+      2.670377568359376,
+      3.4752518486328077
+     ],
+     "rounds": 20,
+     "seq_ms_med": 1807.189004,
+     "seq_ms_seeds": [
+      1782.279352,
+      1993.140474,
+      1753.538011,
+      1807.189004,
+      1956.544433
+     ],
+     "sub_max": 1.3305097677888122e-07,
+     "sub_med": 2.4670925144753695e-10
+    },
+    "full_b5": {
+     "agents": 1024,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0006662607164818,
+     "cost_ratio_med": 1.0003720616934437,
+     "cost_ratio_seeds": [
+      0.9999712698478154,
+      1.0003720616934437,
+      1.0003574209333712,
+      1.0006662607164818,
+      1.0003982365321828
+     ],
+     "floats_med": 892800.0,
+     "local_failures": 0,
+     "par_ms_max": 50.76653071972657,
+     "par_ms_med": 0.8551577998046862,
+     "par_ms_seeds": [
+      0.8387796572265637,
+      0.8527746044921871,
+      1.004543950195312,
+      0.8551577998046862,
+      0.88304262890625
+     ],
+     "rounds": 5,
+     "seq_ms_med": 510.51344,
+     "seq_ms_seeds": [
+      510.51344,
+      602.670482,
+      458.633337,
+      471.55332100000004,
+      620.299024
+     ],
+     "sub_max": 0.006326740193719558,
+     "sub_med": 8.823501880566178e-05
+    },
+    "full_b50": {
+     "agents": 1024,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000000192909386,
+     "cost_ratio_med": 0.9999999921061627,
+     "cost_ratio_seeds": [
+      0.9999999164951322,
+      0.9999999921061627,
+      1.0000000112091783,
+      1.0000000192909386,
+      0.9999997352284306
+     ],
+     "floats_med": 8928000.0,
+     "local_failures": 0,
+     "par_ms_max": 56.37098230566409,
+     "par_ms_med": 31.009533551757805,
+     "par_ms_seeds": [
+      30.182240783203095,
+      31.28514113769533,
+      31.009533551757805,
+      30.32995001367183,
+      32.94043827148439
+     ],
+     "rounds": 50,
+     "seq_ms_med": 4382.132358,
+     "seq_ms_seeds": [
+      4382.132358,
+      4536.120276000001,
+      4315.4053269999995,
+      4293.569955999999,
+      4503.557847
+     ],
+     "sub_max": 1.0510766995496032e-07,
+     "sub_med": -2.800646929996647e-10
+    },
+    "quot_b1": {
+     "agents": 32,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0483831353523878,
+     "cost_ratio_med": 1.0247444364228258,
+     "cost_ratio_seeds": [
+      1.0090166606070294,
+      1.0247444364228258,
+      1.0167935012816258,
+      1.0483831353523878,
+      1.035444692770161
+     ],
+     "floats_med": 11696.0,
+     "local_failures": 0,
+     "par_ms_max": 1.49572175,
+     "par_ms_med": 0.40166015625,
+     "par_ms_seeds": [
+      0.38243778125,
+      0.50988984375,
+      0.40166015625,
+      0.39766165625,
+      0.410396125
+     ],
+     "rounds": 3,
+     "seq_ms_med": 2.5546049999999996,
+     "seq_ms_seeds": [
+      2.5546049999999996,
+      2.847863,
+      2.282677,
+      2.533726,
+      3.071121
+     ],
+     "sub_max": 0.3229622149899711,
+     "sub_med": 0.009949913518765088
+    },
+    "quot_b10": {
+     "agents": 32,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000165240413488,
+     "cost_ratio_med": 0.99999335438434,
+     "cost_ratio_seeds": [
+      0.99999335438434,
+      1.0000165240413488,
+      1.0000018275229376,
+      0.9999664629905186,
+      0.9999761560463875
+     ],
+     "floats_med": 34016.0,
+     "local_failures": 0,
+     "par_ms_max": 1.27551740625,
+     "par_ms_med": 0.8770449062499998,
+     "par_ms_seeds": [
+      0.7061970937500002,
+      0.9917395937499999,
+      0.70507309375,
+      0.8770449062499998,
+      0.9272019374999995
+     ],
+     "rounds": 12,
+     "seq_ms_med": 10.994967,
+     "seq_ms_seeds": [
+      10.38176,
+      14.785561,
+      10.196505,
+      10.994967,
+      14.094149
+     ],
+     "sub_max": 2.4393568400830995e-05,
+     "sub_med": 1.8937520029625438e-07
+    },
+    "quot_b2": {
+     "agents": 32,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.00832584302551,
+     "cost_ratio_med": 1.0055736494087433,
+     "cost_ratio_seeds": [
+      1.0008901081716792,
+      1.0055736494087433,
+      1.003217155812603,
+      1.00832584302551,
+      1.0059267715467775
+     ],
+     "floats_med": 14176.0,
+     "local_failures": 0,
+     "par_ms_max": 1.53902259375,
+     "par_ms_med": 0.4921069062499999,
+     "par_ms_seeds": [
+      0.416666,
+      0.6203981875,
+      0.5155058750000001,
+      0.47516959374999995,
+      0.4921069062499999
+     ],
+     "rounds": 4,
+     "seq_ms_med": 3.910982,
+     "seq_ms_seeds": [
+      3.4242410000000003,
+      4.701862,
+      3.114883,
+      3.910982,
+      4.627512
+     ],
+     "sub_max": 0.07007766662150741,
+     "sub_med": 0.0014647182348139498
+    },
+    "quot_b20": {
+     "agents": 32,
+     "bad_steps": 0,
+     "cost_ratio_max": 0.9999997389704746,
+     "cost_ratio_med": 0.9999993120705216,
+     "cost_ratio_seeds": [
+      0.9999997105617809,
+      0.9999997389704746,
+      0.9999993120705216,
+      0.9999984299743011,
+      0.9999976410502868
+     ],
+     "floats_med": 58816.0,
+     "local_failures": 0,
+     "par_ms_max": 1.7657017812499998,
+     "par_ms_med": 1.0658138125,
+     "par_ms_seeds": [
+      1.04491078125,
+      1.4076398750000005,
+      0.95843321875,
+      1.0658138125,
+      1.30131975
+     ],
+     "rounds": 22,
+     "seq_ms_med": 19.253339,
+     "seq_ms_seeds": [
+      19.253339,
+      23.514168,
+      18.493890999999998,
+      18.811514,
+      22.99428
+     ],
+     "sub_max": 1.49641796700381e-07,
+     "sub_med": 1.387192135387251e-10
+    },
+    "quot_b5": {
+     "agents": 32,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0003074161356535,
+     "cost_ratio_med": 1.0002184546154322,
+     "cost_ratio_seeds": [
+      0.9999446271826138,
+      1.0003074161356535,
+      1.0002184546154322,
+      1.0002314551186444,
+      1.0001690006572144
+     ],
+     "floats_med": 21616.0,
+     "local_failures": 0,
+     "par_ms_max": 1.56007146875,
+     "par_ms_med": 0.64487390625,
+     "par_ms_seeds": [
+      0.5296469374999999,
+      0.7994102500000001,
+      0.63429703125,
+      0.64487390625,
+      0.6796924687499998
+     ],
+     "rounds": 7,
+     "seq_ms_med": 6.552782,
+     "seq_ms_seeds": [
+      6.2035990000000005,
+      9.103501,
+      6.184864,
+      6.552782,
+      8.860254999999999
+     ],
+     "sub_max": 0.00447361894498776,
+     "sub_med": 2.7410913399252257e-05
+    },
+    "quot_b50": {
+     "agents": 32,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000000226047956,
+     "cost_ratio_med": 0.9999999916825135,
+     "cost_ratio_seeds": [
+      0.9999998836860065,
+      0.9999999916825135,
+      1.0000000226047956,
+      1.0000000187185534,
+      0.9999998793594174
+     ],
+     "floats_med": 133216.0,
+     "local_failures": 0,
+     "par_ms_max": 21.829717187500005,
+     "par_ms_med": 2.135221218749996,
+     "par_ms_seeds": [
+      2.0169780000000026,
+      2.3748848125000013,
+      1.9385761250000018,
+      2.135221218749996,
+      2.364173874999996
+     ],
+     "rounds": 52,
+     "seq_ms_med": 44.990190999999996,
+     "seq_ms_seeds": [
+      44.683475,
+      49.815397,
+      44.323937,
+      44.990190999999996,
+      49.060618
+     ],
+     "sub_max": 1.492513987660482e-07,
+     "sub_med": -1.5411660742476158e-13
+    }
+   },
+   "parts": [
+    {
+     "meta": {
+      "affinity": "pid 1308775's current affinity list: 24",
+      "array_job": "",
+      "blas_threads": 1,
+      "commit": "8549f841ddf2f9fb8e71a7d7cc847b9840bfd502",
+      "cone": "soc",
+      "cpu": "AMD EPYC 75F3 32-Core Processor",
+      "disc": "zoh",
+      "exclusive": true,
+      "fleet": "dronecar",
+      "het": false,
+      "host": "c0710a-s30.ufhpc",
+      "job": "50323580",
+      "julia": "1.12.6",
+      "layout": "rows",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "partition": "hpg-dev",
+      "rho_source": "tuned by the November E5x run (jobs 49182450, 49182451), seed 1, cold start to 1e-3",
+      "teammpc_dirty": false,
+      "teammpc_path": "/home/itaykadosh/.julia/packages/TeamMPC/XlUfn",
+      "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+      "teammpc_rev": "unknown",
+      "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+      "teammpc_version": "0.1.0",
+      "slurm_job": "50323580",
+      "steps": 30,
+      "teams": "cr",
+      "threads": 1,
+      "tree": "/blue/fairbanksj/itaykadosh/e52r/tree",
+      "umax_car": 0.4
+     },
+     "seed": 1
+    },
+    {
+     "meta": {
+      "affinity": "pid 1308778's current affinity list: 32",
+      "array_job": "",
+      "blas_threads": 1,
+      "commit": "8549f841ddf2f9fb8e71a7d7cc847b9840bfd502",
+      "cone": "soc",
+      "cpu": "AMD EPYC 75F3 32-Core Processor",
+      "disc": "zoh",
+      "exclusive": true,
+      "fleet": "dronecar",
+      "het": false,
+      "host": "c0710a-s30.ufhpc",
+      "job": "50323580",
+      "julia": "1.12.6",
+      "layout": "rows",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "partition": "hpg-dev",
+      "rho_source": "tuned by the November E5x run (jobs 49182450, 49182451), seed 1, cold start to 1e-3",
+      "teammpc_dirty": false,
+      "teammpc_path": "/home/itaykadosh/.julia/packages/TeamMPC/XlUfn",
+      "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+      "teammpc_rev": "unknown",
+      "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+      "teammpc_version": "0.1.0",
+      "slurm_job": "50323580",
+      "steps": 30,
+      "teams": "cr",
+      "threads": 1,
+      "tree": "/blue/fairbanksj/itaykadosh/e52r/tree",
+      "umax_car": 0.4
+     },
+     "seed": 2
+    },
+    {
+     "meta": {
+      "affinity": "pid 1308780's current affinity list: 40",
+      "array_job": "",
+      "blas_threads": 1,
+      "commit": "8549f841ddf2f9fb8e71a7d7cc847b9840bfd502",
+      "cone": "soc",
+      "cpu": "AMD EPYC 75F3 32-Core Processor",
+      "disc": "zoh",
+      "exclusive": true,
+      "fleet": "dronecar",
+      "het": false,
+      "host": "c0710a-s30.ufhpc",
+      "job": "50323580",
+      "julia": "1.12.6",
+      "layout": "rows",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "partition": "hpg-dev",
+      "rho_source": "tuned by the November E5x run (jobs 49182450, 49182451), seed 1, cold start to 1e-3",
+      "teammpc_dirty": false,
+      "teammpc_path": "/home/itaykadosh/.julia/packages/TeamMPC/XlUfn",
+      "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+      "teammpc_rev": "unknown",
+      "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+      "teammpc_version": "0.1.0",
+      "slurm_job": "50323580",
+      "steps": 30,
+      "teams": "cr",
+      "threads": 1,
+      "tree": "/blue/fairbanksj/itaykadosh/e52r/tree",
+      "umax_car": 0.4
+     },
+     "seed": 3
+    },
+    {
+     "meta": {
+      "affinity": "pid 1308783's current affinity list: 48",
+      "array_job": "",
+      "blas_threads": 1,
+      "commit": "8549f841ddf2f9fb8e71a7d7cc847b9840bfd502",
+      "cone": "soc",
+      "cpu": "AMD EPYC 75F3 32-Core Processor",
+      "disc": "zoh",
+      "exclusive": true,
+      "fleet": "dronecar",
+      "het": false,
+      "host": "c0710a-s30.ufhpc",
+      "job": "50323580",
+      "julia": "1.12.6",
+      "layout": "rows",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "partition": "hpg-dev",
+      "rho_source": "tuned by the November E5x run (jobs 49182450, 49182451), seed 1, cold start to 1e-3",
+      "teammpc_dirty": false,
+      "teammpc_path": "/home/itaykadosh/.julia/packages/TeamMPC/XlUfn",
+      "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+      "teammpc_rev": "unknown",
+      "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+      "teammpc_version": "0.1.0",
+      "slurm_job": "50323580",
+      "steps": 30,
+      "teams": "cr",
+      "threads": 1,
+      "tree": "/blue/fairbanksj/itaykadosh/e52r/tree",
+      "umax_car": 0.4
+     },
+     "seed": 4
+    },
+    {
+     "meta": {
+      "affinity": "pid 1308785's current affinity list: 56",
+      "array_job": "",
+      "blas_threads": 1,
+      "commit": "8549f841ddf2f9fb8e71a7d7cc847b9840bfd502",
+      "cone": "soc",
+      "cpu": "AMD EPYC 75F3 32-Core Processor",
+      "disc": "zoh",
+      "exclusive": true,
+      "fleet": "dronecar",
+      "het": false,
+      "host": "c0710a-s30.ufhpc",
+      "job": "50323580",
+      "julia": "1.12.6",
+      "layout": "rows",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "partition": "hpg-dev",
+      "rho_source": "tuned by the November E5x run (jobs 49182450, 49182451), seed 1, cold start to 1e-3",
+      "teammpc_dirty": false,
+      "teammpc_path": "/home/itaykadosh/.julia/packages/TeamMPC/XlUfn",
+      "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+      "teammpc_rev": "unknown",
+      "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+      "teammpc_version": "0.1.0",
+      "slurm_job": "50323580",
+      "steps": 30,
+      "teams": "cr",
+      "threads": 1,
+      "tree": "/blue/fairbanksj/itaykadosh/e52r/tree",
+      "umax_car": 0.4
+     },
+     "seed": 5
+    }
+   ],
+   "rho": {
+    "full": 0.3,
+    "quot": 10.0
+   },
+   "rows": 32,
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "trace": {
+    "full_step0": {
+     "0.0001": {
+      "iter_max": 22,
+      "iter_med": 20.0,
+      "iter_seeds": [
+       22,
+       22,
+       18,
+       20,
+       19
+      ],
+      "par_s_med": 0.0075382500000000015,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 18,
+      "iter_med": 16.0,
+      "iter_seeds": [
+       18,
+       18,
+       15,
+       16,
+       15
+      ],
+      "par_s_med": 0.006912802000000001,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 14,
+      "iter_med": 13.0,
+      "iter_seeds": [
+       14,
+       13,
+       12,
+       13,
+       12
+      ],
+      "par_s_med": 0.005956273999999999,
+      "unreached": 0
+     }
+    },
+    "full_step10": {
+     "0.0001": {
+      "iter_max": 23,
+      "iter_med": 20.0,
+      "iter_seeds": [
+       23,
+       19,
+       20,
+       21,
+       19
+      ],
+      "par_s_med": 0.006336579,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 19,
+      "iter_med": 16.0,
+      "iter_seeds": [
+       19,
+       15,
+       16,
+       17,
+       15
+      ],
+      "par_s_med": 0.005825209999999999,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 15,
+      "iter_med": 12.0,
+      "iter_seeds": [
+       15,
+       11,
+       11,
+       12,
+       12
+      ],
+      "par_s_med": 0.005232329000000001,
+      "unreached": 0
+     }
+    },
+    "full_step20": {
+     "0.0001": {
+      "iter_max": 24,
+      "iter_med": 19.0,
+      "iter_seeds": [
+       24,
+       18,
+       22,
+       19,
+       18
+      ],
+      "par_s_med": 0.0066115390000000005,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 20,
+      "iter_med": 15.0,
+      "iter_seeds": [
+       20,
+       13,
+       18,
+       15,
+       14
+      ],
+      "par_s_med": 0.005848854,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 16,
+      "iter_med": 11.0,
+      "iter_seeds": [
+       16,
+       9,
+       14,
+       11,
+       11
+      ],
+      "par_s_med": 0.004974030000000001,
+      "unreached": 0
+     }
+    },
+    "quot_step0": {
+     "0.0001": {
+      "iter_max": 11,
+      "iter_med": 11.0,
+      "iter_seeds": [
+       11,
+       11,
+       10,
+       11,
+       11
+      ],
+      "par_s_med": 0.001170287,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 8,
+      "iter_med": 8.0,
+      "iter_seeds": [
+       7,
+       6,
+       8,
+       8,
+       8
+      ],
+      "par_s_med": 0.0009617270000000001,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 5,
+      "iter_med": 5.0,
+      "iter_seeds": [
+       5,
+       5,
+       4,
+       5,
+       5
+      ],
+      "par_s_med": 0.000723573,
+      "unreached": 0
+     }
+    },
+    "quot_step10": {
+     "0.0001": {
+      "iter_max": 15,
+      "iter_med": 13.0,
+      "iter_seeds": [
+       15,
+       12,
+       13,
+       14,
+       12
+      ],
+      "par_s_med": 0.0013274410000000002,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 11,
+      "iter_med": 9.0,
+      "iter_seeds": [
+       11,
+       7,
+       7,
+       9,
+       10
+      ],
+      "par_s_med": 0.001070323,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 6,
+      "iter_med": 6.0,
+      "iter_seeds": [
+       6,
+       5,
+       6,
+       6,
+       5
+      ],
+      "par_s_med": 0.000793604,
+      "unreached": 0
+     }
+    },
+    "quot_step20": {
+     "0.0001": {
+      "iter_max": 17,
+      "iter_med": 14.0,
+      "iter_seeds": [
+       17,
+       12,
+       16,
+       14,
+       13
+      ],
+      "par_s_med": 0.0013015749999999997,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 13,
+      "iter_med": 10.0,
+      "iter_seeds": [
+       13,
+       6,
+       12,
+       9,
+       10
+      ],
+      "par_s_med": 0.001141159,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 8,
+      "iter_med": 6.0,
+      "iter_seeds": [
+       8,
+       5,
+       7,
+       6,
+       6
+      ],
+      "par_s_med": 0.0008322759999999998,
+      "unreached": 0
+     }
+    }
+   }
+  },
+  "256": {
+   "coord_ms_med": 75.234909,
+   "loops": {
+    "full_b1": {
+     "agents": 256,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0229956858571194,
+     "cost_ratio_med": 1.0184361380788478,
+     "cost_ratio_seeds": [
+      1.0229956858571194,
+      1.0184361380788478,
+      1.0168337389120454
+     ],
+     "floats_med": 43200.0,
+     "local_failures": 0,
+     "par_ms_max": 359.20419516406247,
+     "par_ms_med": 0.37679101953125005,
+     "par_ms_seeds": [
+      0.37679101953125005,
+      0.38449409375000004,
+      0.33410145312499995
+     ],
+     "rounds": 1,
+     "seq_ms_med": 45.824506,
+     "seq_ms_seeds": [
+      45.824506,
+      46.131522000000004,
+      35.662472
+     ],
+     "sub_max": 0.3263356928747178,
+     "sub_med": 0.01519339312283998
+    },
+    "full_b10": {
+     "agents": 256,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000242509361046,
+     "cost_ratio_med": 1.0000061971482561,
+     "cost_ratio_seeds": [
+      0.9999932754431063,
+      1.0000242509361046,
+      1.0000061971482561
+     ],
+     "floats_med": 432000.0,
+     "local_failures": 0,
+     "par_ms_max": 4.129283984375002,
+     "par_ms_med": 3.067925566406254,
+     "par_ms_seeds": [
+      3.3457992851562492,
+      3.067925566406254,
+      2.800981832031251
+     ],
+     "rounds": 10,
+     "seq_ms_med": 331.59398899999997,
+     "seq_ms_seeds": [
+      331.59398899999997,
+      383.50581900000003,
+      302.24418199999997
+     ],
+     "sub_max": 3.4799643077916706e-05,
+     "sub_med": 2.5927583365849686e-07
+    },
+    "full_b2": {
+     "agents": 256,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0062706084132353,
+     "cost_ratio_med": 1.0056037096462458,
+     "cost_ratio_seeds": [
+      1.0056037096462458,
+      1.0062706084132353,
+      1.0045018936003494
+     ],
+     "floats_med": 86400.0,
+     "local_failures": 0,
+     "par_ms_max": 1.4483312304687501,
+     "par_ms_med": 0.7317673203125002,
+     "par_ms_seeds": [
+      0.7317673203125002,
+      0.7451108007812499,
+      0.5171559179687502
+     ],
+     "rounds": 2,
+     "seq_ms_med": 85.391937,
+     "seq_ms_seeds": [
+      85.391937,
+      87.57768200000001,
+      65.04755399999999
+     ],
+     "sub_max": 0.09773561483115709,
+     "sub_med": 0.0020123560475090933
+    },
+    "full_b20": {
+     "agents": 256,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000004559693254,
+     "cost_ratio_med": 0.9999997692991351,
+     "cost_ratio_seeds": [
+      0.9999997692991351,
+      1.0000004559693254,
+      0.999999006917905
+     ],
+     "floats_med": 864000.0,
+     "local_failures": 0,
+     "par_ms_max": 62.79737255859374,
+     "par_ms_med": 6.199218476562498,
+     "par_ms_seeds": [
+      6.271216328124989,
+      6.199218476562498,
+      5.715409648437506
+     ],
+     "rounds": 20,
+     "seq_ms_med": 651.638242,
+     "seq_ms_seeds": [
+      651.638242,
+      687.31709,
+      594.960869
+     ],
+     "sub_max": 1.2828285792200388e-07,
+     "sub_med": 2.4724903140563165e-10
+    },
+    "full_b5": {
+     "agents": 256,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0003647525322428,
+     "cost_ratio_med": 1.0003459571173916,
+     "cost_ratio_seeds": [
+      0.9999557829586767,
+      1.0003647525322428,
+      1.0003459571173916
+     ],
+     "floats_med": 216000.0,
+     "local_failures": 0,
+     "par_ms_max": 55.44845540625,
+     "par_ms_med": 1.4573422460937508,
+     "par_ms_seeds": [
+      1.4573422460937508,
+      1.7491871523437492,
+      1.4430023046875002
+     ],
+     "rounds": 5,
+     "seq_ms_med": 177.469677,
+     "seq_ms_seeds": [
+      177.469677,
+      209.606191,
+      153.817709
+     ],
+     "sub_max": 0.006098133002399945,
+     "sub_med": 5.3285767850632485e-05
+    },
+    "full_b50": {
+     "agents": 256,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.000000035193703,
+     "cost_ratio_med": 0.9999999962805114,
+     "cost_ratio_seeds": [
+      0.9999998907358162,
+      0.9999999962805114,
+      1.000000035193703
+     ],
+     "floats_med": 2160000.0,
+     "local_failures": 0,
+     "par_ms_max": 64.07122883593752,
+     "par_ms_med": 14.649187226562495,
+     "par_ms_seeds": [
+      14.078206019531248,
+      15.10065358593754,
+      14.649187226562495
+     ],
+     "rounds": 50,
+     "seq_ms_med": 1487.471615,
+     "seq_ms_seeds": [
+      1487.471615,
+      1557.84277,
+      1455.889852
+     ],
+     "sub_max": 1.0295047712811724e-07,
+     "sub_med": -5.5383308592189396e-11
+    },
+    "quot_b1": {
+     "agents": 16,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0402886273322207,
+     "cost_ratio_med": 1.0316466043148702,
+     "cost_ratio_seeds": [
+      1.009858506208274,
+      1.0402886273322207,
+      1.0316466043148702
+     ],
+     "floats_med": 3504.0,
+     "local_failures": 0,
+     "par_ms_max": 0.5797994375,
+     "par_ms_med": 0.23551381250000003,
+     "par_ms_seeds": [
+      0.23551381250000003,
+      0.28733824999999996,
+      0.23050962500000002
+     ],
+     "rounds": 3,
+     "seq_ms_med": 1.5841640000000001,
+     "seq_ms_seeds": [
+      1.5841640000000001,
+      1.9033870000000002,
+      1.568065
+     ],
+     "sub_max": 0.3650290590308139,
+     "sub_med": 0.018420892752378175
+    },
+    "quot_b10": {
+     "agents": 16,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0001022460046658,
+     "cost_ratio_med": 1.0000675996983999,
+     "cost_ratio_seeds": [
+      0.9999726484283034,
+      1.0001022460046658,
+      1.0000675996983999
+     ],
+     "floats_med": 14304.0,
+     "local_failures": 0,
+     "par_ms_max": 1.7793366249999996,
+     "par_ms_med": 0.9238515625,
+     "par_ms_seeds": [
+      0.9238515625,
+      1.2319518125000002,
+      0.5815557499999999
+     ],
+     "rounds": 12,
+     "seq_ms_med": 7.819043,
+     "seq_ms_seeds": [
+      7.819043,
+      10.734887,
+      6.4854709999999995
+     ],
+     "sub_max": 0.00045276205740604915,
+     "sub_med": 4.476054876393132e-06
+    },
+    "quot_b2": {
+     "agents": 16,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0159351353429116,
+     "cost_ratio_med": 1.007907271203291,
+     "cost_ratio_seeds": [
+      1.0010737922897377,
+      1.0159351353429116,
+      1.007907271203291
+     ],
+     "floats_med": 4704.0,
+     "local_failures": 0,
+     "par_ms_max": 0.7260929374999999,
+     "par_ms_med": 0.380922875,
+     "par_ms_seeds": [
+      0.31759387499999997,
+      0.39921625,
+      0.380922875
+     ],
+     "rounds": 4,
+     "seq_ms_med": 2.7437,
+     "seq_ms_seeds": [
+      2.236293,
+      3.0116650000000003,
+      2.7437
+     ],
+     "sub_max": 0.15945258753753708,
+     "sub_med": 0.0030703828203242087
+    },
+    "quot_b20": {
+     "agents": 16,
+     "bad_steps": 0,
+     "cost_ratio_max": 0.9999981012745662,
+     "cost_ratio_med": 0.9999973588507298,
+     "cost_ratio_seeds": [
+      0.9999973588507298,
+      0.9999981012745662,
+      0.9999970921800747
+     ],
+     "floats_med": 26304.0,
+     "local_failures": 0,
+     "par_ms_max": 2.664972,
+     "par_ms_med": 1.5024832500000005,
+     "par_ms_seeds": [
+      1.2504903749999994,
+      1.710063062500001,
+      1.5024832500000005
+     ],
+     "rounds": 22,
+     "seq_ms_med": 13.717942,
+     "seq_ms_seeds": [
+      13.542997999999999,
+      16.696042,
+      13.717942
+     ],
+     "sub_max": 1.960084847623957e-06,
+     "sub_med": 3.1517306227292346e-08
+    },
+    "quot_b5": {
+     "agents": 16,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.001350500337812,
+     "cost_ratio_med": 1.0007362962312338,
+     "cost_ratio_seeds": [
+      0.9999146173334337,
+      1.001350500337812,
+      1.0007362962312338
+     ],
+     "floats_med": 8304.0,
+     "local_failures": 0,
+     "par_ms_max": 0.9941757500000001,
+     "par_ms_med": 0.5291562499999999,
+     "par_ms_seeds": [
+      0.5291562499999999,
+      0.6634996250000004,
+      0.4506600625
+     ],
+     "rounds": 7,
+     "seq_ms_med": 4.207826000000001,
+     "seq_ms_seeds": [
+      4.207826000000001,
+      5.858518999999999,
+      3.731191
+     ],
+     "sub_max": 0.014608218764902217,
+     "sub_med": 0.0001767775928160129
+    },
+    "quot_b50": {
+     "agents": 16,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000000103790891,
+     "cost_ratio_med": 0.999999959910895,
+     "cost_ratio_seeds": [
+      0.9999999309496505,
+      0.999999959910895,
+      1.0000000103790891
+     ],
+     "floats_med": 62304.0,
+     "local_failures": 0,
+     "par_ms_max": 5.142537249999998,
+     "par_ms_med": 2.7999021249999996,
+     "par_ms_seeds": [
+      2.7999021249999996,
+      3.30588225,
+      2.6002742500000013
+     ],
+     "rounds": 52,
+     "seq_ms_med": 32.67299200000001,
+     "seq_ms_seeds": [
+      32.67299200000001,
+      35.571178,
+      30.46282
+     ],
+     "sub_max": 1.6033457547691008e-07,
+     "sub_med": -4.444301877210191e-12
+    }
+   },
+   "parts": [
+    {
+     "meta": {
+      "cone": "soc",
+      "cpu": "AMD EPYC 7702 64-Core Processor",
+      "disc": "zoh",
+      "host": "c0703a-s3.ufhpc",
+      "job": "49182449",
+      "julia": "1.12.6",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "steps": 30,
+      "threads": 1
+     },
+     "seed": 1
+    },
+    {
+     "meta": {
+      "cone": "soc",
+      "cpu": "AMD EPYC 7702 64-Core Processor",
+      "disc": "zoh",
+      "host": "c0703a-s3.ufhpc",
+      "job": "49182449",
+      "julia": "1.12.6",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "steps": 30,
+      "threads": 1
+     },
+     "seed": 2
+    },
+    {
+     "meta": {
+      "cone": "soc",
+      "cpu": "AMD EPYC 7702 64-Core Processor",
+      "disc": "zoh",
+      "host": "c0703a-s3.ufhpc",
+      "job": "49182449",
+      "julia": "1.12.6",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "steps": 30,
+      "threads": 1
+     },
+     "seed": 3
+    }
+   ],
+   "rho": {
+    "full": 0.3,
+    "quot": 3.0
+   },
+   "rows": 16,
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "trace": {
+    "full_step0": {
+     "0.0001": {
+      "iter_max": 19,
+      "iter_med": 19.0,
+      "iter_seeds": [
+       19,
+       19,
+       16
+      ],
+      "par_s_med": 0.009331694,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 15,
+      "iter_med": 15.0,
+      "iter_seeds": [
+       15,
+       15,
+       13
+      ],
+      "par_s_med": 0.007925442999999999,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 11,
+      "iter_med": 11.0,
+      "iter_seeds": [
+       11,
+       11,
+       10
+      ],
+      "par_s_med": 0.006615685,
+      "unreached": 0
+     }
+    },
+    "full_step10": {
+     "0.0001": {
+      "iter_max": 21,
+      "iter_med": 18.0,
+      "iter_seeds": [
+       21,
+       17,
+       18
+      ],
+      "par_s_med": 0.009079096,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 17,
+      "iter_med": 14.0,
+      "iter_seeds": [
+       17,
+       12,
+       14
+      ],
+      "par_s_med": 0.007582707000000002,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 12,
+      "iter_med": 9.0,
+      "iter_seeds": [
+       12,
+       9,
+       9
+      ],
+      "par_s_med": 0.0061552870000000015,
+      "unreached": 0
+     }
+    },
+    "full_step20": {
+     "0.0001": {
+      "iter_max": 22,
+      "iter_med": 20.0,
+      "iter_seeds": [
+       22,
+       16,
+       20
+      ],
+      "par_s_med": 0.008651998000000001,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 18,
+      "iter_med": 16.0,
+      "iter_seeds": [
+       18,
+       11,
+       16
+      ],
+      "par_s_med": 0.007520313000000001,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 13,
+      "iter_med": 11.0,
+      "iter_seeds": [
+       13,
+       8,
+       11
+      ],
+      "par_s_med": 0.006053107,
+      "unreached": 0
+     }
+    },
+    "quot_step0": {
+     "0.0001": {
+      "iter_max": 13,
+      "iter_med": 12.0,
+      "iter_seeds": [
+       10,
+       12,
+       13
+      ],
+      "par_s_med": 0.0013642600000000002,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 9,
+      "iter_med": 9.0,
+      "iter_seeds": [
+       7,
+       9,
+       9
+      ],
+      "par_s_med": 0.0010897530000000002,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 6,
+      "iter_med": 6.0,
+      "iter_seeds": [
+       4,
+       6,
+       6
+      ],
+      "par_s_med": 0.0007768440000000001,
+      "unreached": 0
+     }
+    },
+    "quot_step10": {
+     "0.0001": {
+      "iter_max": 14,
+      "iter_med": 13.0,
+      "iter_seeds": [
+       14,
+       13,
+       13
+      ],
+      "par_s_med": 0.0017516069999999999,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 9,
+      "iter_med": 9.0,
+      "iter_seeds": [
+       9,
+       9,
+       9
+      ],
+      "par_s_med": 0.001450519,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 6,
+      "iter_med": 6.0,
+      "iter_seeds": [
+       5,
+       6,
+       6
+      ],
+      "par_s_med": 0.0010330650000000001,
+      "unreached": 0
+     }
+    },
+    "quot_step20": {
+     "0.0001": {
+      "iter_max": 16,
+      "iter_med": 15.0,
+      "iter_seeds": [
+       16,
+       12,
+       15
+      ],
+      "par_s_med": 0.0018677010000000003,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 11,
+      "iter_med": 11.0,
+      "iter_seeds": [
+       11,
+       9,
+       11
+      ],
+      "par_s_med": 0.0016155470000000002,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 7,
+      "iter_med": 7.0,
+      "iter_seeds": [
+       7,
+       5,
+       7
+      ],
+      "par_s_med": 0.001271847,
+      "unreached": 0
+     }
+    }
+   }
+  },
+  "4096": {
+   "coord_ms_med": 3846.349961,
+   "loops": {
+    "full_b1": {
+     "agents": 4096,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0873725380242278,
+     "cost_ratio_med": 1.047613547717564,
+     "cost_ratio_seeds": [
+      1.0275999059636567,
+      1.047613547717564,
+      1.0873725380242278
+     ],
+     "floats_med": 725760.0,
+     "local_failures": 0,
+     "par_ms_max": 54.204835750976564,
+     "par_ms_med": 0.23314602001953139,
+     "par_ms_seeds": [
+      0.23314602001953139,
+      0.24948797900390632,
+      0.20087030566406247
+     ],
+     "rounds": 1,
+     "seq_ms_med": 545.8404300000001,
+     "seq_ms_seeds": [
+      537.8714679999999,
+      545.8404300000001,
+      547.5754430000001
+     ],
+     "sub_max": 0.3989230603974156,
+     "sub_med": 0.045740495890255625
+    },
+    "full_b10": {
+     "agents": 4096,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.00091926881175,
+     "cost_ratio_med": 1.0005307086761546,
+     "cost_ratio_seeds": [
+      0.9999181698617811,
+      1.00091926881175,
+      1.0005307086761546
+     ],
+     "floats_med": 7257600.0,
+     "local_failures": 0,
+     "par_ms_max": 67.97041117626954,
+     "par_ms_med": 3.0974676892089854,
+     "par_ms_seeds": [
+      3.7314769833984403,
+      3.0974676892089854,
+      3.067587291503907
+     ],
+     "rounds": 10,
+     "seq_ms_med": 3827.531042,
+     "seq_ms_seeds": [
+      3827.531042,
+      4941.900112,
+      3789.199066
+     ],
+     "sub_max": 0.009197468643310006,
+     "sub_med": 0.00010372064668484035
+    },
+    "full_b2": {
+     "agents": 4096,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0422955886256209,
+     "cost_ratio_med": 1.0241444150013408,
+     "cost_ratio_seeds": [
+      1.0062987500766536,
+      1.0422955886256209,
+      1.0241444150013408
+     ],
+     "floats_med": 1451520.0,
+     "local_failures": 0,
+     "par_ms_max": 57.87042222558593,
+     "par_ms_med": 0.6176757602539049,
+     "par_ms_seeds": [
+      0.5893853933105477,
+      0.6833587189941419,
+      0.6176757602539049
+     ],
+     "rounds": 2,
+     "seq_ms_med": 1021.392039,
+     "seq_ms_seeds": [
+      904.722944,
+      1027.9492930000001,
+      1021.392039
+     ],
+     "sub_max": 0.283052225145163,
+     "sub_med": 0.012264997474708633
+    },
+    "full_b20": {
+     "agents": 4096,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000489061265554,
+     "cost_ratio_med": 1.0000362720613714,
+     "cost_ratio_seeds": [
+      0.9999805561809664,
+      1.0000489061265554,
+      1.0000362720613714
+     ],
+     "floats_med": 14515200.0,
+     "local_failures": 0,
+     "par_ms_max": 64.19817200341797,
+     "par_ms_med": 61.18907559277343,
+     "par_ms_seeds": [
+      61.28547542456053,
+      55.9775774460449,
+      61.18907559277343
+     ],
+     "rounds": 20,
+     "seq_ms_med": 7532.741306,
+     "seq_ms_seeds": [
+      7532.741306,
+      8753.852719999999,
+      7482.982064
+     ],
+     "sub_max": 0.00021054630984608421,
+     "sub_med": 2.153639947037511e-06
+    },
+    "full_b5": {
+     "agents": 4096,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0074898028844603,
+     "cost_ratio_med": 1.003725899922322,
+     "cost_ratio_seeds": [
+      1.000245208200216,
+      1.0074898028844603,
+      1.003725899922322
+     ],
+     "floats_med": 3628800.0,
+     "local_failures": 0,
+     "par_ms_max": 77.83477563916014,
+     "par_ms_med": 1.4865683352050807,
+     "par_ms_seeds": [
+      1.4865683352050807,
+      1.5733750769042947,
+      1.3100563532714857
+     ],
+     "rounds": 5,
+     "seq_ms_med": 2017.52953,
+     "seq_ms_seeds": [
+      2017.52953,
+      2516.8277,
+      1960.42274
+     ],
+     "sub_max": 0.10186306267112888,
+     "sub_med": 0.0013501456330816527
+    },
+    "full_b50": {
+     "agents": 4096,
+     "bad_steps": 0,
+     "cost_ratio_max": 0.9999993529321752,
+     "cost_ratio_med": 0.9999982369710814,
+     "cost_ratio_seeds": [
+      0.9999993529321752,
+      0.999998060952487,
+      0.9999982369710814
+     ],
+     "floats_med": 36288000.0,
+     "local_failures": 0,
+     "par_ms_max": 177.08059088842782,
+     "par_ms_med": 92.55264612963873,
+     "par_ms_seeds": [
+      92.1226330334473,
+      92.55264612963873,
+      92.5648705056151
+     ],
+     "rounds": 50,
+     "seq_ms_med": 18526.281784,
+     "seq_ms_seeds": [
+      18469.412012,
+      20046.743264,
+      18526.281784
+     ],
+     "sub_max": 5.457715305124672e-08,
+     "sub_med": 2.217948615442997e-10
+    },
+    "quot_b1": {
+     "agents": 64,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0145359198607242,
+     "cost_ratio_med": 1.0127720912691538,
+     "cost_ratio_seeds": [
+      1.0145359198607242,
+      1.0127720912691538,
+      1.0100951361630726
+     ],
+     "floats_med": 41904.0,
+     "local_failures": 0,
+     "par_ms_max": 2.5681264531249997,
+     "par_ms_med": 1.993236734375,
+     "par_ms_seeds": [
+      2.031373453125,
+      1.993236734375,
+      1.7943027031249998
+     ],
+     "rounds": 3,
+     "seq_ms_med": 6.695884,
+     "seq_ms_seeds": [
+      6.695884,
+      6.786334000000001,
+      5.34618
+     ],
+     "sub_max": 0.20391096207483575,
+     "sub_med": 0.007800526947683987
+    },
+    "quot_b10": {
+     "agents": 64,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000143918936553,
+     "cost_ratio_med": 0.9999975932284575,
+     "cost_ratio_seeds": [
+      0.9999975932284575,
+      1.0000143918936553,
+      0.9999959676705628
+     ],
+     "floats_med": 87264.0,
+     "local_failures": 0,
+     "par_ms_max": 3.964033640625,
+     "par_ms_med": 2.4674393593749997,
+     "par_ms_seeds": [
+      2.4674393593749997,
+      2.54751015625,
+      2.1686293437499997
+     ],
+     "rounds": 12,
+     "seq_ms_med": 24.062445,
+     "seq_ms_seeds": [
+      24.062445,
+      30.030842000000003,
+      22.286403
+     ],
+     "sub_max": 1.288370319163144e-05,
+     "sub_med": 1.4146117890054234e-08
+    },
+    "quot_b2": {
+     "agents": 64,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0035327105896172,
+     "cost_ratio_med": 1.0016611158793531,
+     "cost_ratio_seeds": [
+      1.0035327105896172,
+      1.0015196824796853,
+      1.0016611158793531
+     ],
+     "floats_med": 46944.0,
+     "local_failures": 0,
+     "par_ms_max": 38.885186359375005,
+     "par_ms_med": 2.1072549687499995,
+     "par_ms_seeds": [
+      2.190356859375,
+      2.1072549687499995,
+      1.8708545156249998
+     ],
+     "rounds": 4,
+     "seq_ms_med": 9.038067,
+     "seq_ms_seeds": [
+      9.038067,
+      11.576201,
+      7.266908
+     ],
+     "sub_max": 0.06639162317448624,
+     "sub_med": 0.0007690906852240526
+    },
+    "quot_b20": {
+     "agents": 64,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000002284451426,
+     "cost_ratio_med": 1.0000002120124736,
+     "cost_ratio_seeds": [
+      0.9999999073006165,
+      1.0000002284451426,
+      1.0000002120124736
+     ],
+     "floats_med": 137664.0,
+     "local_failures": 0,
+     "par_ms_max": 39.346346625,
+     "par_ms_med": 2.7578066562500005,
+     "par_ms_seeds": [
+      2.7578066562500005,
+      2.860710078125001,
+      2.5798252187499986
+     ],
+     "rounds": 22,
+     "seq_ms_med": 41.305792000000004,
+     "seq_ms_seeds": [
+      41.305792000000004,
+      48.114704,
+      39.158594
+     ],
+     "sub_max": 6.845573876801285e-08,
+     "sub_med": 3.1268044783664087e-12
+    },
+    "quot_b5": {
+     "agents": 64,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000919961861794,
+     "cost_ratio_med": 0.9999889990581511,
+     "cost_ratio_seeds": [
+      0.9999817726719227,
+      0.9999889990581511,
+      1.0000919961861794
+     ],
+     "floats_med": 62064.0,
+     "local_failures": 0,
+     "par_ms_max": 3.0148178750000003,
+     "par_ms_med": 2.1932460156249998,
+     "par_ms_seeds": [
+      2.1932460156249998,
+      2.3007663750000003,
+      1.9158318281249997
+     ],
+     "rounds": 7,
+     "seq_ms_med": 14.721765000000001,
+     "seq_ms_seeds": [
+      14.721765000000001,
+      20.293902000000003,
+      12.433236
+     ],
+     "sub_max": 0.001250074803377211,
+     "sub_med": 2.396593974459688e-06
+    },
+    "quot_b50": {
+     "agents": 64,
+     "bad_steps": 0,
+     "cost_ratio_max": 1.0000002094426408,
+     "cost_ratio_med": 1.0000000001989977,
+     "cost_ratio_seeds": [
+      0.999999860222289,
+      1.0000000001989977,
+      1.0000002094426408
+     ],
+     "floats_med": 288864.0,
+     "local_failures": 0,
+     "par_ms_max": 4.995478015625001,
+     "par_ms_med": 3.8951557968749992,
+     "par_ms_seeds": [
+      3.8951557968749992,
+      4.000926343749998,
+      3.5372519843749965
+     ],
+     "rounds": 52,
+     "seq_ms_med": 95.090098,
+     "seq_ms_seeds": [
+      95.090098,
+      102.903934,
+      92.94142400000001
+     ],
+     "sub_max": 6.84419335673863e-08,
+     "sub_med": -3.4494431240614356e-14
+    }
+   },
+   "parts": [
+    {
+     "meta": {
+      "affinity": "pid 1308768's current affinity list: 0",
+      "array_job": "",
+      "blas_threads": 1,
+      "commit": "8549f841ddf2f9fb8e71a7d7cc847b9840bfd502",
+      "cone": "soc",
+      "cpu": "AMD EPYC 75F3 32-Core Processor",
+      "disc": "zoh",
+      "exclusive": true,
+      "fleet": "dronecar",
+      "het": false,
+      "host": "c0710a-s30.ufhpc",
+      "job": "50323580",
+      "julia": "1.12.6",
+      "layout": "rows",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "partition": "hpg-dev",
+      "rho_source": "tuned by the November E5x run (jobs 49182450, 49182451), seed 1, cold start to 1e-3",
+      "teammpc_dirty": false,
+      "teammpc_path": "/home/itaykadosh/.julia/packages/TeamMPC/XlUfn",
+      "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+      "teammpc_rev": "unknown",
+      "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+      "teammpc_version": "0.1.0",
+      "slurm_job": "50323580",
+      "steps": 30,
+      "teams": "cr",
+      "threads": 1,
+      "tree": "/blue/fairbanksj/itaykadosh/e52r/tree",
+      "umax_car": 0.4
+     },
+     "seed": 1
+    },
+    {
+     "meta": {
+      "affinity": "pid 1308770's current affinity list: 8",
+      "array_job": "",
+      "blas_threads": 1,
+      "commit": "8549f841ddf2f9fb8e71a7d7cc847b9840bfd502",
+      "cone": "soc",
+      "cpu": "AMD EPYC 75F3 32-Core Processor",
+      "disc": "zoh",
+      "exclusive": true,
+      "fleet": "dronecar",
+      "het": false,
+      "host": "c0710a-s30.ufhpc",
+      "job": "50323580",
+      "julia": "1.12.6",
+      "layout": "rows",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "partition": "hpg-dev",
+      "rho_source": "tuned by the November E5x run (jobs 49182450, 49182451), seed 1, cold start to 1e-3",
+      "teammpc_dirty": false,
+      "teammpc_path": "/home/itaykadosh/.julia/packages/TeamMPC/XlUfn",
+      "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+      "teammpc_rev": "unknown",
+      "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+      "teammpc_version": "0.1.0",
+      "slurm_job": "50323580",
+      "steps": 30,
+      "teams": "cr",
+      "threads": 1,
+      "tree": "/blue/fairbanksj/itaykadosh/e52r/tree",
+      "umax_car": 0.4
+     },
+     "seed": 2
+    },
+    {
+     "meta": {
+      "affinity": "pid 1308772's current affinity list: 16",
+      "array_job": "",
+      "blas_threads": 1,
+      "commit": "8549f841ddf2f9fb8e71a7d7cc847b9840bfd502",
+      "cone": "soc",
+      "cpu": "AMD EPYC 75F3 32-Core Processor",
+      "disc": "zoh",
+      "exclusive": true,
+      "fleet": "dronecar",
+      "het": false,
+      "host": "c0710a-s30.ufhpc",
+      "job": "50323580",
+      "julia": "1.12.6",
+      "layout": "rows",
+      "local_settings": {
+       "eps_abs": 1e-06,
+       "eps_rel": 1e-06,
+       "max_iter": 20000
+      },
+      "partition": "hpg-dev",
+      "rho_source": "tuned by the November E5x run (jobs 49182450, 49182451), seed 1, cold start to 1e-3",
+      "teammpc_dirty": false,
+      "teammpc_path": "/home/itaykadosh/.julia/packages/TeamMPC/XlUfn",
+      "teammpc_repo_rev": "baa542bf62cb2c469511469bd091ed24ad7657f7",
+      "teammpc_rev": "unknown",
+      "teammpc_tree_sha1": "8c126f1a13312b9fa3492d4d48152372aa21cf93",
+      "teammpc_version": "0.1.0",
+      "slurm_job": "50323580",
+      "steps": 30,
+      "teams": "cr",
+      "threads": 1,
+      "tree": "/blue/fairbanksj/itaykadosh/e52r/tree",
+      "umax_car": 0.4
+     },
+     "seed": 3
+    }
+   ],
+   "rho": {
+    "full": 0.1,
+    "quot": 30.0
+   },
+   "rows": 64,
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "trace": {
+    "full_step0": {
+     "0.0001": {
+      "iter_max": 27,
+      "iter_med": 27.0,
+      "iter_seeds": [
+       26,
+       27,
+       27
+      ],
+      "par_s_med": 0.00978119,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 21,
+      "iter_med": 21.0,
+      "iter_seeds": [
+       20,
+       21,
+       21
+      ],
+      "par_s_med": 0.008673439,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 17,
+      "iter_med": 16.0,
+      "iter_seeds": [
+       16,
+       17,
+       15
+      ],
+      "par_s_med": 0.006372816,
+      "unreached": 0
+     }
+    },
+    "full_step10": {
+     "0.0001": {
+      "iter_max": 28,
+      "iter_med": 26.0,
+      "iter_seeds": [
+       28,
+       26,
+       25
+      ],
+      "par_s_med": 0.010295615999999999,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 23,
+      "iter_med": 20.0,
+      "iter_seeds": [
+       23,
+       20,
+       19
+      ],
+      "par_s_med": 0.008022567999999999,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 18,
+      "iter_med": 14.0,
+      "iter_seeds": [
+       18,
+       14,
+       14
+      ],
+      "par_s_med": 0.006091276999999999,
+      "unreached": 0
+     }
+    },
+    "full_step20": {
+     "0.0001": {
+      "iter_max": 28,
+      "iter_med": 27.0,
+      "iter_seeds": [
+       28,
+       24,
+       27
+      ],
+      "par_s_med": 0.06916284200000002,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 22,
+      "iter_med": 21.0,
+      "iter_seeds": [
+       22,
+       19,
+       21
+      ],
+      "par_s_med": 0.062763798,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 17,
+      "iter_med": 16.0,
+      "iter_seeds": [
+       17,
+       13,
+       16
+      ],
+      "par_s_med": 0.061974483000000004,
+      "unreached": 0
+     }
+    },
+    "quot_step0": {
+     "0.0001": {
+      "iter_max": 14,
+      "iter_med": 13.0,
+      "iter_seeds": [
+       13,
+       14,
+       10
+      ],
+      "par_s_med": 0.0013279539999999997,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 7,
+      "iter_med": 7.0,
+      "iter_seeds": [
+       7,
+       7,
+       5
+      ],
+      "par_s_med": 0.0009096229999999999,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 6,
+      "iter_med": 6.0,
+      "iter_seeds": [
+       6,
+       6,
+       5
+      ],
+      "par_s_med": 0.0008314259999999999,
+      "unreached": 0
+     }
+    },
+    "quot_step10": {
+     "0.0001": {
+      "iter_max": 17,
+      "iter_med": 15.0,
+      "iter_seeds": [
+       17,
+       14,
+       15
+      ],
+      "par_s_med": 0.0017219000000000002,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 14,
+      "iter_med": 7.0,
+      "iter_seeds": [
+       14,
+       7,
+       7
+      ],
+      "par_s_med": 0.0012356510000000002,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 7,
+      "iter_med": 6.0,
+      "iter_seeds": [
+       7,
+       6,
+       6
+      ],
+      "par_s_med": 0.001090028,
+      "unreached": 0
+     }
+    },
+    "quot_step20": {
+     "0.0001": {
+      "iter_max": 18,
+      "iter_med": 17.0,
+      "iter_seeds": [
+       18,
+       14,
+       17
+      ],
+      "par_s_med": 0.001567187,
+      "unreached": 0
+     },
+     "0.001": {
+      "iter_max": 15,
+      "iter_med": 14.0,
+      "iter_seeds": [
+       15,
+       7,
+       14
+      ],
+      "par_s_med": 0.001298268,
+      "unreached": 0
+     },
+     "0.01": {
+      "iter_max": 7,
+      "iter_med": 7.0,
+      "iter_seeds": [
+       7,
+       6,
+       7
+      ],
+      "par_s_med": 0.0010227419999999999,
+      "unreached": 0
+     }
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "experiment": "setup: parameters of Section VI read from fleet_dc.jl, e26_flagship.jl and e62_tube.jl",
+ "horizon": 10,
+ "h_s": 0.2,
+ "umax_drone": 4.0,
+ "umax_car": 0.4,
+ "drag_car": 0.3,
+ "r_drone": 0.1,
+ "r_car": 0.2,
+ "q_position": 1.0,
+ "qf_position": 5.0,
+ "qf_velocity": 1.0,
+ "solver_eps": 1e-06,
+ "cpus": [
+  "AMD EPYC 7702 64-Core Processor"
+ ],
+ "tube_qv": 0.1,
+ "tube_horizon": 20
+}

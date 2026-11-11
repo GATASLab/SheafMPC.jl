@@ -1,0 +1,638 @@
+{
+ "experiment": "E102: E71c's equal 200 ms budget on the irregular formation, all arms of a seed in one job, sequentially, on one pinned core (partition and node exclusivity per seed under partition/exclusive). Arms: converged centralized (reference cost), centralized stopped at the period (ADMM only, warm, E71c rt_admm), quasi-stable teams (q=8, when run), response teams at the q=8 count of E71c and at 1/2, 0.35 and 1/4 of it (floored at one team per class). Overrun rule per arm under fallback_rule: none = the plan is applied whenever it finishes; shift = on a step over the period the previously applied plan, shifted one sample, is applied (E106). Certified gaps against a tight (1e-9) central solve at the measured state.",
+ "fields": {
+  "certified.cert_over_gap_med": "dual certificate over the true gap, median of per-seed medians",
+  "certified.eta_over_gap_med": "KKT-normal certificate in H_S (the arm's teams; for rt_admm the q=8 teams) over the true gap",
+  "cost_ratio_med/max": "closed-loop cost over that of converged centralized MPC in the same job, median/worst over seeds",
+  "met_frac": "mean over seeds of the fraction of steps within 200 ms",
+  "ms_max": "worst step over seeds (ms)",
+  "ms_med": "median over seeds of the per-seed median time per step (ms, one core, steps after the untimed step 0)",
+  "viol_max_raw": "largest input-limit violation of the first input before projection (applied input is projected)"
+ },
+ "generator": {
+  "density_per_m2": 1.0,
+  "note": "natural_instance of squads_dc.jl: slots uniform at one per m^2, edges below the radius (largest component), weight 1/distance, regions by k-means of about region_size slots, each region one class (drone or car, one variant)",
+  "radius_m": 1.5,
+  "reference_tol": 1e-09,
+  "region_size": 12
+ },
+ "period_ms": 200.0,
+ "sizes": {
+  "4096": {
+   "affinity": [
+    "core 0 of 0-63",
+    "core 0 of 0-63",
+    "core 0 of 0-63",
+    "core 0 of 0-63",
+    "core 0 of 0-63"
+   ],
+   "arm_seconds": [
+    {
+     "coord": 184.773422352,
+     "hyb_resp_339": 322.629787503,
+     "rt_admm": 402.329428832,
+     "team_resp_339": 359.314665136,
+     "vf_HS_shift": 339.528985158
+    },
+    {
+     "coord": 166.311342609,
+     "hyb_resp_337": 352.997190504,
+     "rt_admm": 392.57574666,
+     "team_resp_337": 388.054582891,
+     "vf_HS_shift": 344.457670957
+    },
+    {
+     "coord": 221.856874442,
+     "hyb_resp_339": 426.414619783,
+     "rt_admm": 430.853406477,
+     "team_resp_339": 417.510164551,
+     "vf_HS_shift": 351.573381292
+    },
+    {
+     "coord": 145.30189533,
+     "hyb_resp_339": 319.900992224,
+     "rt_admm": 392.78302301,
+     "team_resp_339": 339.041003452,
+     "vf_HS_shift": 360.825229444
+    },
+    {
+     "coord": 196.67430497,
+     "hyb_resp_339": 397.509779064,
+     "rt_admm": 451.967358971,
+     "team_resp_339": 390.633774871,
+     "vf_HS_shift": 375.195159903
+    }
+   ],
+   "controllers": {
+    "coord": {
+     "cost_med": 5368.40300708529,
+     "cost_ratio_max": 1.0,
+     "cost_ratio_med": 1.0,
+     "met_frac": 0.0,
+     "ms_max": 24744.284476,
+     "ms_med": 4865.778508,
+     "seeds": 5
+    },
+    "hyb_f25": {
+     "cert_in_step": false,
+     "cert_in_time_frac": 0.9793103448275863,
+     "certified": {
+      "cert_below_gap": 0,
+      "cert_in_time_frac": 0.9793103448275863,
+      "cert_max": 17.152325536092867,
+      "cert_med": 6.967776607583182,
+      "cert_over_gap_med": 57.05628682915948,
+      "dual_viol_max": -2.580739303830253,
+      "eta_below_gap": 0,
+      "eta_max": 0.45899730268712396,
+      "eta_med": 0.2554545527966993,
+      "eta_over_gap_med": 1.719678242461436,
+      "gap_max": 0.2053658977748188,
+      "gap_med": 0.13488123741529956,
+      "jstar_bracket_max": 1.6618196356221126e-07,
+      "no_cert_steps": 0,
+      "plan_viol_max": 4.454407487031187e-06,
+      "t_cert_ms_med": 29.756968,
+      "t_eta_ms_max": 16.443051999999998,
+      "t_eta_ms_med": 14.896978
+     },
+     "cost_ratio_max": 1.18130314406221,
+     "cost_ratio_med": 1.1511964813906177,
+     "cost_ratio_per_seed": [
+      1.014049294890296,
+      1.174455277118105,
+      1.1131934955645157,
+      1.18130314406221,
+      1.1511964813906177
+     ],
+     "eta_in_time_frac": 0.9862068965517242,
+     "eta_ms_med": 14.896978,
+     "fallback_frac": 0.006896551724137931,
+     "fallback_rule": "shift",
+     "frac_requested": 0.25,
+     "iters_med": 0.0,
+     "kb": 6.5581407628765565,
+     "met_frac": 0.993103448275862,
+     "ms_eta_med": 101.158812,
+     "ms_max": 215.57362799999999,
+     "ms_med": 86.358825,
+     "refine_skipped_frac": 1.0,
+     "seeds": 5,
+     "solve_ms_med": 86.358825,
+     "teams": 339.0,
+     "teams_per_seed": [
+      339,
+      337,
+      339,
+      339,
+      339
+     ],
+     "viol_max_raw": 3.8641257643634574e-07,
+     "viol_note": "largest violation of an input ball by the controller's first input before the projection; the applied input and the closed-loop cost are after the projection (clip26)"
+    },
+    "rt_admm": {
+     "cert_in_step": false,
+     "cert_in_time_frac": 0.034482758620689655,
+     "certified": {
+      "cert_below_gap": 0,
+      "cert_in_time_frac": 0.034482758620689655,
+      "cert_max": 73.7440662079026,
+      "cert_med": 6.829657223003243,
+      "cert_over_gap_med": 20.148235988411294,
+      "dual_viol_max": -0.5202910125523659,
+      "eta_below_gap": 0,
+      "eta_max": 4.779805545521943,
+      "eta_med": 0.9107259289060167,
+      "eta_over_gap_med": 2.9375607476230927,
+      "gap_max": 3.4232894519525066,
+      "gap_med": 0.419161393817395,
+      "jstar_bracket_max": 1.3674139840896358e-07,
+      "no_cert_steps": 0,
+      "plan_viol_max": 0.4908623309785345,
+      "t_cert_ms_med": 29.731087,
+      "t_eta_ms_max": 12.839592,
+      "t_eta_ms_med": 11.788145
+     },
+     "cost_ratio_max": 3.4387826591883934,
+     "cost_ratio_med": 2.379471496505993,
+     "cost_ratio_per_seed": [
+      3.4387826591883934,
+      2.379471496505993,
+      2.6750497972138314,
+      2.122201437553159,
+      1.0940248178937246
+     ],
+     "eta_in_time_frac": 0.38620689655172413,
+     "eta_ms_med": 11.788145,
+     "fallback_frac": 0.034482758620689655,
+     "fallback_rule": "shift",
+     "iters_med": 4.0,
+     "kb": null,
+     "met_frac": 0.9655172413793103,
+     "ms_eta_med": 205.993486,
+     "ms_max": 217.29847999999998,
+     "ms_med": 194.062589,
+     "seeds": 5,
+     "solve_ms_med": 194.062589,
+     "teams": 4069.0,
+     "viol_max_raw": 0.4908623309785345,
+     "viol_note": "largest violation of an input ball by the controller's first input before the projection; the applied input and the closed-loop cost are after the projection (clip26)"
+    },
+    "team_f25": {
+     "cert_in_step": true,
+     "cert_in_time_frac": 0.9793103448275863,
+     "certified": {
+      "cert_below_gap": 0,
+      "cert_in_time_frac": 0.9793103448275863,
+      "cert_max": 14.615065191213558,
+      "cert_med": 9.132241135704929,
+      "cert_over_gap_med": 45.965952158255334,
+      "dual_viol_max": -3.4894251254413082,
+      "eta_below_gap": 0,
+      "eta_max": 0.5627917305153812,
+      "eta_med": 0.3555236933945411,
+      "eta_over_gap_med": 1.8244871009520671,
+      "gap_max": 0.22924313689603493,
+      "gap_med": 0.20162496754308168,
+      "jstar_bracket_max": 7.778263851246479e-08,
+      "no_cert_steps": 0,
+      "plan_viol_max": 3.983939676877046e-06,
+      "t_cert_ms_med": 29.614566,
+      "t_eta_ms_max": 15.731936,
+      "t_eta_ms_med": 14.866254000000001
+     },
+     "cost_ratio_max": 1.2863159729082088,
+     "cost_ratio_med": 1.1973515529317431,
+     "cost_ratio_per_seed": [
+      1.0336230976597003,
+      1.2863159729082088,
+      1.1346550993716116,
+      1.2216110918280023,
+      1.1973515529317431
+     ],
+     "eta_in_time_frac": 0.9862068965517242,
+     "eta_ms_med": 14.866254000000001,
+     "fallback_frac": 0.013793103448275862,
+     "fallback_rule": "shift",
+     "iters_med": 0.0,
+     "kb": null,
+     "met_frac": 0.9862068965517242,
+     "ms_eta_med": 107.19481999999999,
+     "ms_max": 221.968626,
+     "ms_med": 107.19481999999999,
+     "seeds": 5,
+     "solve_ms_med": 92.510959,
+     "teams": 339.0,
+     "teams_per_seed": [
+      339,
+      337,
+      339,
+      339,
+      339
+     ],
+     "viol_max_raw": 1.6301632079773754e-06,
+     "viol_note": "largest violation of an input ball by the controller's first input before the projection; the applied input and the closed-loop cost are after the projection (clip26)"
+    },
+    "team_resp_quarter": {
+     "at_class_floor": [
+      true,
+      true,
+      true,
+      true,
+      true
+     ],
+     "cert_in_step": true,
+     "cert_in_time_frac": 0.9793103448275863,
+     "certified": {
+      "cert_below_gap": 0,
+      "cert_in_time_frac": 0.9793103448275863,
+      "cert_max": 14.615065191213558,
+      "cert_med": 9.132241135704929,
+      "cert_over_gap_med": 45.965952158255334,
+      "dual_viol_max": -3.4894251254413082,
+      "eta_below_gap": 0,
+      "eta_max": 0.5627917305153812,
+      "eta_med": 0.3555236933945411,
+      "eta_over_gap_med": 1.8244871009520671,
+      "gap_max": 0.22924313689603493,
+      "gap_med": 0.20162496754308168,
+      "jstar_bracket_max": 7.778263851246479e-08,
+      "no_cert_steps": 0,
+      "plan_viol_max": 3.983939676877046e-06,
+      "t_cert_ms_med": 29.614566,
+      "t_eta_ms_max": 15.731936,
+      "t_eta_ms_med": 14.866254000000001
+     },
+     "classes_per_seed": [
+      339,
+      337,
+      339,
+      339,
+      339
+     ],
+     "cost_ratio_max": 1.2863159729082088,
+     "cost_ratio_med": 1.1973515529317431,
+     "cost_ratio_per_seed": [
+      1.0336230976597003,
+      1.2863159729082088,
+      1.1346550993716116,
+      1.2216110918280023,
+      1.1973515529317431
+     ],
+     "eta_in_time_frac": 0.9862068965517242,
+     "eta_ms_med": 14.866254000000001,
+     "fallback_frac": 0.013793103448275862,
+     "fallback_rule": "shift",
+     "frac_requested": 0.25,
+     "iters_med": 0.0,
+     "kb": null,
+     "met_frac": 0.9862068965517242,
+     "ms_eta_med": 107.19481999999999,
+     "ms_max": 221.968626,
+     "ms_med": 107.19481999999999,
+     "seeds": 5,
+     "solve_ms_med": 92.510959,
+     "teams": 339.0,
+     "teams_per_seed": [
+      339,
+      337,
+      339,
+      339,
+      339
+     ],
+     "viol_max_raw": 1.6301632079773754e-06,
+     "viol_note": "largest violation of an input ball by the controller's first input before the projection; the applied input and the closed-loop cost are after the projection (clip26)"
+    },
+    "vf_HS_shift": {
+     "cost_ratio_max": 39.9589178514858,
+     "cost_ratio_med": 15.065646757652551,
+     "cost_ratio_per_seed": [
+      15.065646757652551,
+      3.393369780116024,
+      39.9589178514858,
+      20.750272783200757,
+      9.364882057801312
+     ],
+     "iters_max": 0.0,
+     "met_frac": 0.0,
+     "ms_max": 394.481597,
+     "ms_med": 374.150074,
+     "seeds": 5
+    }
+   },
+   "cpu": [
+    "AMD EPYC 75F3 32-Core Processor"
+   ],
+   "edges": [
+    14224,
+    13948,
+    14194,
+    14305,
+    14347
+   ],
+   "exclusive": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "hosts": [
+    "c0712a-s30.ufhpc",
+    "c0713a-s30.ufhpc",
+    "c0711a-s30.ufhpc",
+    "c0712a-s30.ufhpc",
+    "c0713a-s30.ufhpc"
+   ],
+   "jobs": [
+    "50296549",
+    "50296550",
+    "50296551",
+    "50296552",
+    "50296553"
+   ],
+   "load": [
+    {
+     "before_arm": {
+      "coord": [
+       0.96,
+       0.52,
+       0.59
+      ],
+      "hyb_resp_339": [
+       1.02,
+       1.04,
+       0.92
+      ],
+      "rt_admm": [
+       1.03,
+       0.76,
+       0.68
+      ],
+      "team_resp_339": [
+       1.18,
+       1.02,
+       0.84
+      ],
+      "vf_HS_shift": [
+       1.01,
+       1.03,
+       0.97
+      ]
+     },
+     "end": [
+      1.05,
+      1.04,
+      1.0
+     ],
+     "start": [
+      0.9,
+      0.42,
+      0.56
+     ]
+    },
+    {
+     "before_arm": {
+      "coord": [
+       0.92,
+       0.49,
+       0.58
+      ],
+      "hyb_resp_337": [
+       1.1,
+       1.06,
+       0.92
+      ],
+      "rt_admm": [
+       1.01,
+       0.72,
+       0.66
+      ],
+      "team_resp_337": [
+       1.05,
+       0.98,
+       0.81
+      ],
+      "vf_HS_shift": [
+       1.03,
+       1.05,
+       0.99
+      ]
+     },
+     "end": [
+      1.03,
+      1.05,
+      1.0
+     ],
+     "start": [
+      0.81,
+      0.38,
+      0.55
+     ]
+    },
+    {
+     "before_arm": {
+      "coord": [
+       1.31,
+       3.26,
+       3.77
+      ],
+      "hyb_resp_339": [
+       1.04,
+       1.13,
+       1.89
+      ],
+      "rt_admm": [
+       1.03,
+       2.09,
+       3.17
+      ],
+      "team_resp_339": [
+       1.02,
+       1.3,
+       2.38
+      ],
+      "vf_HS_shift": [
+       1.05,
+       1.09,
+       1.59
+      ]
+     },
+     "end": [
+      1.02,
+      1.06,
+      1.41
+     ],
+     "start": [
+      1.62,
+      3.65,
+      3.92
+     ]
+    },
+    {
+     "before_arm": {
+      "coord": [
+       1.0,
+       1.01,
+       1.0
+      ],
+      "hyb_resp_339": [
+       1.06,
+       1.04,
+       1.0
+      ],
+      "rt_admm": [
+       1.09,
+       1.05,
+       1.01
+      ],
+      "team_resp_339": [
+       1.03,
+       1.04,
+       1.0
+      ],
+      "vf_HS_shift": [
+       1.01,
+       1.02,
+       1.0
+      ]
+     },
+     "end": [
+      1.03,
+      1.03,
+      1.0
+     ],
+     "start": [
+      0.99,
+      1.02,
+      1.0
+     ]
+    },
+    {
+     "before_arm": {
+      "coord": [
+       1.07,
+       1.04,
+       1.01
+      ],
+      "hyb_resp_339": [
+       1.1,
+       1.05,
+       1.01
+      ],
+      "rt_admm": [
+       1.09,
+       1.05,
+       1.01
+      ],
+      "team_resp_339": [
+       1.02,
+       1.03,
+       1.0
+      ],
+      "vf_HS_shift": [
+       1.11,
+       1.05,
+       1.01
+      ]
+     },
+     "end": [
+      1.0,
+      1.02,
+      1.0
+     ],
+     "start": [
+      0.99,
+      1.02,
+      1.0
+     ]
+    }
+   ],
+   "n": [
+    4071,
+    4046,
+    4071,
+    4067,
+    4069
+   ],
+   "partition": [
+    "hpg-dev",
+    "hpg-dev",
+    "hpg-dev",
+    "hpg-dev",
+    "hpg-dev"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "selection": [
+    {
+     "K_qs8": 1196,
+     "Ks": [
+      339
+     ],
+     "class_size_max": 26,
+     "class_size_med": 12.0,
+     "classes": 339,
+     "embed_seconds": 13.309327346,
+     "kmeans_seconds": 2.864951421,
+     "select_seconds": 17.378947197
+    },
+    {
+     "K_qs8": 1169,
+     "Ks": [
+      337
+     ],
+     "class_size_max": 25,
+     "class_size_med": 12.0,
+     "classes": 337,
+     "embed_seconds": 12.887411885,
+     "kmeans_seconds": 2.813268526,
+     "select_seconds": 16.907054194
+    },
+    {
+     "K_qs8": 1177,
+     "Ks": [
+      339
+     ],
+     "class_size_max": 38,
+     "class_size_med": 12.0,
+     "classes": 339,
+     "embed_seconds": 13.011220508,
+     "kmeans_seconds": 2.993646686,
+     "select_seconds": 17.2227124
+    },
+    {
+     "K_qs8": 1170,
+     "Ks": [
+      339
+     ],
+     "class_size_max": 27,
+     "class_size_med": 11.0,
+     "classes": 339,
+     "embed_seconds": 13.654738846,
+     "kmeans_seconds": 3.022717764,
+     "select_seconds": 17.878539837
+    },
+    {
+     "K_qs8": 1166,
+     "Ks": [
+      339
+     ],
+     "class_size_max": 28,
+     "class_size_med": 12.0,
+     "classes": 339,
+     "embed_seconds": 13.89188965,
+     "kmeans_seconds": 2.963253652,
+     "select_seconds": 18.003309248
+    }
+   ],
+   "steps": 30
+  }
+ },
+ "run_note": "E106 final: every arm of a seed in one job on one pinned core of an exclusive hpg-dev AMD EPYC 75F3 node, E71_FALLBACK=shift, E71_CERT_IN_STEP=1; seeds [1, 2, 3, 4, 5], jobs ['50296549', '50296550', '50296551', '50296552', '50296553']; parts under /blue/fairbanksj/itaykadosh/e106/parts4h."
+}

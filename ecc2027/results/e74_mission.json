@@ -1,0 +1,6464 @@
+{
+ "experiment": "E74 mission formations: colour refinement from mission classes on geometric sensing graphs (stiffness 1/d), lossless team MPC vs centralized",
+ "partitions": {
+  "C1_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.00012313,
+   "cr_seconds_all": [
+    0.00012302,
+    0.000123421,
+    0.00012313
+   ],
+   "dims": [
+    4,
+    256
+   ],
+   "edges": 1788,
+   "equitable_seconds": 0.000194384,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 2.01,
+   "reduction": 256.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 256,
+    "median": 256.0,
+    "min": 256
+   },
+   "teams": 4,
+   "variant": "C1"
+  },
+  "C1_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.002089266,
+   "cr_seconds_all": [
+    0.002097441,
+    0.002089266,
+    0.002080168
+   ],
+   "dims": [
+    4,
+    4096
+   ],
+   "edges": 28668,
+   "equitable_seconds": 0.002838074,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 2.01,
+   "reduction": 4096.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 4096,
+    "median": 4096.0,
+    "min": 4096
+   },
+   "teams": 4,
+   "variant": "C1"
+  },
+  "C1_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 4.6647e-5,
+   "cr_seconds_all": [
+    4.4594e-5,
+    4.9923e-5,
+    4.6647e-5
+   ],
+   "dims": [
+    4,
+    64
+   ],
+   "edges": 444,
+   "equitable_seconds": 7.0752e-5,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 2.01,
+   "reduction": 64.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 64,
+    "median": 64.0,
+    "min": 64
+   },
+   "teams": 4,
+   "variant": "C1"
+  },
+  "C1_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.000522277,
+   "cr_seconds_all": [
+    0.000520262,
+    0.000529609,
+    0.000522277
+   ],
+   "dims": [
+    4,
+    1024
+   ],
+   "edges": 7164,
+   "equitable_seconds": 0.000760902,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 2.01,
+   "reduction": 1024.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 1024,
+    "median": 1024.0,
+    "min": 1024
+   },
+   "teams": 4,
+   "variant": "C1"
+  },
+  "C3_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.000306563,
+   "cr_seconds_all": [
+    0.000304188,
+    0.000316111,
+    0.000306563
+   ],
+   "dims": [
+    4,
+    256
+   ],
+   "edges": 3318,
+   "equitable_seconds": 0.000279582,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 2.6,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 512,
+   "variant": "C3"
+  },
+  "C3_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.004994295,
+   "cr_seconds_all": [
+    0.004980519,
+    0.00501278,
+    0.004994295
+   ],
+   "dims": [
+    4,
+    4096
+   ],
+   "edges": 53238,
+   "equitable_seconds": 0.009176632,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 2.6,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 8192,
+   "variant": "C3"
+  },
+  "C3_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.000102261,
+   "cr_seconds_all": [
+    0.000102261,
+    0.00010163,
+    0.000103032
+   ],
+   "dims": [
+    4,
+    64
+   ],
+   "edges": 822,
+   "equitable_seconds": 9.4346e-5,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 2.6,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 128,
+   "variant": "C3"
+  },
+  "C3_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.001223988,
+   "cr_seconds_all": [
+    0.001228476,
+    0.001222675,
+    0.001223988
+   ],
+   "dims": [
+    4,
+    1024
+   ],
+   "edges": 13302,
+   "equitable_seconds": 0.001113612,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 2.6,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 2048,
+   "variant": "C3"
+  },
+  "C3bal_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 6.068692405068471e-16,
+   "balance_factor": {
+    "max": 1.493686706598309,
+    "median": 0.9978693181818178,
+    "min": 0.9154804532970654
+   },
+   "classes": 4,
+   "cr_seconds": 0.000144921,
+   "cr_seconds_all": [
+    0.000144921,
+    0.00014468,
+    0.000145472
+   ],
+   "dims": [
+    4,
+    256
+   ],
+   "edges": 3318,
+   "equitable_seconds": 0.000285092,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 2.6,
+   "reduction": 256.0,
+   "singletons": 0,
+   "spread": 6.068692405068457e-16,
+   "team_size": {
+    "max": 256,
+    "median": 256.0,
+    "min": 256
+   },
+   "teams": 4,
+   "variant": "C3bal"
+  },
+  "C3bal_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 7.570710614092071e-16,
+   "balance_factor": {
+    "max": 1.496676737817033,
+    "median": 0.9998668323863631,
+    "min": 0.9173130431724376
+   },
+   "classes": 4,
+   "cr_seconds": 0.00246125,
+   "cr_seconds_all": [
+    0.00246125,
+    0.002469316,
+    0.002448196
+   ],
+   "dims": [
+    4,
+    4096
+   ],
+   "edges": 53238,
+   "equitable_seconds": 0.004304516,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 2.6,
+   "reduction": 4096.0,
+   "singletons": 0,
+   "spread": 7.570710614091793e-16,
+   "team_size": {
+    "max": 4096,
+    "median": 4096.0,
+    "min": 4096
+   },
+   "teams": 4,
+   "variant": "C3bal"
+  },
+  "C3bal_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 6.107817214671891e-16,
+   "balance_factor": {
+    "max": 1.4841186062526681,
+    "median": 0.9914772724295037,
+    "min": 0.9096161654226907
+   },
+   "classes": 4,
+   "cr_seconds": 3.9674e-5,
+   "cr_seconds_all": [
+    4.0415e-5,
+    3.9674e-5,
+    3.8512e-5
+   ],
+   "dims": [
+    4,
+    64
+   ],
+   "edges": 822,
+   "equitable_seconds": 7.6964e-5,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 2.6,
+   "reduction": 64.0,
+   "singletons": 0,
+   "spread": 4.58086291100392e-16,
+   "team_size": {
+    "max": 64,
+    "median": 64.0,
+    "min": 64
+   },
+   "teams": 4,
+   "variant": "C3bal"
+  },
+  "C3bal_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 7.573736746564043e-16,
+   "balance_factor": {
+    "max": 1.496078731545111,
+    "median": 0.9994673295266301,
+    "min": 0.9169465251800935
+   },
+   "classes": 4,
+   "cr_seconds": 0.000592117,
+   "cr_seconds_all": [
+    0.000592117,
+    0.000585835,
+    0.000603328
+   ],
+   "dims": [
+    4,
+    1024
+   ],
+   "edges": 13302,
+   "equitable_seconds": 0.00109135,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 2.6,
+   "reduction": 1024.0,
+   "singletons": 0,
+   "spread": 7.57373674656394e-16,
+   "team_size": {
+    "max": 1024,
+    "median": 1024.0,
+    "min": 1024
+   },
+   "teams": 4,
+   "variant": "C3bal"
+  },
+  "Ccyl_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 16,
+   "cr_seconds": 0.000161131,
+   "cr_seconds_all": [
+    0.000171922,
+    0.000161131,
+    0.00016014
+   ],
+   "dims": [
+    64,
+    16
+   ],
+   "edges": 3904,
+   "equitable_seconds": 0.000162544,
+   "equitable_teams": 16,
+   "n": 1024,
+   "radius": 1.5,
+   "reduction": 64.0,
+   "singletons": 0,
+   "spread": 1.839261398347693e-15,
+   "team_size": {
+    "max": 64,
+    "median": 64.0,
+    "min": 64
+   },
+   "teams": 16,
+   "variant": "Ccyl"
+  },
+  "Ccyl_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 16,
+   "cr_seconds": 0.002831552,
+   "cr_seconds_all": [
+    0.002805814,
+    0.248543629,
+    0.002831552
+   ],
+   "dims": [
+    1024,
+    16
+   ],
+   "edges": 62464,
+   "equitable_seconds": 0.00276597,
+   "equitable_teams": 16,
+   "n": 16384,
+   "radius": 1.5,
+   "reduction": 1024.0,
+   "singletons": 0,
+   "spread": 3.090321176961786e-14,
+   "team_size": {
+    "max": 1024,
+    "median": 1024.0,
+    "min": 1024
+   },
+   "teams": 16,
+   "variant": "Ccyl"
+  },
+  "Ccyl_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 16,
+   "cr_seconds": 5.4922e-5,
+   "cr_seconds_all": [
+    5.5894e-5,
+    5.4922e-5,
+    5.4793e-5
+   ],
+   "dims": [
+    16,
+    16
+   ],
+   "edges": 976,
+   "equitable_seconds": 5.5243e-5,
+   "equitable_teams": 16,
+   "n": 256,
+   "radius": 1.5,
+   "reduction": 16.0,
+   "singletons": 0,
+   "spread": 7.344093989646251e-16,
+   "team_size": {
+    "max": 16,
+    "median": 16.0,
+    "min": 16
+   },
+   "teams": 16,
+   "variant": "Ccyl"
+  },
+  "Ccyl_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 16,
+   "cr_seconds": 0.000650626,
+   "cr_seconds_all": [
+    0.000655285,
+    0.000650626,
+    0.000641739
+   ],
+   "dims": [
+    256,
+    16
+   ],
+   "edges": 15616,
+   "equitable_seconds": 0.00064186,
+   "equitable_teams": 16,
+   "n": 4096,
+   "radius": 1.5,
+   "reduction": 256.0,
+   "singletons": 0,
+   "spread": 6.622071168133846e-15,
+   "team_size": {
+    "max": 256,
+    "median": 256.0,
+    "min": 256
+   },
+   "teams": 16,
+   "variant": "Ccyl"
+  },
+  "E1_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 8,
+   "cr_seconds": 0.000153627,
+   "cr_seconds_all": [
+    0.000153156,
+    0.000153647,
+    0.000153627
+   ],
+   "dims": [
+    4,
+    128
+   ],
+   "edges": 2296,
+   "equitable_seconds": 0.00022451,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 2.01,
+   "reduction": 128.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 128,
+    "median": 128.0,
+    "min": 128
+   },
+   "teams": 8,
+   "variant": "E1"
+  },
+  "E1_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 8,
+   "cr_seconds": 0.002653199,
+   "cr_seconds_all": [
+    0.002662296,
+    0.002650715,
+    0.002653199
+   ],
+   "dims": [
+    4,
+    2048
+   ],
+   "edges": 36856,
+   "equitable_seconds": 0.003524247,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 2.01,
+   "reduction": 2048.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2048,
+    "median": 2048.0,
+    "min": 2048
+   },
+   "teams": 8,
+   "variant": "E1"
+  },
+  "E1_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 8,
+   "cr_seconds": 5.321e-5,
+   "cr_seconds_all": [
+    5.321e-5,
+    5.2408e-5,
+    6.2487e-5
+   ],
+   "dims": [
+    4,
+    32
+   ],
+   "edges": 568,
+   "equitable_seconds": 8.3466e-5,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 2.01,
+   "reduction": 32.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 32,
+    "median": 32.0,
+    "min": 32
+   },
+   "teams": 8,
+   "variant": "E1"
+  },
+  "E1_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 8,
+   "cr_seconds": 0.000638954,
+   "cr_seconds_all": [
+    0.000638954,
+    0.00064227,
+    0.000633825
+   ],
+   "dims": [
+    4,
+    512
+   ],
+   "edges": 9208,
+   "equitable_seconds": 0.000871169,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 2.01,
+   "reduction": 512.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 512,
+    "median": 512.0,
+    "min": 512
+   },
+   "teams": 8,
+   "variant": "E1"
+  },
+  "E1t_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 3,
+   "cr_seconds": 0.000199362,
+   "cr_seconds_all": [
+    0.000199362,
+    0.000199844,
+    0.000196658
+   ],
+   "dims": [
+    4,
+    128
+   ],
+   "edges": 2296,
+   "equitable_seconds": 0.000280434,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 2.01,
+   "reduction": 128.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 128,
+    "median": 128.0,
+    "min": 128
+   },
+   "teams": 8,
+   "variant": "E1t"
+  },
+  "E1t_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 3,
+   "cr_seconds": 0.003563641,
+   "cr_seconds_all": [
+    0.003563641,
+    0.003532964,
+    0.003581033
+   ],
+   "dims": [
+    4,
+    2048
+   ],
+   "edges": 36856,
+   "equitable_seconds": 0.004715715,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 2.01,
+   "reduction": 2048.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2048,
+    "median": 2048.0,
+    "min": 2048
+   },
+   "teams": 8,
+   "variant": "E1t"
+  },
+  "E1t_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 3,
+   "cr_seconds": 6.433e-5,
+   "cr_seconds_all": [
+    6.41e-5,
+    6.433e-5,
+    7.5762e-5
+   ],
+   "dims": [
+    4,
+    32
+   ],
+   "edges": 568,
+   "equitable_seconds": 9.4186e-5,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 2.01,
+   "reduction": 32.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 32,
+    "median": 32.0,
+    "min": 32
+   },
+   "teams": 8,
+   "variant": "E1t"
+  },
+  "E1t_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 3,
+   "cr_seconds": 0.000827196,
+   "cr_seconds_all": [
+    0.000828539,
+    0.000824311,
+    0.000827196
+   ],
+   "dims": [
+    4,
+    512
+   ],
+   "edges": 9208,
+   "equitable_seconds": 0.001126897,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 2.01,
+   "reduction": 512.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 512,
+    "median": 512.0,
+    "min": 512
+   },
+   "teams": 8,
+   "variant": "E1t"
+  },
+  "E3_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 8,
+   "cr_seconds": 0.000465229,
+   "cr_seconds_all": [
+    0.000465229,
+    0.000467995,
+    0.000457706
+   ],
+   "dims": [
+    4,
+    128
+   ],
+   "edges": 5604,
+   "equitable_seconds": 0.000456072,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 2.6,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 512,
+   "variant": "E3"
+  },
+  "E3_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 8,
+   "cr_seconds": 0.007947114,
+   "cr_seconds_all": [
+    0.007876842,
+    0.007983522,
+    0.007947114
+   ],
+   "dims": [
+    4,
+    2048
+   ],
+   "edges": 90084,
+   "equitable_seconds": 0.007595417,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 2.6,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 8192,
+   "variant": "E3"
+  },
+  "E3_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 8,
+   "cr_seconds": 0.000151393,
+   "cr_seconds_all": [
+    0.000151393,
+    0.000174977,
+    0.000143999
+   ],
+   "dims": [
+    4,
+    32
+   ],
+   "edges": 1380,
+   "equitable_seconds": 0.000115877,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 2.6,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 128,
+   "variant": "E3"
+  },
+  "E3_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 8,
+   "cr_seconds": 0.001873191,
+   "cr_seconds_all": [
+    0.002076802,
+    0.001873191,
+    0.001848745
+   ],
+   "dims": [
+    4,
+    512
+   ],
+   "edges": 22500,
+   "equitable_seconds": 0.001775598,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 2.6,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 2048,
+   "variant": "E3"
+  },
+  "E3bal_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 6.08167819480827e-16,
+   "balance_factor": {
+    "max": 1.4904973399650039,
+    "median": 0.9957386363636368,
+    "min": 0.9135256907633359
+   },
+   "classes": 8,
+   "cr_seconds": 0.000233136,
+   "cr_seconds_all": [
+    0.000244447,
+    0.000233136,
+    0.000232364
+   ],
+   "dims": [
+    4,
+    128
+   ],
+   "edges": 5604,
+   "equitable_seconds": 0.000431076,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 2.6,
+   "reduction": 128.0,
+   "singletons": 0,
+   "spread": 6.081678194808262e-16,
+   "team_size": {
+    "max": 128,
+    "median": 128.0,
+    "min": 128
+   },
+   "teams": 8,
+   "variant": "E3bal"
+  },
+  "E3bal_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 7.571719056946204e-16,
+   "balance_factor": {
+    "max": 1.4964774022434553,
+    "median": 0.9997336646665081,
+    "min": 0.9171908704166308
+   },
+   "classes": 8,
+   "cr_seconds": 0.004368112,
+   "cr_seconds_all": [
+    0.004368112,
+    0.004352172,
+    0.007633554
+   ],
+   "dims": [
+    4,
+    2048
+   ],
+   "edges": 90084,
+   "equitable_seconds": 0.007416979,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 2.6,
+   "reduction": 2048.0,
+   "singletons": 0,
+   "spread": 7.571719056946408e-16,
+   "team_size": {
+    "max": 2048,
+    "median": 2048.0,
+    "min": 2048
+   },
+   "teams": 8,
+   "variant": "E3bal"
+  },
+  "E3bal_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 4.620581374162506e-16,
+   "balance_factor": {
+    "max": 1.4713611401651665,
+    "median": 0.9829545467171704,
+    "min": 0.9017971155609525
+   },
+   "classes": 8,
+   "cr_seconds": 5.7407e-5,
+   "cr_seconds_all": [
+    5.7407e-5,
+    5.7597e-5,
+    5.6586e-5
+   ],
+   "dims": [
+    4,
+    32
+   ],
+   "edges": 1380,
+   "equitable_seconds": 0.000113602,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 2.6,
+   "reduction": 32.0,
+   "singletons": 0,
+   "spread": 6.160775165550006e-16,
+   "team_size": {
+    "max": 32,
+    "median": 32.0,
+    "min": 32
+   },
+   "teams": 8,
+   "variant": "E3bal"
+  },
+  "E3bal_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 7.577775354711343e-16,
+   "balance_factor": {
+    "max": 1.495281389914962,
+    "median": 0.9989346590909087,
+    "min": 0.9164578345639306
+   },
+   "classes": 8,
+   "cr_seconds": 0.001028683,
+   "cr_seconds_all": [
+    0.001028683,
+    0.001017381,
+    0.002605871
+   ],
+   "dims": [
+    4,
+    512
+   ],
+   "edges": 22500,
+   "equitable_seconds": 0.001837364,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 2.6,
+   "reduction": 512.0,
+   "singletons": 0,
+   "spread": 6.062220283769014e-16,
+   "team_size": {
+    "max": 512,
+    "median": 512.0,
+    "min": 512
+   },
+   "teams": 8,
+   "variant": "E3bal"
+  },
+  "L26_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.00067949,
+   "cr_seconds_all": [
+    0.000681985,
+    0.00067949,
+    0.000672928
+   ],
+   "dims": [
+    16,
+    16,
+    4
+   ],
+   "edges": 10068,
+   "equitable_seconds": 0.00068441,
+   "equitable_teams": 144,
+   "n": 1024,
+   "radius": 1.74,
+   "reduction": 7.111111111111111,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 8,
+    "median": 8.0,
+    "min": 4
+   },
+   "teams": 144,
+   "variant": "L26"
+  },
+  "L26_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 16,
+   "cr_seconds": 0.013130753,
+   "cr_seconds_all": [
+    0.013130753,
+    0.01252999,
+    0.018226337
+   ],
+   "dims": [
+    32,
+    32,
+    16
+   ],
+   "edges": 195036,
+   "equitable_seconds": 0.012662598,
+   "equitable_teams": 2176,
+   "n": 16384,
+   "radius": 1.74,
+   "reduction": 7.529411764705882,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 8,
+    "median": 8.0,
+    "min": 4
+   },
+   "teams": 2176,
+   "variant": "L26"
+  },
+  "L26_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.000131797,
+   "cr_seconds_all": [
+    0.000136806,
+    0.000131797,
+    0.000130424
+   ],
+   "dims": [
+    8,
+    8,
+    4
+   ],
+   "edges": 2292,
+   "equitable_seconds": 0.000138529,
+   "equitable_teams": 40,
+   "n": 256,
+   "radius": 1.74,
+   "reduction": 6.4,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 8,
+    "median": 8.0,
+    "min": 4
+   },
+   "teams": 40,
+   "variant": "L26"
+  },
+  "L26_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 16,
+   "cr_seconds": 0.003102259,
+   "cr_seconds_all": [
+    0.003104042,
+    0.003102259,
+    0.003059438
+   ],
+   "dims": [
+    16,
+    16,
+    16
+   ],
+   "edges": 46620,
+   "equitable_seconds": 0.002790756,
+   "equitable_teams": 576,
+   "n": 4096,
+   "radius": 1.74,
+   "reduction": 7.111111111111111,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 8,
+    "median": 8.0,
+    "min": 4
+   },
+   "teams": 576,
+   "variant": "L26"
+  },
+  "L26bal_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 7.816548874760622e-16,
+   "balance_factor": {
+    "max": 2.395202194800362,
+    "median": 0.9261402227534963,
+    "min": 0.724065747550163
+   },
+   "classes": 4,
+   "cr_seconds": 0.000277028,
+   "cr_seconds_all": [
+    0.000298568,
+    0.000277028,
+    0.000275896
+   ],
+   "dims": [
+    16,
+    16,
+    4
+   ],
+   "edges": 10068,
+   "equitable_seconds": 0.000635778,
+   "equitable_teams": 144,
+   "n": 1024,
+   "radius": 1.74,
+   "reduction": 256.0,
+   "singletons": 0,
+   "spread": 7.816548874760648e-16,
+   "team_size": {
+    "max": 256,
+    "median": 256.0,
+    "min": 256
+   },
+   "teams": 4,
+   "variant": "L26bal"
+  },
+  "L26bal_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 1.0524585885258245e-15,
+   "balance_factor": {
+    "max": 2.4904638833677972,
+    "median": 0.9624507538808611,
+    "min": 0.7528632008801187
+   },
+   "classes": 16,
+   "cr_seconds": 0.005574079,
+   "cr_seconds_all": [
+    0.005539084,
+    0.005982252,
+    0.005574079
+   ],
+   "dims": [
+    32,
+    32,
+    16
+   ],
+   "edges": 195036,
+   "equitable_seconds": 0.01203774,
+   "equitable_teams": 2176,
+   "n": 16384,
+   "radius": 1.74,
+   "reduction": 1024.0,
+   "singletons": 0,
+   "spread": 1.0524585885258446e-15,
+   "team_size": {
+    "max": 1024,
+    "median": 1024.0,
+    "min": 1024
+   },
+   "teams": 16,
+   "variant": "L26bal"
+  },
+  "L26bal_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 6.776096939429773e-16,
+   "balance_factor": {
+    "max": 2.2103159781966184,
+    "median": 0.8874641002525655,
+    "min": 0.6682929945724084
+   },
+   "classes": 4,
+   "cr_seconds": 6.5122e-5,
+   "cr_seconds_all": [
+    6.7115e-5,
+    6.5122e-5,
+    6.432e-5
+   ],
+   "dims": [
+    8,
+    8,
+    4
+   ],
+   "edges": 2292,
+   "equitable_seconds": 0.000139841,
+   "equitable_teams": 40,
+   "n": 256,
+   "radius": 1.74,
+   "reduction": 64.0,
+   "singletons": 0,
+   "spread": 6.776096939429771e-16,
+   "team_size": {
+    "max": 64,
+    "median": 64.0,
+    "min": 64
+   },
+   "teams": 4,
+   "variant": "L26bal"
+  },
+  "L26bal_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 7.816548874760622e-16,
+   "balance_factor": {
+    "max": 2.395202194800362,
+    "median": 0.9261402227534963,
+    "min": 0.724065747550163
+   },
+   "classes": 16,
+   "cr_seconds": 0.001739651,
+   "cr_seconds_all": [
+    0.001739651,
+    0.001721678,
+    0.001855508
+   ],
+   "dims": [
+    16,
+    16,
+    16
+   ],
+   "edges": 46620,
+   "equitable_seconds": 0.002940506,
+   "equitable_teams": 576,
+   "n": 4096,
+   "radius": 1.74,
+   "reduction": 256.0,
+   "singletons": 0,
+   "spread": 7.816548874760648e-16,
+   "team_size": {
+    "max": 256,
+    "median": 256.0,
+    "min": 256
+   },
+   "teams": 16,
+   "variant": "L26bal"
+  },
+  "L6_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 0.000132417,
+   "cr_seconds_all": [
+    0.000132417,
+    0.000132277,
+    0.000135353
+   ],
+   "dims": [
+    16,
+    16,
+    4
+   ],
+   "edges": 2688,
+   "equitable_seconds": 0.000224389,
+   "equitable_teams": 144,
+   "n": 1024,
+   "radius": 1.01,
+   "reduction": 256.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 256,
+    "median": 256.0,
+    "min": 256
+   },
+   "teams": 4,
+   "variant": "L6"
+  },
+  "L6_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 16,
+   "cr_seconds": 0.003122095,
+   "cr_seconds_all": [
+    0.002849316,
+    0.003122095,
+    0.003287786
+   ],
+   "dims": [
+    32,
+    32,
+    16
+   ],
+   "edges": 47104,
+   "equitable_seconds": 0.004639271,
+   "equitable_teams": 2176,
+   "n": 16384,
+   "radius": 1.01,
+   "reduction": 1024.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 1024,
+    "median": 1024.0,
+    "min": 1024
+   },
+   "teams": 16,
+   "variant": "L6"
+  },
+  "L6_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 4,
+   "cr_seconds": 3.6408e-5,
+   "cr_seconds_all": [
+    3.6679e-5,
+    3.6408e-5,
+    3.6057e-5
+   ],
+   "dims": [
+    8,
+    8,
+    4
+   ],
+   "edges": 640,
+   "equitable_seconds": 6.2797e-5,
+   "equitable_teams": 40,
+   "n": 256,
+   "radius": 1.01,
+   "reduction": 64.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 64,
+    "median": 64.0,
+    "min": 64
+   },
+   "teams": 4,
+   "variant": "L6"
+  },
+  "L6_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 16,
+   "cr_seconds": 0.000576969,
+   "cr_seconds_all": [
+    0.000579644,
+    0.000573081,
+    0.000576969
+   ],
+   "dims": [
+    16,
+    16,
+    16
+   ],
+   "edges": 11520,
+   "equitable_seconds": 0.000862862,
+   "equitable_teams": 576,
+   "n": 4096,
+   "radius": 1.01,
+   "reduction": 256.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 256,
+    "median": 256.0,
+    "min": 256
+   },
+   "teams": 16,
+   "variant": "L6"
+  },
+  "Lfig_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.000365774,
+   "cr_seconds_all": [
+    0.000365774,
+    0.000372256,
+    0.000359492
+   ],
+   "dims": [
+    16,
+    16,
+    4
+   ],
+   "edges": 2688,
+   "equitable_seconds": 0.000338002,
+   "equitable_teams": 1024,
+   "n": 1024,
+   "radius": 1.01,
+   "reduction": 1.0,
+   "singletons": 1024,
+   "spread": 0.0,
+   "team_size": {
+    "max": 1,
+    "median": 1.0,
+    "min": 1
+   },
+   "teams": 1024,
+   "variant": "Lfig"
+  },
+  "Lfig_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.006285919,
+   "cr_seconds_all": [
+    0.006244652,
+    0.006297761,
+    0.006285919
+   ],
+   "dims": [
+    32,
+    32,
+    16
+   ],
+   "edges": 47104,
+   "equitable_seconds": 0.005699874,
+   "equitable_teams": 16384,
+   "n": 16384,
+   "radius": 1.01,
+   "reduction": 1.0,
+   "singletons": 16384,
+   "spread": 0.0,
+   "team_size": {
+    "max": 1,
+    "median": 1.0,
+    "min": 1
+   },
+   "teams": 16384,
+   "variant": "Lfig"
+  },
+  "Lfig_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.0001125,
+   "cr_seconds_all": [
+    0.000114043,
+    0.0001125,
+    0.000109545
+   ],
+   "dims": [
+    8,
+    8,
+    4
+   ],
+   "edges": 640,
+   "equitable_seconds": 0.000111158,
+   "equitable_teams": 256,
+   "n": 256,
+   "radius": 1.01,
+   "reduction": 1.0,
+   "singletons": 256,
+   "spread": 0.0,
+   "team_size": {
+    "max": 1,
+    "median": 1.0,
+    "min": 1
+   },
+   "teams": 256,
+   "variant": "Lfig"
+  },
+  "Lfig_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.001605581,
+   "cr_seconds_all": [
+    0.00159994,
+    0.001610029,
+    0.001605581
+   ],
+   "dims": [
+    16,
+    16,
+    16
+   ],
+   "edges": 11520,
+   "equitable_seconds": 0.001453877,
+   "equitable_teams": 4096,
+   "n": 4096,
+   "radius": 1.01,
+   "reduction": 1.0,
+   "singletons": 4096,
+   "spread": 0.0,
+   "team_size": {
+    "max": 1,
+    "median": 1.0,
+    "min": 1
+   },
+   "teams": 4096,
+   "variant": "Lfig"
+  },
+  "Rbal_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 8.764831165179093e-16,
+   "balance_factor": {
+    "max": 1.6370348004864426,
+    "median": 0.9379704839763404,
+    "min": 0.1636272702887479
+   },
+   "classes": 18,
+   "cr_seconds": 0.000148938,
+   "cr_seconds_all": [
+    0.000148938,
+    0.000144641,
+    0.000150301
+   ],
+   "dims": [
+    18
+   ],
+   "edges": 3084,
+   "equitable_seconds": 0.000152074,
+   "equitable_teams": 18,
+   "n": 1026,
+   "radius": 1.5,
+   "reduction": 57.0,
+   "singletons": 0,
+   "spread": 7.512712427296376e-16,
+   "team_size": {
+    "max": 108,
+    "median": 57.0,
+    "min": 6
+   },
+   "teams": 18,
+   "variant": "Rbal"
+  },
+  "Rbal_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 1.6706290072396004e-15,
+   "balance_factor": {
+    "max": 1.6959593924468335,
+    "median": 0.9235344028561767,
+    "min": 0.1636272702887479
+   },
+   "classes": 73,
+   "cr_seconds": 0.002601352,
+   "cr_seconds_all": [
+    0.002628113,
+    0.002601352,
+    0.002591845
+   ],
+   "dims": [
+    73
+   ],
+   "edges": 50322,
+   "equitable_seconds": 0.002602284,
+   "equitable_teams": 73,
+   "n": 16206,
+   "radius": 1.5,
+   "reduction": 222.0,
+   "singletons": 0,
+   "spread": 1.6706290072395989e-15,
+   "team_size": {
+    "max": 438,
+    "median": 222.0,
+    "min": 6
+   },
+   "teams": 73,
+   "variant": "Rbal"
+  },
+  "Rbal_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 6.847286535434033e-16,
+   "balance_factor": {
+    "max": 1.6370348004864426,
+    "median": 0.9385659326065368,
+    "min": 0.1636272702887479
+   },
+   "classes": 9,
+   "cr_seconds": 3.9474e-5,
+   "cr_seconds_all": [
+    4.1618e-5,
+    3.9474e-5,
+    3.9414e-5
+   ],
+   "dims": [
+    9
+   ],
+   "edges": 762,
+   "equitable_seconds": 4.3571e-5,
+   "equitable_teams": 9,
+   "n": 270,
+   "radius": 1.5,
+   "reduction": 30.0,
+   "singletons": 0,
+   "spread": 7.409998211004735e-16,
+   "team_size": {
+    "max": 54,
+    "median": 30.0,
+    "min": 6
+   },
+   "teams": 9,
+   "variant": "Rbal"
+  },
+  "Rbal_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 1.1078183644651744e-15,
+   "balance_factor": {
+    "max": 1.677728152503762,
+    "median": 0.9355805600279106,
+    "min": 0.1636272702887479
+   },
+   "classes": 37,
+   "cr_seconds": 0.000639676,
+   "cr_seconds_all": [
+    0.000628194,
+    0.000655034,
+    0.000639676
+   ],
+   "dims": [
+    37
+   ],
+   "edges": 12954,
+   "equitable_seconds": 0.001937451,
+   "equitable_teams": 37,
+   "n": 4218,
+   "radius": 1.5,
+   "reduction": 114.0,
+   "singletons": 0,
+   "spread": 9.856583355231872e-16,
+   "team_size": {
+    "max": 222,
+    "median": 114.0,
+    "min": 6
+   },
+   "teams": 37,
+   "variant": "Rbal"
+  },
+  "Rden_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 18,
+   "cr_seconds": 0.000209953,
+   "cr_seconds_all": [
+    0.000209953,
+    0.000209642,
+    0.000215743
+   ],
+   "dims": [
+    18
+   ],
+   "edges": 3084,
+   "equitable_seconds": 0.000204813,
+   "equitable_teams": 99,
+   "n": 1026,
+   "radius": 1.5,
+   "reduction": 10.363636363636363,
+   "singletons": 0,
+   "spread": 3.138638972977535e-14,
+   "team_size": {
+    "max": 12,
+    "median": 12.0,
+    "min": 6
+   },
+   "teams": 99,
+   "variant": "Rden"
+  },
+  "Rden_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 73,
+   "cr_seconds": 0.003489683,
+   "cr_seconds_all": [
+    0.003474895,
+    0.003489683,
+    0.00349383
+   ],
+   "dims": [
+    73
+   ],
+   "edges": 50322,
+   "equitable_seconds": 0.003157151,
+   "equitable_teams": 1405,
+   "n": 16206,
+   "radius": 1.5,
+   "reduction": 11.534519572953737,
+   "singletons": 0,
+   "spread": 1.4439624115042806e-13,
+   "team_size": {
+    "max": 12,
+    "median": 12.0,
+    "min": 6
+   },
+   "teams": 1405,
+   "variant": "Rden"
+  },
+  "Rden_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 9,
+   "cr_seconds": 8.0049e-5,
+   "cr_seconds_all": [
+    8.0751e-5,
+    8.0049e-5,
+    7.8446e-5
+   ],
+   "dims": [
+    9
+   ],
+   "edges": 762,
+   "equitable_seconds": 7.471e-5,
+   "equitable_teams": 29,
+   "n": 270,
+   "radius": 1.5,
+   "reduction": 9.310344827586206,
+   "singletons": 0,
+   "spread": 1.5454162439940606e-14,
+   "team_size": {
+    "max": 12,
+    "median": 12.0,
+    "min": 6
+   },
+   "teams": 29,
+   "variant": "Rden"
+  },
+  "Rden_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 37,
+   "cr_seconds": 0.00087712,
+   "cr_seconds_all": [
+    0.00087712,
+    0.000936691,
+    0.00086685
+   ],
+   "dims": [
+    37
+   ],
+   "edges": 12954,
+   "equitable_seconds": 0.000801759,
+   "equitable_teams": 379,
+   "n": 4218,
+   "radius": 1.5,
+   "reduction": 11.129287598944591,
+   "singletons": 0,
+   "spread": 6.417463837984929e-14,
+   "team_size": {
+    "max": 12,
+    "median": 12.0,
+    "min": 6
+   },
+   "teams": 379,
+   "variant": "Rden"
+  },
+  "W1_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.000188742,
+   "cr_seconds_all": [
+    0.000190796,
+    0.000188742,
+    0.000188362
+   ],
+   "dims": [
+    16,
+    64
+   ],
+   "edges": 3936,
+   "equitable_seconds": 0.000359041,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 3.01,
+   "reduction": 64.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 64,
+    "median": 64.0,
+    "min": 64
+   },
+   "teams": 16,
+   "variant": "W1"
+  },
+  "W1_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.003245877,
+   "cr_seconds_all": [
+    0.003346585,
+    0.003234936,
+    0.003245877
+   ],
+   "dims": [
+    64,
+    256
+   ],
+   "edges": 64896,
+   "equitable_seconds": 0.005608463,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 3.01,
+   "reduction": 256.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 256,
+    "median": 256.0,
+    "min": 256
+   },
+   "teams": 64,
+   "variant": "W1"
+  },
+  "W1_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 6.928e-5,
+   "cr_seconds_all": [
+    7.0091e-5,
+    6.928e-5,
+    6.7246e-5
+   ],
+   "dims": [
+    8,
+    32
+   ],
+   "edges": 944,
+   "equitable_seconds": 0.000126526,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 3.01,
+   "reduction": 32.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 32,
+    "median": 32.0,
+    "min": 32
+   },
+   "teams": 8,
+   "variant": "W1"
+  },
+  "W1_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.000811267,
+   "cr_seconds_all": [
+    0.000811267,
+    0.000813631,
+    0.000784626
+   ],
+   "dims": [
+    32,
+    128
+   ],
+   "edges": 16064,
+   "equitable_seconds": 0.001626991,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 3.01,
+   "reduction": 128.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 128,
+    "median": 128.0,
+    "min": 128
+   },
+   "teams": 32,
+   "variant": "W1"
+  },
+  "W3_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.000486239,
+   "cr_seconds_all": [
+    0.000486239,
+    0.000477362,
+    0.000493733
+   ],
+   "dims": [
+    16,
+    64
+   ],
+   "edges": 5826,
+   "equitable_seconds": 0.000462965,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 3.2,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 512,
+   "variant": "W3"
+  },
+  "W3_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.008138172,
+   "cr_seconds_all": [
+    0.008153049,
+    0.008138172,
+    0.008087196
+   ],
+   "dims": [
+    64,
+    256
+   ],
+   "edges": 97026,
+   "equitable_seconds": 0.007677259,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 3.2,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 8192,
+   "variant": "W3"
+  },
+  "W3_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.000170609,
+   "cr_seconds_all": [
+    0.000170609,
+    0.000170087,
+    0.0001713
+   ],
+   "dims": [
+    8,
+    32
+   ],
+   "edges": 1378,
+   "equitable_seconds": 0.000166561,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 3.2,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 128,
+   "variant": "W3"
+  },
+  "W3_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 0.0,
+   "balance_factor": null,
+   "classes": 2,
+   "cr_seconds": 0.001946599,
+   "cr_seconds_all": [
+    0.001973529,
+    0.001946599,
+    0.001944845
+   ],
+   "dims": [
+    32,
+    128
+   ],
+   "edges": 23938,
+   "equitable_seconds": 0.002179624,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 3.2,
+   "reduction": 2.0,
+   "singletons": 0,
+   "spread": 0.0,
+   "team_size": {
+    "max": 2,
+    "median": 2.0,
+    "min": 2
+   },
+   "teams": 2048,
+   "variant": "W3"
+  },
+  "W3bal_N1024": {
+   "N": 1024,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 4.645737786958262e-16,
+   "balance_factor": {
+    "max": 1.724880104990336,
+    "median": 0.9897678281015688,
+    "min": 0.841336145529901
+   },
+   "classes": 2,
+   "cr_seconds": 0.000237263,
+   "cr_seconds_all": [
+    0.00024063,
+    0.000237263,
+    0.000224239
+   ],
+   "dims": [
+    16,
+    64
+   ],
+   "edges": 5826,
+   "equitable_seconds": 0.000474426,
+   "equitable_teams": 512,
+   "n": 1024,
+   "radius": 3.2,
+   "reduction": 64.0,
+   "singletons": 0,
+   "spread": 4.645737786958264e-16,
+   "team_size": {
+    "max": 64,
+    "median": 64.0,
+    "min": 64
+   },
+   "teams": 16,
+   "variant": "W3bal"
+  },
+  "W3bal_N16384": {
+   "N": 16384,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 5.7624929625370555e-16,
+   "balance_factor": {
+    "max": 1.7382538976234365,
+    "median": 0.9974419555088292,
+    "min": 0.8478594135022638
+   },
+   "classes": 2,
+   "cr_seconds": 0.00431756,
+   "cr_seconds_all": [
+    0.004320125,
+    0.00431756,
+    0.004286362
+   ],
+   "dims": [
+    64,
+    256
+   ],
+   "edges": 97026,
+   "equitable_seconds": 0.007963705,
+   "equitable_teams": 8192,
+   "n": 16384,
+   "radius": 3.2,
+   "reduction": 256.0,
+   "singletons": 0,
+   "spread": 6.914991555044441e-16,
+   "team_size": {
+    "max": 256,
+    "median": 256.0,
+    "min": 256
+   },
+   "teams": 64,
+   "variant": "W3bal"
+  },
+  "W3bal_N256": {
+   "N": 256,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 5.867833613569712e-16,
+   "balance_factor": {
+    "max": 1.7070483779556251,
+    "median": 0.9795356577092864,
+    "min": 0.8326384531812443
+   },
+   "classes": 2,
+   "cr_seconds": 5.6386e-5,
+   "cr_seconds_all": [
+    5.6386e-5,
+    5.5444e-5,
+    5.6776e-5
+   ],
+   "dims": [
+    8,
+    32
+   ],
+   "edges": 1378,
+   "equitable_seconds": 0.000121828,
+   "equitable_teams": 128,
+   "n": 256,
+   "radius": 3.2,
+   "reduction": 32.0,
+   "singletons": 0,
+   "spread": 4.694266890855768e-16,
+   "team_size": {
+    "max": 32,
+    "median": 32.0,
+    "min": 32
+   },
+   "teams": 8,
+   "variant": "W3bal"
+  },
+  "W3bal_N4096": {
+   "N": 4096,
+   "aep_refines_classes": true,
+   "balance_bad": 0,
+   "balance_err": 6.932771353099318e-16,
+   "balance_factor": {
+    "max": 1.733795968507691,
+    "median": 0.9948839140507842,
+    "min": 0.8456849917042292
+   },
+   "classes": 2,
+   "cr_seconds": 0.000949955,
+   "cr_seconds_all": [
+    0.000964262,
+    0.000949385,
+    0.000949955
+   ],
+   "dims": [
+    32,
+    128
+   ],
+   "edges": 23938,
+   "equitable_seconds": 0.002507336,
+   "equitable_teams": 2048,
+   "n": 4096,
+   "radius": 3.2,
+   "reduction": 128.0,
+   "singletons": 0,
+   "spread": 4.621847568732883e-16,
+   "team_size": {
+    "max": 128,
+    "median": 128.0,
+    "min": 128
+   },
+   "teams": 32,
+   "variant": "W3bal"
+  }
+ },
+ "solves": {
+  "C1_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.07715513,
+   "build_team_s": 0.010385563,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 1788,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s18.ufhpc",
+    "job": "49627804",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 1.823447377,
+   "mpc_build_team_s": 0.002637213,
+   "n": 1024,
+   "quotient_edges": 3,
+   "steps": [
+    {
+     "Jstar": 619.469717434356,
+     "Jteam": 619.469717409529,
+     "active_full": 3328,
+     "gap": -2.482693162164651e-8,
+     "gap_rel": -4.007771634822064e-11,
+     "input_diff": 4.39675252915557e-6,
+     "input_scale": 0.39990523036317693,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 5.814431675774112e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 3.020654501,
+     "mpc_t_team": 0.002265461,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 1.601185611,
+     "t_solve_full": 1.583440769,
+     "t_solve_team": 0.002526558,
+     "t_team": 0.003513597
+    },
+    {
+     "Jstar": 598.2696372666089,
+     "Jteam": 598.2696372036773,
+     "active_full": 2816,
+     "gap": -6.2931576394476e-8,
+     "gap_rel": -1.0518932012328011e-10,
+     "input_diff": 3.674655999791332e-6,
+     "input_scale": 0.39842810354500713,
+     "iters": [
+      10,
+      11
+     ],
+     "mpc_input_diff": 2.764124419359082e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.421728397,
+     "mpc_t_team": 0.001409045,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 1.634207026,
+     "t_solve_full": 1.616117091,
+     "t_solve_team": 0.002686686,
+     "t_team": 0.003670108
+    },
+    {
+     "Jstar": 604.1059830039446,
+     "Jteam": 604.1059830747688,
+     "active_full": 2048,
+     "gap": 7.082417141646147e-8,
+     "gap_rel": 1.1723799036765872e-10,
+     "input_diff": 2.5706002564573893e-5,
+     "input_scale": 0.393130377817989,
+     "iters": [
+      12,
+      11
+     ],
+     "mpc_input_diff": 2.130995021165649e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.82871106,
+     "mpc_t_team": 0.00108954,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 1.87838273,
+     "t_solve_full": 1.860879719,
+     "t_solve_team": 0.00274809,
+     "t_team": 0.003700245
+    }
+   ],
+   "teams": 4,
+   "variant": "C1",
+   "vars_full": 20480,
+   "vars_team": 80,
+   "summary": {
+    "active_full_max": 3328,
+    "all_solved": true,
+    "gap_rel_max": 1.1723799036765872e-10,
+    "input_diff_max": 2.5706002564573893e-5,
+    "mpc_input_diff_max": 5.814431675774112e-5,
+    "mpc_speedup_med": 760.6063659893167,
+    "mpc_t_full_med": 0.82871106,
+    "mpc_t_team_med": 0.001409045,
+    "speedup_med": 455.7112301154629,
+    "t_full_med": 1.634207026,
+    "t_team_med": 0.003670108
+   }
+  },
+  "C1_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.023331669,
+   "build_team_s": 0.002929469,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 444,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s18.ufhpc",
+    "job": "49627803",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 0.248724331,
+   "mpc_build_team_s": 0.002808554,
+   "n": 256,
+   "quotient_edges": 3,
+   "steps": [
+    {
+     "Jstar": 154.86742935895774,
+     "Jteam": 154.86742934972062,
+     "active_full": 832,
+     "gap": -9.237112408300163e-9,
+     "gap_rel": -5.964528788613147e-11,
+     "input_diff": 2.8992725983542633e-6,
+     "input_scale": 0.39990522915990706,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 5.32087535370096e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.7870945,
+     "mpc_t_team": 0.001965833,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 0.34329811,
+     "t_solve_full": 0.337409355,
+     "t_solve_team": 0.003341707,
+     "t_team": 0.003686069
+    },
+    {
+     "Jstar": 149.5674101359383,
+     "Jteam": 149.56741012044273,
+     "active_full": 704,
+     "gap": -1.5495572824875126e-8,
+     "gap_rel": -1.0360260173517456e-10,
+     "input_diff": 4.341562486798178e-6,
+     "input_scale": 0.39842808609455255,
+     "iters": [
+      10,
+      11
+     ],
+     "mpc_input_diff": 1.3301154767886292e-8,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.117305953,
+     "mpc_t_team": 0.000969096,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 0.353640206,
+     "t_solve_full": 0.348626886,
+     "t_solve_team": 0.003347667,
+     "t_team": 0.003677823
+    },
+    {
+     "Jstar": 151.0264983831089,
+     "Jteam": 151.02649842745927,
+     "active_full": 512,
+     "gap": 4.435037226357963e-8,
+     "gap_rel": 2.936595414605723e-10,
+     "input_diff": 2.2713950066199917e-5,
+     "input_scale": 0.39313058399128725,
+     "iters": [
+      12,
+      11
+     ],
+     "mpc_input_diff": 1.1773379676727203e-7,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.143285116,
+     "mpc_t_team": 0.000694985,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 0.435757125,
+     "t_solve_full": 0.431131126,
+     "t_solve_team": 0.003539154,
+     "t_team": 0.003878076
+    }
+   ],
+   "teams": 4,
+   "variant": "C1",
+   "vars_full": 5120,
+   "vars_team": 80,
+   "summary": {
+    "active_full_max": 832,
+    "all_solved": true,
+    "gap_rel_max": 2.936595414605723e-10,
+    "input_diff_max": 2.2713950066199917e-5,
+    "mpc_input_diff_max": 5.32087535370096e-5,
+    "mpc_speedup_med": 206.1700842464226,
+    "mpc_t_full_med": 0.143285116,
+    "mpc_t_team_med": 0.000969096,
+    "speedup_med": 96.15476492479382,
+    "t_full_med": 0.353640206,
+    "t_team_med": 0.003686069
+   }
+  },
+  "C3_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.140117422,
+   "build_team_s": 0.147285026,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 3318,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s5.ufhpc",
+    "job": "49636397",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 4.089453522,
+   "mpc_build_team_s": 1.501054823,
+   "n": 1024,
+   "quotient_edges": 1654,
+   "steps": [
+    {
+     "Jstar": 700.3821157217246,
+     "Jteam": 700.3821157198361,
+     "active_full": 2304,
+     "gap": -1.8885657482314855e-9,
+     "gap_rel": -2.696479115954253e-12,
+     "input_diff": 2.435420105792452e-7,
+     "input_scale": 0.39918456804821895,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 8.826692227340005e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 3.738913636,
+     "mpc_t_team": 0.405897211,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 2.408755377,
+     "t_solve_full": 2.380518824,
+     "t_solve_team": 1.124830981,
+     "t_team": 1.142713364
+    },
+    {
+     "Jstar": 700.263500919652,
+     "Jteam": 700.2635009245091,
+     "active_full": 2048,
+     "gap": 4.857156454818323e-9,
+     "gap_rel": 6.936183948527159e-12,
+     "input_diff": 1.0129162589800345e-6,
+     "input_scale": 0.3998072332525449,
+     "iters": [
+      9,
+      9
+     ],
+     "mpc_input_diff": 3.904292635997786e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.574316379,
+     "mpc_t_team": 0.289488781,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 2.128538629,
+     "t_solve_full": 2.101457081,
+     "t_solve_team": 0.98630772,
+     "t_team": 1.001776225
+    },
+    {
+     "Jstar": 728.288646998978,
+     "Jteam": 728.2886469661346,
+     "active_full": 2302,
+     "gap": -3.284344529674854e-8,
+     "gap_rel": -4.5096742111915176e-11,
+     "input_diff": 1.924361206273595e-6,
+     "input_scale": 0.3822236660970919,
+     "iters": [
+      9,
+      9
+     ],
+     "mpc_input_diff": 4.2957247881753036e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.227804548,
+     "mpc_t_team": 0.169103371,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 2.106880965,
+     "t_solve_full": 2.075400616,
+     "t_solve_team": 0.906171006,
+     "t_team": 0.920776793
+    }
+   ],
+   "teams": 512,
+   "variant": "C3",
+   "vars_full": 20480,
+   "vars_team": 10240,
+   "summary": {
+    "active_full_max": 2304,
+    "all_solved": true,
+    "gap_rel_max": 4.5096742111915176e-11,
+    "input_diff_max": 1.924361206273595e-6,
+    "mpc_input_diff_max": 8.826692227340005e-5,
+    "mpc_speedup_med": 1.9838985711850436,
+    "mpc_t_full_med": 0.574316379,
+    "mpc_t_team_med": 0.289488781,
+    "speedup_med": 2.124764569053333,
+    "t_full_med": 2.128538629,
+    "t_team_med": 1.001776225
+   }
+  },
+  "C3_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.030877783,
+   "build_team_s": 0.030921996,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 822,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s21.ufhpc",
+    "job": "49627805",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 0.377894015,
+   "mpc_build_team_s": 0.172026272,
+   "n": 256,
+   "quotient_edges": 406,
+   "steps": [
+    {
+     "Jstar": 174.90124299166803,
+     "Jteam": 174.90124299111437,
+     "active_full": 576,
+     "gap": -5.536548997042701e-10,
+     "gap_rel": -3.1655286734048264e-12,
+     "input_diff": 1.7825005178481734e-7,
+     "input_scale": 0.39918456601030333,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 3.3034702550671646e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.671267218,
+     "mpc_t_team": 0.173916901,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 0.492128612,
+     "t_solve_full": 0.484900671,
+     "t_solve_team": 0.214874664,
+     "t_team": 0.219281884
+    },
+    {
+     "Jstar": 174.82315268561342,
+     "Jteam": 174.82315268696163,
+     "active_full": 512,
+     "gap": 1.3482122085406445e-9,
+     "gap_rel": 7.711863033182742e-12,
+     "input_diff": 1.055295416080293e-6,
+     "input_scale": 0.3998072328794129,
+     "iters": [
+      9,
+      9
+     ],
+     "mpc_input_diff": 2.408652196295158e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.10398015,
+     "mpc_t_team": 0.052336023,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 0.430839419,
+     "t_solve_full": 0.424279599,
+     "t_solve_team": 0.200007954,
+     "t_team": 0.204130751
+    },
+    {
+     "Jstar": 181.7774871708517,
+     "Jteam": 181.7774871615361,
+     "active_full": 574,
+     "gap": -9.315613169746939e-9,
+     "gap_rel": -5.1247342642553106e-11,
+     "input_diff": 1.905187607315062e-6,
+     "input_scale": 0.3822236732630005,
+     "iters": [
+      9,
+      9
+     ],
+     "mpc_input_diff": 4.893923329793437e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.04297535,
+     "mpc_t_team": 0.030215533,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 0.427772017,
+     "t_solve_full": 0.421618236,
+     "t_solve_team": 0.189777672,
+     "t_team": 0.193951937
+    }
+   ],
+   "teams": 128,
+   "variant": "C3",
+   "vars_full": 5120,
+   "vars_team": 2560,
+   "summary": {
+    "active_full_max": 576,
+    "all_solved": true,
+    "gap_rel_max": 5.1247342642553106e-11,
+    "input_diff_max": 1.905187607315062e-6,
+    "mpc_input_diff_max": 3.3034702550671646e-5,
+    "mpc_speedup_med": 1.9867797367790057,
+    "mpc_t_full_med": 0.10398015,
+    "mpc_t_team_med": 0.052336023,
+    "speedup_med": 2.2055568179244327,
+    "t_full_med": 0.430839419,
+    "t_team_med": 0.204130751
+   }
+  },
+  "C3bal_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.17419905,
+   "build_team_s": 0.02553689,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 3318,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s5.ufhpc",
+    "job": "49636398",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 4.148968506,
+   "mpc_build_team_s": 0.002408448,
+   "n": 1024,
+   "quotient_edges": 3,
+   "steps": [
+    {
+     "Jstar": 700.4204935530681,
+     "Jteam": 700.4204935496657,
+     "active_full": 2304,
+     "gap": -3.4024196793325245e-9,
+     "gap_rel": -4.857681507965096e-12,
+     "input_diff": 3.570728161622627e-7,
+     "input_scale": 0.3984690985492536,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 8.897631120377558e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 3.785551626,
+     "mpc_t_team": 0.002469822,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 2.522459626,
+     "t_solve_full": 2.486992399,
+     "t_solve_team": 0.002664237,
+     "t_team": 0.003689681
+    },
+    {
+     "Jstar": 700.3123600621691,
+     "Jteam": 700.3123600315612,
+     "active_full": 2048,
+     "gap": -3.0607907319790684e-8,
+     "gap_rel": -4.370607898034745e-11,
+     "input_diff": 6.160584677788669e-6,
+     "input_scale": 0.3998046651165255,
+     "iters": [
+      9,
+      10
+     ],
+     "mpc_input_diff": 3.5362633942770394e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.555131322,
+     "mpc_t_team": 0.001478744,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 2.251636006,
+     "t_solve_full": 2.224623598,
+     "t_solve_team": 0.002860215,
+     "t_team": 0.004061599
+    },
+    {
+     "Jstar": 728.349805044968,
+     "Jteam": 728.3498050464382,
+     "active_full": 2304,
+     "gap": 1.4701981854159385e-9,
+     "gap_rel": 2.01853309389596e-12,
+     "input_diff": 8.742521822729943e-6,
+     "input_scale": 0.3822184984464167,
+     "iters": [
+      9,
+      9
+     ],
+     "mpc_input_diff": 4.266722699194925e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.203822756,
+     "mpc_t_team": 0.001186846,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 2.18651705,
+     "t_solve_full": 2.156691476,
+     "t_solve_team": 0.002459533,
+     "t_team": 0.003425075
+    }
+   ],
+   "teams": 4,
+   "variant": "C3bal",
+   "vars_full": 20480,
+   "vars_team": 80,
+   "summary": {
+    "active_full_max": 2304,
+    "all_solved": true,
+    "gap_rel_max": 4.370607898034745e-11,
+    "input_diff_max": 8.742521822729943e-6,
+    "mpc_input_diff_max": 8.897631120377558e-5,
+    "mpc_speedup_med": 375.40731999588843,
+    "mpc_t_full_med": 0.555131322,
+    "mpc_t_team_med": 0.001478744,
+    "speedup_med": 638.3851594490632,
+    "t_full_med": 2.251636006,
+    "t_team_med": 0.003689681
+   }
+  },
+  "C3bal_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.050000336,
+   "build_team_s": 0.010399167,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 822,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s9.ufhpc",
+    "job": "49636391",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 0.782387431,
+   "mpc_build_team_s": 0.004640874,
+   "n": 256,
+   "quotient_edges": 3,
+   "steps": [
+    {
+     "Jstar": 174.9388492521946,
+     "Jteam": 174.93884925083717,
+     "active_full": 576,
+     "gap": -1.3574208423960954e-9,
+     "gap_rel": -7.759401917862259e-12,
+     "input_diff": 8.486179072786371e-7,
+     "input_scale": 0.3984923766643974,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 3.7018796181564895e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.79095198,
+     "mpc_t_team": 0.002619686,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 0.51049196,
+     "t_solve_full": 0.500617685,
+     "t_solve_team": 0.005401216,
+     "t_team": 0.00582598
+    },
+    {
+     "Jstar": 174.8710350998354,
+     "Jteam": 174.87103515529037,
+     "active_full": 512,
+     "gap": 5.545496151171392e-8,
+     "gap_rel": 3.171191928958057e-10,
+     "input_diff": 1.339565519424546e-5,
+     "input_scale": 0.3997972885329601,
+     "iters": [
+      9,
+      9
+     ],
+     "mpc_input_diff": 2.2333553542853296e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.126676471,
+     "mpc_t_team": 0.00130055,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 0.471815812,
+     "t_solve_full": 0.462962192,
+     "t_solve_team": 0.00523739,
+     "t_team": 0.005711105
+    },
+    {
+     "Jstar": 181.8374522384663,
+     "Jteam": 181.83745224871024,
+     "active_full": 576,
+     "gap": 1.0243923043162795e-8,
+     "gap_rel": 5.6335605877982994e-11,
+     "input_diff": 9.10289451827584e-6,
+     "input_scale": 0.38221053355773504,
+     "iters": [
+      9,
+      9
+     ],
+     "mpc_input_diff": 4.823766454817302e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.065228145,
+     "mpc_t_team": 0.001204661,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 0.477278307,
+     "t_solve_full": 0.469042263,
+     "t_solve_team": 0.005104981,
+     "t_team": 0.005574379
+    }
+   ],
+   "teams": 4,
+   "variant": "C3bal",
+   "vars_full": 5120,
+   "vars_team": 80,
+   "summary": {
+    "active_full_max": 576,
+    "all_solved": true,
+    "gap_rel_max": 3.171191928958057e-10,
+    "input_diff_max": 1.339565519424546e-5,
+    "mpc_input_diff_max": 3.7018796181564895e-5,
+    "mpc_speedup_med": 97.40223059474839,
+    "mpc_t_full_med": 0.126676471,
+    "mpc_t_team_med": 0.00130055,
+    "speedup_med": 85.6199958775677,
+    "t_full_med": 0.477278307,
+    "t_team_med": 0.005711105
+   }
+  },
+  "Ccyl_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.325200097,
+   "build_team_s": 0.04128411,
+   "classes": 16,
+   "cone": "soc",
+   "edges": 3904,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s18.ufhpc",
+    "job": "49627798",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 6.12864809,
+   "mpc_build_team_s": 0.012825225,
+   "n": 1024,
+   "quotient_edges": 15,
+   "steps": [
+    {
+     "Jstar": 735.2275898838848,
+     "Jteam": 735.2275898838811,
+     "active_full": 0,
+     "gap": -3.637978807091713e-12,
+     "gap_rel": -4.948098870536486e-15,
+     "input_diff": 1.574962382733247e-12,
+     "input_scale": 0.5542780029806231,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.047212372373707e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 10.777937463,
+     "mpc_t_team": 0.01073929,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 196.681563806,
+     "t_solve_full": 196.647568547,
+     "t_solve_team": 0.013211205,
+     "t_team": 0.014714958
+    },
+    {
+     "Jstar": 710.9916270663507,
+     "Jteam": 710.9916270663524,
+     "active_full": 0,
+     "gap": 1.7053025658242404e-12,
+     "gap_rel": 2.398484737240231e-15,
+     "input_diff": 1.3448703262142203e-10,
+     "input_scale": 0.4143718760378119,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 7.218825884280911e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.24522151,
+     "mpc_t_team": 0.001211849,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 173.681472188,
+     "t_solve_full": 173.636617052,
+     "t_solve_team": 0.0140124,
+     "t_team": 0.015629994
+    },
+    {
+     "Jstar": 722.056886668136,
+     "Jteam": 722.0568866681389,
+     "active_full": 0,
+     "gap": 2.8421709430404007e-12,
+     "gap_rel": 3.936214715928177e-15,
+     "input_diff": 1.6570256278214401e-10,
+     "input_scale": 0.43704113352415014,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 4.426773392296468e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.203729332,
+     "mpc_t_team": 0.001307276,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 178.881536205,
+     "t_solve_full": 178.84631733,
+     "t_solve_team": 0.014693811,
+     "t_team": 0.016145025
+    }
+   ],
+   "teams": 16,
+   "variant": "Ccyl",
+   "vars_full": 30720,
+   "vars_team": 480,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 4.948098870536486e-15,
+    "input_diff_max": 1.6570256278214401e-10,
+    "mpc_input_diff_max": 1.047212372373707e-9,
+    "mpc_speedup_med": 202.3531892174685,
+    "mpc_t_full_med": 0.24522151,
+    "mpc_t_team_med": 0.001307276,
+    "speedup_med": 11112.062627023399,
+    "t_full_med": 178.881536205,
+    "t_team_med": 0.015629994
+   }
+  },
+  "Ccyl_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.141561196,
+   "build_team_s": 0.016913897,
+   "classes": 16,
+   "cone": "soc",
+   "edges": 976,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s18.ufhpc",
+    "job": "49627797",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 4.314305313,
+   "mpc_build_team_s": 0.030008717,
+   "n": 256,
+   "quotient_edges": 15,
+   "steps": [
+    {
+     "Jstar": 183.86045043007164,
+     "Jteam": 183.86045043007138,
+     "active_full": 0,
+     "gap": -2.5579538487363607e-13,
+     "gap_rel": -1.3912474611875474e-15,
+     "input_diff": 6.978861932793734e-13,
+     "input_scale": 0.5542035404178618,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.0505409320238357e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 3.127282614,
+     "mpc_t_team": 0.01417825,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 52.299868262,
+     "t_solve_full": 52.281107785,
+     "t_solve_team": 0.017264089,
+     "t_team": 0.020593273
+    },
+    {
+     "Jstar": 177.81005222041742,
+     "Jteam": 177.8100522204174,
+     "active_full": 0,
+     "gap": -2.842170943040401e-14,
+     "gap_rel": -1.598430970323984e-16,
+     "input_diff": 1.353012146765309e-10,
+     "input_scale": 0.4143102723518827,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 7.240396060481658e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.187895807,
+     "mpc_t_team": 0.002986435,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 50.100790784,
+     "t_solve_full": 50.071240431,
+     "t_solve_team": 0.01988832,
+     "t_team": 0.022811437
+    },
+    {
+     "Jstar": 180.58425580817854,
+     "Jteam": 180.58425580817905,
+     "active_full": 0,
+     "gap": 5.115907697472721e-13,
+     "gap_rel": 2.8329754853640042e-15,
+     "input_diff": 1.6730117291530178e-10,
+     "input_scale": 0.43704286109549495,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 4.436343514768737e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.217207745,
+     "mpc_t_team": 0.002713546,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 54.959201817,
+     "t_solve_full": 54.930606752,
+     "t_solve_team": 0.0175699,
+     "t_team": 0.020699982
+    }
+   ],
+   "teams": 16,
+   "variant": "Ccyl",
+   "vars_full": 7680,
+   "vars_team": 480,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 2.8329754853640042e-15,
+    "input_diff_max": 1.6730117291530178e-10,
+    "mpc_input_diff_max": 1.0505409320238357e-9,
+    "mpc_speedup_med": 80.04572061796631,
+    "mpc_t_full_med": 0.217207745,
+    "mpc_t_team_med": 0.002986435,
+    "speedup_med": 2539.657890321757,
+    "t_full_med": 52.299868262,
+    "t_team_med": 0.020699982
+   }
+  },
+  "E1_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.131918271,
+   "build_team_s": 0.017686191,
+   "classes": 8,
+   "cone": "soc",
+   "edges": 2296,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0704a-s14.ufhpc",
+    "job": "49627818",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 2.996118252,
+   "mpc_build_team_s": 0.005715688,
+   "n": 1024,
+   "quotient_edges": 10,
+   "steps": [
+    {
+     "Jstar": 577.7306454816784,
+     "Jteam": 577.7306455391487,
+     "active_full": 1280,
+     "gap": 5.7470288084005006e-8,
+     "gap_rel": 9.947592106021935e-11,
+     "input_diff": 5.286439913671642e-6,
+     "input_scale": 0.4853838798254392,
+     "iters": [
+      12,
+      11
+     ],
+     "mpc_input_diff": 3.8338376416507947e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 9.823119581,
+     "mpc_t_team": 0.006885292,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 6.957763053,
+     "t_solve_full": 6.927675866,
+     "t_solve_team": 0.009501985,
+     "t_team": 0.010973472
+    },
+    {
+     "Jstar": 542.9054377476677,
+     "Jteam": 542.9054378237868,
+     "active_full": 1024,
+     "gap": 7.611902219650801e-8,
+     "gap_rel": 1.402067780206812e-10,
+     "input_diff": 9.23555020654332e-6,
+     "input_scale": 0.4429844499559032,
+     "iters": [
+      11,
+      10
+     ],
+     "mpc_input_diff": 1.0233029517636716e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 1.126440921,
+     "mpc_t_team": 0.004474271,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 6.931272478,
+     "t_solve_full": 6.904512341,
+     "t_solve_team": 0.009039362,
+     "t_team": 0.010496602
+    },
+    {
+     "Jstar": 539.5148159722714,
+     "Jteam": 539.5148159134967,
+     "active_full": 1024,
+     "gap": -5.877473086002283e-8,
+     "gap_rel": -1.0893997554840752e-10,
+     "input_diff": 7.737647710781559e-6,
+     "input_scale": 0.4265921164037607,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 6.5554910857051896e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.603114348,
+     "mpc_t_team": 0.002666637,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 6.096503761,
+     "t_solve_full": 6.065188823,
+     "t_solve_team": 0.009033991,
+     "t_team": 0.010343876
+    }
+   ],
+   "teams": 8,
+   "variant": "E1",
+   "vars_full": 25600,
+   "vars_team": 200,
+   "summary": {
+    "active_full_max": 1280,
+    "all_solved": true,
+    "gap_rel_max": 1.402067780206812e-10,
+    "input_diff_max": 9.23555020654332e-6,
+    "mpc_input_diff_max": 3.8338376416507947e-5,
+    "mpc_speedup_med": 251.7596544777909,
+    "mpc_t_full_med": 1.126440921,
+    "mpc_t_team_med": 0.004474271,
+    "speedup_med": 634.0530192267315,
+    "t_full_med": 6.931272478,
+    "t_team_med": 0.010496602
+   }
+  },
+  "E1_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.025944305,
+   "build_team_s": 0.004679632,
+   "classes": 8,
+   "cone": "soc",
+   "edges": 568,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0704a-s7.ufhpc",
+    "job": "49627817",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 0.303374546,
+   "mpc_build_team_s": 0.004982106,
+   "n": 256,
+   "quotient_edges": 10,
+   "steps": [
+    {
+     "Jstar": 144.4326613704134,
+     "Jteam": 144.43266138476793,
+     "active_full": 320,
+     "gap": 1.4354526456372696e-8,
+     "gap_rel": 9.938559824469993e-11,
+     "input_diff": 5.581522373732106e-6,
+     "input_scale": 0.4853838798238678,
+     "iters": [
+      12,
+      11
+     ],
+     "mpc_input_diff": 1.4783726964839872e-8,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.501125131,
+     "mpc_t_team": 0.005226721,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 1.347654664,
+     "t_solve_full": 1.341552039,
+     "t_solve_team": 0.008879249,
+     "t_team": 0.00928787
+    },
+    {
+     "Jstar": 135.72635934224752,
+     "Jteam": 135.7263593661134,
+     "active_full": 256,
+     "gap": 2.3865879938966827e-8,
+     "gap_rel": 1.7583820898626358e-10,
+     "input_diff": 1.0204612576114602e-5,
+     "input_scale": 0.4429844496426685,
+     "iters": [
+      11,
+      10
+     ],
+     "mpc_input_diff": 5.3882135489513594e-8,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.378333393,
+     "mpc_t_team": 0.002852267,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 1.229891728,
+     "t_solve_full": 1.224492865,
+     "t_solve_team": 0.008384768,
+     "t_team": 0.008764846
+    },
+    {
+     "Jstar": 134.8787049567344,
+     "Jteam": 134.87870496374296,
+     "active_full": 256,
+     "gap": 7.008566171862185e-9,
+     "gap_rel": 5.196199188085585e-11,
+     "input_diff": 9.133836314900723e-6,
+     "input_scale": 0.4265921169021634,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 3.650428258533678e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.076068978,
+     "mpc_t_team": 0.001681115,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 1.155441418,
+     "t_solve_full": 1.150366871,
+     "t_solve_team": 0.00802804,
+     "t_team": 0.008383543
+    }
+   ],
+   "teams": 8,
+   "variant": "E1",
+   "vars_full": 6400,
+   "vars_team": 200,
+   "summary": {
+    "active_full_max": 320,
+    "all_solved": true,
+    "gap_rel_max": 1.7583820898626358e-10,
+    "input_diff_max": 1.0204612576114602e-5,
+    "mpc_input_diff_max": 3.650428258533678e-6,
+    "mpc_speedup_med": 95.877536030716,
+    "mpc_t_full_med": 0.378333393,
+    "mpc_t_team_med": 0.002852267,
+    "speedup_med": 140.32097403650903,
+    "t_full_med": 1.229891728,
+    "t_team_med": 0.008764846
+   }
+  },
+  "E1t_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.127073545,
+   "build_team_s": 0.015726779,
+   "classes": 3,
+   "cone": "soc",
+   "edges": 2296,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s5.ufhpc",
+    "job": "49636399",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 3.249612914,
+   "mpc_build_team_s": 0.006335434,
+   "n": 1024,
+   "quotient_edges": 10,
+   "steps": [
+    {
+     "Jstar": 474.29300523108213,
+     "Jteam": 474.2930052362801,
+     "active_full": 1536,
+     "gap": 5.197989594307728e-9,
+     "gap_rel": 1.0959448140659791e-11,
+     "input_diff": 6.699221269113043e-7,
+     "input_scale": 0.4178182296942652,
+     "iters": [
+      12,
+      12
+     ],
+     "mpc_input_diff": 2.4050378106516e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 8.346387111,
+     "mpc_t_team": 0.005411841,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 6.390637186,
+     "t_solve_full": 6.369296066,
+     "t_solve_team": 0.008984703,
+     "t_team": 0.010083524
+    },
+    {
+     "Jstar": 397.6452618126359,
+     "Jteam": 397.64526180098164,
+     "active_full": 1792,
+     "gap": -1.1654265108518302e-8,
+     "gap_rel": -2.930819558969021e-11,
+     "input_diff": 9.258356733321538e-6,
+     "input_scale": 0.3911505799619468,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 9.680056957145355e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.662583283,
+     "mpc_t_team": 0.002087606,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 5.775035618,
+     "t_solve_full": 5.753067772,
+     "t_solve_team": 0.008581297,
+     "t_team": 0.009764526
+    },
+    {
+     "Jstar": 350.30574105243,
+     "Jteam": 350.30574104903667,
+     "active_full": 2304,
+     "gap": -3.3933247323147953e-9,
+     "gap_rel": -9.686751699016314e-12,
+     "input_diff": 5.098717847734635e-6,
+     "input_scale": 0.3806364002702835,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 5.9526584474944855e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.681704898,
+     "mpc_t_team": 0.002556776,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 5.418756265,
+     "t_solve_full": 5.398143902,
+     "t_solve_team": 0.008307072,
+     "t_team": 0.009372451
+    }
+   ],
+   "teams": 8,
+   "variant": "E1t",
+   "vars_full": 25600,
+   "vars_team": 200,
+   "summary": {
+    "active_full_max": 2304,
+    "all_solved": true,
+    "gap_rel_max": 2.930819558969021e-11,
+    "input_diff_max": 9.258356733321538e-6,
+    "mpc_input_diff_max": 2.4050378106516e-5,
+    "mpc_speedup_med": 317.3890489872131,
+    "mpc_t_full_med": 0.681704898,
+    "mpc_t_team_med": 0.002556776,
+    "speedup_med": 591.4302054190854,
+    "t_full_med": 5.775035618,
+    "t_team_med": 0.009764526
+   }
+  },
+  "E1t_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.023550157,
+   "build_team_s": 0.004429126,
+   "classes": 3,
+   "cone": "soc",
+   "edges": 568,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s9.ufhpc",
+    "job": "49636392",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 0.294945732,
+   "mpc_build_team_s": 0.004936374,
+   "n": 256,
+   "quotient_edges": 10,
+   "steps": [
+    {
+     "Jstar": 118.5732513077777,
+     "Jteam": 118.57325130743294,
+     "active_full": 384,
+     "gap": -3.447553353908006e-10,
+     "gap_rel": -2.9075304218143397e-12,
+     "input_diff": 1.3799937479130886e-6,
+     "input_scale": 0.4178182296929328,
+     "iters": [
+      12,
+      12
+     ],
+     "mpc_input_diff": 7.303328924956887e-8,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.471550209,
+     "mpc_t_team": 0.005190769,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 1.234130533,
+     "t_solve_full": 1.22786198,
+     "t_solve_team": 0.009294118,
+     "t_team": 0.009713641
+    },
+    {
+     "Jstar": 99.41131493970721,
+     "Jteam": 99.41131493644923,
+     "active_full": 448,
+     "gap": -3.2579805520072114e-9,
+     "gap_rel": -3.277273370725627e-11,
+     "input_diff": 8.949561248333682e-6,
+     "input_scale": 0.39115054934881693,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 2.243700256310266e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.133179442,
+     "mpc_t_team": 0.001671364,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 1.139152034,
+     "t_solve_full": 1.133245478,
+     "t_solve_team": 0.008639925,
+     "t_team": 0.009019464
+    },
+    {
+     "Jstar": 87.57643412529899,
+     "Jteam": 87.5764342431167,
+     "active_full": 576,
+     "gap": 1.1781770581364981e-7,
+     "gap_rel": 1.345312891423319e-9,
+     "input_diff": 9.23682001763293e-6,
+     "input_scale": 0.3806364031685052,
+     "iters": [
+      11,
+      10
+     ],
+     "mpc_input_diff": 3.108372090276923e-8,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.145399387,
+     "mpc_t_team": 0.001861548,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 1.140079337,
+     "t_solve_full": 1.134796486,
+     "t_solve_team": 0.008335005,
+     "t_team": 0.008728951
+    }
+   ],
+   "teams": 8,
+   "variant": "E1t",
+   "vars_full": 6400,
+   "vars_team": 200,
+   "summary": {
+    "active_full_max": 576,
+    "all_solved": true,
+    "gap_rel_max": 1.345312891423319e-9,
+    "input_diff_max": 9.23682001763293e-6,
+    "mpc_input_diff_max": 2.243700256310266e-6,
+    "mpc_speedup_med": 79.68308638932034,
+    "mpc_t_full_med": 0.145399387,
+    "mpc_t_team_med": 0.001861548,
+    "speedup_med": 127.05128107987521,
+    "t_full_med": 1.140079337,
+    "t_team_med": 0.009019464
+   }
+  },
+  "E3_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.414391679,
+   "build_team_s": 0.292503349,
+   "classes": 8,
+   "cone": "soc",
+   "edges": 5604,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0704a-s15.ufhpc",
+    "job": "49627822",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 9.192611529,
+   "mpc_build_team_s": 2.606979158,
+   "n": 1024,
+   "quotient_edges": 2788,
+   "steps": [
+    {
+     "Jstar": 683.1844090431873,
+     "Jteam": 683.1844090435036,
+     "active_full": 768,
+     "gap": 3.162767825415358e-10,
+     "gap_rel": 4.629449653051764e-13,
+     "input_diff": 8.585444072339854e-8,
+     "input_scale": 0.4386272791091064,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 0.00014717073824715987,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 10.020139721,
+     "mpc_t_team": 1.195082964,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 12.122436374,
+     "t_solve_full": 12.071007283,
+     "t_solve_team": 5.765952615,
+     "t_team": 5.788233049
+    },
+    {
+     "Jstar": 673.1427637178438,
+     "Jteam": 673.1427637410861,
+     "active_full": 1024,
+     "gap": 2.3242364477482624e-8,
+     "gap_rel": 3.4528135382622866e-11,
+     "input_diff": 5.568170723391219e-6,
+     "input_scale": 0.4117222796048093,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 1.2399358822821893e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 1.203218626,
+     "mpc_t_team": 0.512078821,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 12.190609809,
+     "t_solve_full": 12.147087522,
+     "t_solve_team": 5.562806279,
+     "t_team": 5.584613168
+    },
+    {
+     "Jstar": 693.1331485911953,
+     "Jteam": 693.1331486187398,
+     "active_full": 1152,
+     "gap": 2.7544501790544018e-8,
+     "gap_rel": 3.9739120609840515e-11,
+     "input_diff": 1.9202014128194556e-6,
+     "input_scale": 0.3853194951792938,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 1.814318838641582e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.650442982,
+     "mpc_t_team": 0.558563534,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 11.859392712,
+     "t_solve_full": 11.815366996,
+     "t_solve_team": 5.852046074,
+     "t_team": 5.873138697
+    }
+   ],
+   "teams": 512,
+   "variant": "E3",
+   "vars_full": 25600,
+   "vars_team": 12800,
+   "summary": {
+    "active_full_max": 1152,
+    "all_solved": true,
+    "gap_rel_max": 3.9739120609840515e-11,
+    "input_diff_max": 5.568170723391219e-6,
+    "mpc_input_diff_max": 0.00014717073824715987,
+    "mpc_speedup_med": 2.3496746529183246,
+    "mpc_t_full_med": 1.203218626,
+    "mpc_t_team_med": 0.558563534,
+    "speedup_med": 2.094324169634864,
+    "t_full_med": 12.122436374,
+    "t_team_med": 5.788233049
+   }
+  },
+  "E3_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.052953084,
+   "build_team_s": 0.051585577,
+   "classes": 8,
+   "cone": "soc",
+   "edges": 1380,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0704a-s15.ufhpc",
+    "job": "49627821",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 1.224901535,
+   "mpc_build_team_s": 0.241501143,
+   "n": 256,
+   "quotient_edges": 676,
+   "steps": [
+    {
+     "Jstar": 170.49229463438866,
+     "Jteam": 170.4922946344696,
+     "active_full": 192,
+     "gap": 8.094502845779061e-11,
+     "gap_rel": 4.747723563189338e-13,
+     "input_diff": 8.523591515929851e-8,
+     "input_scale": 0.43862727910769966,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 9.952452312278481e-8,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.68207436,
+     "mpc_t_team": 0.228886567,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 2.417310301,
+     "t_solve_full": 2.406599405,
+     "t_solve_team": 1.224480678,
+     "t_team": 1.230135821
+    },
+    {
+     "Jstar": 167.91490875952093,
+     "Jteam": 167.91490876526348,
+     "active_full": 256,
+     "gap": 5.742549546994269e-9,
+     "gap_rel": 3.419916426371914e-11,
+     "input_diff": 5.521539017977473e-6,
+     "input_scale": 0.4117222794821689,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 1.2694807856601653e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.231735584,
+     "mpc_t_team": 0.099108488,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 2.531373469,
+     "t_solve_full": 2.520984686,
+     "t_solve_team": 1.013239973,
+     "t_team": 1.019026441
+    },
+    {
+     "Jstar": 172.85253806768327,
+     "Jteam": 172.8525381023412,
+     "active_full": 288,
+     "gap": 3.4657944070204394e-8,
+     "gap_rel": 2.0050584421637767e-10,
+     "input_diff": 3.358214359150402e-6,
+     "input_scale": 0.3853198770057063,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 7.0202936797159055e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.169588511,
+     "mpc_t_team": 0.118770589,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 2.544652466,
+     "t_solve_full": 2.534929368,
+     "t_solve_team": 1.057522536,
+     "t_team": 1.06302294
+    }
+   ],
+   "teams": 128,
+   "variant": "E3",
+   "vars_full": 6400,
+   "vars_team": 3200,
+   "summary": {
+    "active_full_max": 288,
+    "all_solved": true,
+    "gap_rel_max": 2.0050584421637767e-10,
+    "input_diff_max": 5.521539017977473e-6,
+    "mpc_input_diff_max": 1.2694807856601653e-5,
+    "mpc_speedup_med": 2.338201184140757,
+    "mpc_t_full_med": 0.231735584,
+    "mpc_t_team_med": 0.118770589,
+    "speedup_med": 2.3937888546412744,
+    "t_full_med": 2.531373469,
+    "t_team_med": 1.06302294
+   }
+  },
+  "E3bal_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.431932358,
+   "build_team_s": 0.050913544,
+   "classes": 8,
+   "cone": "soc",
+   "edges": 5604,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s8.ufhpc",
+    "job": "49636401",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 8.109676055,
+   "mpc_build_team_s": 0.005919662,
+   "n": 1024,
+   "quotient_edges": 16,
+   "steps": [
+    {
+     "Jstar": 683.2397442718429,
+     "Jteam": 683.2397442754354,
+     "active_full": 768,
+     "gap": 3.5925040720030665e-9,
+     "gap_rel": 5.258043171700656e-12,
+     "input_diff": 1.0008757813928515e-6,
+     "input_scale": 0.4332974865540974,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 0.00011560108094837984,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 10.391919146,
+     "mpc_t_team": 0.006197001,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 11.192384063,
+     "t_solve_full": 11.150125686,
+     "t_solve_team": 0.008850082,
+     "t_team": 0.010361573
+    },
+    {
+     "Jstar": 673.2120436720634,
+     "Jteam": 673.2120436829796,
+     "active_full": 1024,
+     "gap": 1.0916210158029571e-8,
+     "gap_rel": 1.621511418376689e-11,
+     "input_diff": 1.1967101147536408e-6,
+     "input_scale": 0.4018399976570343,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 1.2483076763158962e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.98912982,
+     "mpc_t_team": 0.002735667,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 10.982699929,
+     "t_solve_full": 10.94173836,
+     "t_solve_team": 0.009337377,
+     "t_team": 0.011259439
+    },
+    {
+     "Jstar": 693.2156630642526,
+     "Jteam": 693.2156630429317,
+     "active_full": 1152,
+     "gap": -2.132082954631187e-8,
+     "gap_rel": -3.0756416339565155e-11,
+     "input_diff": 6.407553720472192e-6,
+     "input_scale": 0.3796703857340133,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 1.8055120477311615e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.836636539,
+     "mpc_t_team": 0.002302996,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 11.297282357,
+     "t_solve_full": 11.231643826,
+     "t_solve_team": 0.008912772,
+     "t_team": 0.010307175
+    }
+   ],
+   "teams": 8,
+   "variant": "E3bal",
+   "vars_full": 25600,
+   "vars_team": 200,
+   "summary": {
+    "active_full_max": 1152,
+    "all_solved": true,
+    "gap_rel_max": 3.0756416339565155e-11,
+    "input_diff_max": 6.407553720472192e-6,
+    "mpc_input_diff_max": 0.00011560108094837984,
+    "mpc_speedup_med": 363.2818029210646,
+    "mpc_t_full_med": 0.98912982,
+    "mpc_t_team_med": 0.002735667,
+    "speedup_med": 1080.1819437068098,
+    "t_full_med": 11.192384063,
+    "t_team_med": 0.010361573
+   }
+  },
+  "E3bal_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.059891737,
+   "build_team_s": 0.014070703,
+   "classes": 8,
+   "cone": "soc",
+   "edges": 1380,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s13.ufhpc",
+    "job": "49636395",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 1.316105805,
+   "mpc_build_team_s": 0.008995731,
+   "n": 256,
+   "quotient_edges": 16,
+   "steps": [
+    {
+     "Jstar": 170.54530070918435,
+     "Jteam": 170.5453007089866,
+     "active_full": 192,
+     "gap": -1.9775825421675108e-10,
+     "gap_rel": -1.1595643702547428e-12,
+     "input_diff": 5.720224665328733e-7,
+     "input_scale": 0.43362677385809645,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 8.701948417400018e-8,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.703849098,
+     "mpc_t_team": 0.00567895,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 2.436824354,
+     "t_solve_full": 2.426818658,
+     "t_solve_team": 0.008948752,
+     "t_team": 0.010199678
+    },
+    {
+     "Jstar": 167.98127909787547,
+     "Jteam": 167.98127910157552,
+     "active_full": 256,
+     "gap": 3.7000518204877153e-9,
+     "gap_rel": 2.2026572486877267e-11,
+     "input_diff": 1.1859567027872053e-6,
+     "input_scale": 0.40237758327512263,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 0.0001622135640427201,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.219199427,
+     "mpc_t_team": 0.001867572,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 2.463864962,
+     "t_solve_full": 2.453488322,
+     "t_solve_team": 0.009167535,
+     "t_team": 0.010480954
+    },
+    {
+     "Jstar": 172.93159711312512,
+     "Jteam": 172.93159713917368,
+     "active_full": 288,
+     "gap": 2.6048553536384134e-8,
+     "gap_rel": 1.5062923127543998e-10,
+     "input_diff": 6.2925950444214784e-6,
+     "input_scale": 0.37994173084940525,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 7.083133385377138e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.231793312,
+     "mpc_t_team": 0.001858215,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 2.46771457,
+     "t_solve_full": 2.458189979,
+     "t_solve_team": 0.008980436,
+     "t_team": 0.010219036
+    }
+   ],
+   "teams": 8,
+   "variant": "E3bal",
+   "vars_full": 6400,
+   "vars_team": 200,
+   "summary": {
+    "active_full_max": 288,
+    "all_solved": true,
+    "gap_rel_max": 1.5062923127543998e-10,
+    "input_diff_max": 6.2925950444214784e-6,
+    "mpc_input_diff_max": 0.0001622135640427201,
+    "mpc_speedup_med": 123.94000616311112,
+    "mpc_t_full_med": 0.231793312,
+    "mpc_t_team_med": 0.001867572,
+    "speedup_med": 238.91189055183898,
+    "t_full_med": 2.463864962,
+    "t_team_med": 0.010219036
+   }
+  },
+  "L26_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 1.213466265,
+   "build_team_s": 0.293750702,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 10068,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s11.ufhpc",
+    "job": "49627789",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 34.816122015,
+   "mpc_build_team_s": 1.594980318,
+   "n": 1024,
+   "quotient_edges": 1158,
+   "steps": [
+    {
+     "Jstar": 582.6240949190346,
+     "Jteam": 582.6240949190368,
+     "active_full": 0,
+     "gap": 2.1600499167107046e-12,
+     "gap_rel": 3.707450370741841e-15,
+     "input_diff": 5.450195850187356e-12,
+     "input_scale": 0.6125699584016774,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 3.597085851403392e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 112.33524886,
+     "mpc_t_team": 1.438839465,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 1363.302961521,
+     "t_solve_full": 1363.199651183,
+     "t_solve_team": 20.381681507,
+     "t_team": 20.395173883
+    },
+    {
+     "Jstar": 521.1637748497678,
+     "Jteam": 521.1637748497681,
+     "active_full": 0,
+     "gap": 2.2737367544323206e-13,
+     "gap_rel": 4.3628065958493654e-16,
+     "input_diff": 1.985430916895403e-12,
+     "input_scale": 0.3423181685183535,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 2.3346611310870458e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.731142988,
+     "mpc_t_team": 0.031332834,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 1391.852847299,
+     "t_solve_full": 1391.738467679,
+     "t_solve_team": 17.247598701,
+     "t_team": 17.259760172
+    },
+    {
+     "Jstar": 499.6525167278104,
+     "Jteam": 499.6525167278105,
+     "active_full": 0,
+     "gap": 1.1368683772161603e-13,
+     "gap_rel": 2.275318024337058e-16,
+     "input_diff": 1.4593048991429214e-12,
+     "input_scale": 0.3221691294640876,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.6744508835042637e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.650124781,
+     "mpc_t_team": 0.037500854,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 1445.277914305,
+     "t_solve_full": 1445.170057432,
+     "t_solve_team": 19.610112466,
+     "t_team": 19.62301115
+    }
+   ],
+   "teams": 144,
+   "variant": "L26",
+   "vars_full": 30720,
+   "vars_team": 4320,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 3.707450370741841e-15,
+    "input_diff_max": 5.450195850187356e-12,
+    "mpc_input_diff_max": 3.597085851403392e-9,
+    "mpc_speedup_med": 23.33472254696144,
+    "mpc_t_full_med": 0.731142988,
+    "mpc_t_team_med": 0.037500854,
+    "speedup_med": 73.65219859771624,
+    "t_full_med": 1391.852847299,
+    "t_team_med": 19.62301115
+   }
+  },
+  "L26_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.218496205,
+   "build_team_s": 0.066115581,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 2292,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s10.ufhpc",
+    "job": "49627788",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 4.299609697,
+   "mpc_build_team_s": 0.157978663,
+   "n": 256,
+   "quotient_edges": 240,
+   "steps": [
+    {
+     "Jstar": 144.08960676884124,
+     "Jteam": 144.08960676884104,
+     "active_full": 0,
+     "gap": -1.9895196601282805e-13,
+     "gap_rel": -1.3807516758096293e-15,
+     "input_diff": 5.259792601464142e-12,
+     "input_scale": 0.6125952351933426,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 3.672573911650545e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 5.54137644,
+     "mpc_t_team": 0.185884247,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 136.779243,
+     "t_solve_full": 136.753032594,
+     "t_solve_team": 0.531935512,
+     "t_team": 0.536155488
+    },
+    {
+     "Jstar": 128.43513475083444,
+     "Jteam": 128.4351347508342,
+     "active_full": 0,
+     "gap": -2.2737367544323206e-13,
+     "gap_rel": -1.7703385906382975e-15,
+     "input_diff": 1.830761237053835e-12,
+     "input_scale": 0.3423385062812274,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 2.385499159318627e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.225335332,
+     "mpc_t_team": 0.006034067,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 151.765612916,
+     "t_solve_full": 151.737121051,
+     "t_solve_team": 0.561866957,
+     "t_team": 0.567619359
+    },
+    {
+     "Jstar": 122.77504383531755,
+     "Jteam": 122.77504383531749,
+     "active_full": 0,
+     "gap": -5.684341886080802e-14,
+     "gap_rel": -4.629883817191226e-16,
+     "input_diff": 1.3688217226359711e-12,
+     "input_scale": 0.3221779770384051,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.6896536947363927e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.187832273,
+     "mpc_t_team": 0.005241236,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 164.441078554,
+     "t_solve_full": 164.405980796,
+     "t_solve_team": 0.544649635,
+     "t_team": 0.549466327
+    }
+   ],
+   "teams": 40,
+   "variant": "L26",
+   "vars_full": 7680,
+   "vars_team": 1200,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 1.7703385906382975e-15,
+    "input_diff_max": 5.259792601464142e-12,
+    "mpc_input_diff_max": 3.672573911650545e-10,
+    "mpc_speedup_med": 35.8374003765524,
+    "mpc_t_full_med": 0.225335332,
+    "mpc_t_team_med": 0.006034067,
+    "speedup_med": 267.3721579605251,
+    "t_full_med": 151.765612916,
+    "t_team_med": 0.549466327
+   }
+  },
+  "L26bal_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 1.230889751,
+   "build_team_s": 0.076832399,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 10068,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s14.ufhpc",
+    "job": "49627795",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 24.241645983,
+   "mpc_build_team_s": 0.003433025,
+   "n": 1024,
+   "quotient_edges": 3,
+   "steps": [
+    {
+     "Jstar": 583.4624639701126,
+     "Jteam": 583.4624639701083,
+     "active_full": 0,
+     "gap": -4.320099833421409e-12,
+     "gap_rel": -7.404246374352374e-15,
+     "input_diff": 2.269219534500877e-12,
+     "input_scale": 0.6040922842031431,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 2.7192144091969794e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 75.462375276,
+     "mpc_t_team": 0.0031356,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 931.769951963,
+     "t_solve_full": 931.69691196,
+     "t_solve_team": 0.007054598,
+     "t_team": 0.00816182
+    },
+    {
+     "Jstar": 522.1605145211478,
+     "Jteam": 522.1605145211468,
+     "active_full": 0,
+     "gap": -1.0231815394945443e-12,
+     "gap_rel": -1.959515342581701e-15,
+     "input_diff": 1.902866753056287e-12,
+     "input_scale": 0.3364195594502509,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.7629335768987175e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.389142558,
+     "mpc_t_team": 0.00077818,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 939.765332771,
+     "t_solve_full": 939.689885877,
+     "t_solve_team": 0.009509791,
+     "t_team": 0.010594331
+    },
+    {
+     "Jstar": 500.8054727602355,
+     "Jteam": 500.8054727602331,
+     "active_full": 0,
+     "gap": -2.3874235921539366e-12,
+     "gap_rel": -4.767167537118617e-15,
+     "input_diff": 1.6013856907193258e-12,
+     "input_scale": 0.31150594620519356,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.2646342584243797e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.351055078,
+     "mpc_t_team": 0.000910416,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 878.005115827,
+     "t_solve_full": 877.931052355,
+     "t_solve_team": 0.007868773,
+     "t_team": 0.008947541
+    }
+   ],
+   "teams": 4,
+   "variant": "L26bal",
+   "vars_full": 30720,
+   "vars_team": 120,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 7.404246374352374e-15,
+    "input_diff_max": 2.269219534500877e-12,
+    "mpc_input_diff_max": 2.7192144091969794e-9,
+    "mpc_speedup_med": 500.0675396437843,
+    "mpc_t_full_med": 0.389142558,
+    "mpc_t_team_med": 0.000910416,
+    "speedup_med": 98128.09081590128,
+    "t_full_med": 931.769951963,
+    "t_team_med": 0.008947541
+   }
+  },
+  "L26bal_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.155171927,
+   "build_team_s": 0.019350725,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 2292,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s12.ufhpc",
+    "job": "49636393",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 4.304487699,
+   "mpc_build_team_s": 0.003481762,
+   "n": 256,
+   "quotient_edges": 3,
+   "steps": [
+    {
+     "Jstar": 144.44118790817225,
+     "Jteam": 144.44118790817245,
+     "active_full": 0,
+     "gap": 1.9895196601282805e-13,
+     "gap_rel": 1.3773908183260771e-15,
+     "input_diff": 1.0798029137504273e-12,
+     "input_scale": 0.6058390004168965,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 2.853446368078494e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 5.582880675,
+     "mpc_t_team": 0.002617623,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 104.315398907,
+     "t_solve_full": 104.285461736,
+     "t_solve_team": 0.008264528,
+     "t_team": 0.008649416
+    },
+    {
+     "Jstar": 128.85248212760155,
+     "Jteam": 128.85248212760166,
+     "active_full": 0,
+     "gap": 1.1368683772161603e-13,
+     "gap_rel": 8.823022719037177e-16,
+     "input_diff": 6.529776719332858e-13,
+     "input_scale": 0.3375838166968268,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.843728988926152e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.142936536,
+     "mpc_t_team": 0.000385879,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 103.549325831,
+     "t_solve_full": 103.532623167,
+     "t_solve_team": 0.003441955,
+     "t_team": 0.003825961
+    },
+    {
+     "Jstar": 123.25725221720722,
+     "Jteam": 123.25725221720745,
+     "active_full": 0,
+     "gap": 2.2737367544323206e-13,
+     "gap_rel": 1.8447082938580204e-15,
+     "input_diff": 5.360156762890256e-13,
+     "input_scale": 0.31313433761562504,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.324965137605716e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.067110206,
+     "mpc_t_team": 0.001109629,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 105.472820981,
+     "t_solve_full": 105.451740579,
+     "t_solve_team": 0.004948781,
+     "t_team": 0.00575249
+    }
+   ],
+   "teams": 4,
+   "variant": "L26bal",
+   "vars_full": 7680,
+   "vars_team": 120,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 1.8447082938580204e-15,
+    "input_diff_max": 1.0798029137504273e-12,
+    "mpc_input_diff_max": 2.853446368078494e-10,
+    "mpc_speedup_med": 370.41802222976634,
+    "mpc_t_full_med": 0.142936536,
+    "mpc_t_team_med": 0.001109629,
+    "speedup_med": 18335.15937985116,
+    "t_full_med": 104.315398907,
+    "t_team_med": 0.00575249
+   }
+  },
+  "L6_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.204434849,
+   "build_team_s": 0.012208212,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 2688,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s10.ufhpc",
+    "job": "49627787",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 4.107378435,
+   "mpc_build_team_s": 0.003665095,
+   "n": 1024,
+   "quotient_edges": 3,
+   "steps": [
+    {
+     "Jstar": 453.26709390071915,
+     "Jteam": 453.2670939007289,
+     "active_full": 0,
+     "gap": 9.777068044058979e-12,
+     "gap_rel": 2.157021362375908e-14,
+     "input_diff": 1.015645900714901e-12,
+     "input_scale": 0.6473792259442501,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 8.730428602277129e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 14.383724174,
+     "mpc_t_team": 0.003184622,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 213.195881658,
+     "t_solve_full": 213.16451235,
+     "t_solve_team": 0.013407285,
+     "t_team": 0.014704499
+    },
+    {
+     "Jstar": 364.4932405918888,
+     "Jteam": 364.49324059188507,
+     "active_full": 0,
+     "gap": -3.751665644813329e-12,
+     "gap_rel": -1.0292826387455416e-14,
+     "input_diff": 6.599221169523162e-11,
+     "input_scale": 0.3677151978254823,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 5.759916293923695e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.264611572,
+     "mpc_t_team": 0.001489624,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 190.641299669,
+     "t_solve_full": 190.608486008,
+     "t_solve_team": 0.003787059,
+     "t_team": 0.004956774
+    },
+    {
+     "Jstar": 316.4015238384769,
+     "Jteam": 316.4015238384718,
+     "active_full": 0,
+     "gap": -5.115907697472721e-12,
+     "gap_rel": -1.6169036215149186e-14,
+     "input_diff": 4.7476356179743107e-11,
+     "input_scale": 0.3486645613056243,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 3.995999087180735e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.209265776,
+     "mpc_t_team": 0.000833097,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 188.865528388,
+     "t_solve_full": 188.833679351,
+     "t_solve_team": 0.003324764,
+     "t_team": 0.004492957
+    }
+   ],
+   "teams": 4,
+   "variant": "L6",
+   "vars_full": 30720,
+   "vars_team": 120,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 2.157021362375908e-14,
+    "input_diff_max": 6.599221169523162e-11,
+    "mpc_input_diff_max": 8.730428602277129e-10,
+    "mpc_speedup_med": 251.19016873185234,
+    "mpc_t_full_med": 0.264611572,
+    "mpc_t_team_med": 0.001489624,
+    "speedup_med": 38460.76090396698,
+    "t_full_med": 190.641299669,
+    "t_team_med": 0.004956774
+   }
+  },
+  "L6_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.036387458,
+   "build_team_s": 0.002892815,
+   "classes": 4,
+   "cone": "soc",
+   "edges": 640,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s9.ufhpc",
+    "job": "49627786",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 0.452673532,
+   "mpc_build_team_s": 0.002954711,
+   "n": 256,
+   "quotient_edges": 3,
+   "steps": [
+    {
+     "Jstar": 113.31677347516904,
+     "Jteam": 113.31677347516899,
+     "active_full": 0,
+     "gap": -5.684341886080802e-14,
+     "gap_rel": -5.016328749711889e-16,
+     "input_diff": 6.655787032627813e-13,
+     "input_scale": 0.6473792259442376,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 7.3918426934938e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 1.282508429,
+     "mpc_t_team": 0.002635926,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 14.850579371,
+     "t_solve_full": 14.843480613,
+     "t_solve_team": 0.003453931,
+     "t_team": 0.003811678
+    },
+    {
+     "Jstar": 91.12331014797371,
+     "Jteam": 91.12331014797357,
+     "active_full": 0,
+     "gap": -1.4210854715202004e-13,
+     "gap_rel": -1.5595191496144313e-15,
+     "input_diff": 6.607880909115238e-11,
+     "input_scale": 0.36771519782532314,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 4.88393561703937e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.068525641,
+     "mpc_t_team": 0.000468434,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 12.346370572,
+     "t_solve_full": 12.338569033,
+     "t_solve_team": 0.003523901,
+     "t_team": 0.00388796
+    },
+    {
+     "Jstar": 79.10038095961607,
+     "Jteam": 79.10038095961704,
+     "active_full": 0,
+     "gap": 9.663381206337363e-13,
+     "gap_rel": 1.2216605140335426e-14,
+     "input_diff": 1.9751866808803697e-11,
+     "input_scale": 0.34866456130569157,
+     "iters": [
+      6,
+      6
+     ],
+     "mpc_input_diff": 3.370745349506876e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.037608425,
+     "mpc_t_team": 0.000431315,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 11.708546149,
+     "t_solve_full": 11.702360484,
+     "t_solve_team": 0.003259749,
+     "t_team": 0.003610252
+    }
+   ],
+   "teams": 4,
+   "variant": "L6",
+   "vars_full": 7680,
+   "vars_team": 120,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 1.2216605140335426e-14,
+    "input_diff_max": 6.607880909115238e-11,
+    "mpc_input_diff_max": 7.3918426934938e-11,
+    "mpc_speedup_med": 146.28665084088686,
+    "mpc_t_full_med": 0.068525641,
+    "mpc_t_team_med": 0.000468434,
+    "speedup_med": 3243.13819340035,
+    "t_full_med": 12.346370572,
+    "t_team_med": 0.003811678
+   }
+  },
+  "Lfig_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.103105789,
+   "build_team_s": 0.135461135,
+   "classes": 2,
+   "cone": "soc",
+   "edges": 640,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s18.ufhpc",
+    "job": "49627796",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 1.363191256,
+   "mpc_build_team_s": 2.821314362,
+   "n": 256,
+   "quotient_edges": 640,
+   "steps": [
+    {
+     "Jstar": 76.55359724954678,
+     "Jteam": 76.55359724954681,
+     "active_full": 0,
+     "gap": 2.842170943040401e-14,
+     "gap_rel": 3.712654983116717e-16,
+     "input_diff": 1.6431300764452317e-14,
+     "input_scale": 0.6264309348735242,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 7.96944177317016e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 3.134595673,
+     "mpc_t_team": 3.000254227,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 53.519898485,
+     "t_solve_full": 53.508535794,
+     "t_solve_team": 49.237618694,
+     "t_team": 49.254150035
+    },
+    {
+     "Jstar": 52.69411416611457,
+     "Jteam": 52.694114166114566,
+     "active_full": 0,
+     "gap": -7.105427357601002e-15,
+     "gap_rel": -1.3484290361541388e-16,
+     "input_diff": 1.6431300764452317e-14,
+     "input_scale": 0.3471357954494043,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 5.415914938744493e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.116381373,
+     "mpc_t_team": 0.174273177,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 50.417328761,
+     "t_solve_full": 50.40714181,
+     "t_solve_team": 40.342157321,
+     "t_team": 40.362219094
+    },
+    {
+     "Jstar": 38.64423334089841,
+     "Jteam": 38.64423334089845,
+     "active_full": 0,
+     "gap": 4.263256414560601e-14,
+     "gap_rel": 1.1032063637936537e-15,
+     "input_diff": 1.7791323969618134e-14,
+     "input_scale": 0.2824911755884355,
+     "iters": [
+      6,
+      6
+     ],
+     "mpc_input_diff": 3.3271066457452037e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.087722392,
+     "mpc_t_team": 0.076327439,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 41.824468226,
+     "t_solve_full": 41.807347464,
+     "t_solve_team": 43.137504119,
+     "t_team": 43.16731096
+    }
+   ],
+   "teams": 256,
+   "variant": "Lfig",
+   "vars_full": 7680,
+   "vars_team": 7680,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 1.1032063637936537e-15,
+    "input_diff_max": 1.7791323969618134e-14,
+    "mpc_input_diff_max": 7.96944177317016e-11,
+    "mpc_speedup_med": 1.0447766875190208,
+    "mpc_t_full_med": 0.116381373,
+    "mpc_t_team_med": 0.174273177,
+    "speedup_med": 1.0866068838253986,
+    "t_full_med": 50.417328761,
+    "t_team_med": 43.16731096
+   }
+  },
+  "Rbal_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.326909672,
+   "build_team_s": 0.0390942,
+   "classes": 18,
+   "cone": "soc",
+   "edges": 3084,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s5.ufhpc",
+    "job": "49636400",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 5.572882674,
+   "mpc_build_team_s": 0.018456449,
+   "n": 1026,
+   "quotient_edges": 17,
+   "steps": [
+    {
+     "Jstar": 751.0675122039768,
+     "Jteam": 751.0675122039709,
+     "active_full": 0,
+     "gap": -5.9117155615240335e-12,
+     "gap_rel": -7.871084110902822e-15,
+     "input_diff": 9.312778326275861e-11,
+     "input_scale": 0.5835128489240237,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.7058862100682859e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 7.579798964,
+     "mpc_t_team": 0.008874787,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 90.853016462,
+     "t_solve_full": 90.823030726,
+     "t_solve_team": 0.012799409,
+     "t_team": 0.014206288
+    },
+    {
+     "Jstar": 719.6546528201849,
+     "Jteam": 719.6546528201814,
+     "active_full": 0,
+     "gap": -3.524291969370097e-12,
+     "gap_rel": -4.89719889332903e-15,
+     "input_diff": 1.272968397358909e-10,
+     "input_scale": 0.4229193446428296,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 1.2159034057379614e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.210944809,
+     "mpc_t_team": 0.001278368,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 76.085382756,
+     "t_solve_full": 76.056927025,
+     "t_solve_team": 0.017879155,
+     "t_team": 0.019453078
+    },
+    {
+     "Jstar": 722.3244947585779,
+     "Jteam": 722.3244947585702,
+     "active_full": 0,
+     "gap": -7.73070496506989e-12,
+     "gap_rel": -1.070253746227133e-14,
+     "input_diff": 1.575828911803967e-10,
+     "input_scale": 0.4388599745349954,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 7.901407306221131e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.152642044,
+     "mpc_t_team": 0.001298655,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 78.710416198,
+     "t_solve_full": 78.681147857,
+     "t_solve_team": 0.012995045,
+     "t_team": 0.014431209
+    }
+   ],
+   "teams": 18,
+   "variant": "Rbal",
+   "vars_full": 30780,
+   "vars_team": 540,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 1.070253746227133e-14,
+    "input_diff_max": 1.575828911803967e-10,
+    "mpc_input_diff_max": 1.7058862100682859e-9,
+    "mpc_speedup_med": 165.011021083131,
+    "mpc_t_full_med": 0.210944809,
+    "mpc_t_team_med": 0.001298655,
+    "speedup_med": 5454.180325293605,
+    "t_full_med": 78.710416198,
+    "t_team_med": 0.014431209
+   }
+  },
+  "Rbal_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.050459021,
+   "build_team_s": 0.008269405,
+   "classes": 9,
+   "cone": "soc",
+   "edges": 762,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s13.ufhpc",
+    "job": "49636394",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 0.625551358,
+   "mpc_build_team_s": 0.006936747,
+   "n": 270,
+   "quotient_edges": 8,
+   "steps": [
+    {
+     "Jstar": 165.9236236353485,
+     "Jteam": 165.923623635348,
+     "active_full": 0,
+     "gap": -4.831690603168681e-13,
+     "gap_rel": -2.911996795457723e-15,
+     "input_diff": 2.6564916932869664e-11,
+     "input_scale": 0.5836477739865188,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.514162129012675e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 1.101789208,
+     "mpc_t_team": 0.005871388,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 7.913840162,
+     "t_solve_full": 7.905370216,
+     "t_solve_team": 0.007635659,
+     "t_team": 0.008490914
+    },
+    {
+     "Jstar": 163.20938566820186,
+     "Jteam": 163.2093856682014,
+     "active_full": 0,
+     "gap": -4.547473508864641e-13,
+     "gap_rel": -2.7862818613320883e-15,
+     "input_diff": 6.130213003885387e-11,
+     "input_scale": 0.4323077874327581,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 1.0251260951221752e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.068020402,
+     "mpc_t_team": 0.000557851,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 6.673787104,
+     "t_solve_full": 6.664633525,
+     "t_solve_team": 0.007063091,
+     "t_team": 0.008811141
+    },
+    {
+     "Jstar": 172.43816703091164,
+     "Jteam": 172.43816703091176,
+     "active_full": 0,
+     "gap": 1.1368683772161603e-13,
+     "gap_rel": 6.59290455698455e-16,
+     "input_diff": 7.203104779307523e-11,
+     "input_scale": 0.40217046374621873,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 6.285025277996681e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.030726197,
+     "mpc_t_team": 0.00055779,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 7.74370003,
+     "t_solve_full": 7.733594296,
+     "t_solve_team": 0.006980928,
+     "t_team": 0.008621187
+    }
+   ],
+   "teams": 9,
+   "variant": "Rbal",
+   "vars_full": 8100,
+   "vars_team": 270,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 2.911996795457723e-15,
+    "input_diff_max": 7.203104779307523e-11,
+    "mpc_input_diff_max": 1.514162129012675e-10,
+    "mpc_speedup_med": 121.9329211563661,
+    "mpc_t_full_med": 0.068020402,
+    "mpc_t_team_med": 0.000557851,
+    "speedup_med": 898.2173835227097,
+    "t_full_med": 7.74370003,
+    "t_team_med": 0.008621187
+   }
+  },
+  "Rden_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.224144361,
+   "build_team_s": 0.064908496,
+   "classes": 18,
+   "cone": "soc",
+   "edges": 3084,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s18.ufhpc",
+    "job": "49627800",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 4.947106562,
+   "mpc_build_team_s": 0.136551581,
+   "n": 1026,
+   "quotient_edges": 261,
+   "steps": [
+    {
+     "Jstar": 750.039315460777,
+     "Jteam": 750.0393154607775,
+     "active_full": 0,
+     "gap": 5.684341886080801e-13,
+     "gap_rel": 7.578725233341534e-16,
+     "input_diff": 4.596711900006767e-12,
+     "input_scale": 0.5853588946287591,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 2.006306454305218e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 8.42530692,
+     "mpc_t_team": 0.276052926,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 94.671926139,
+     "t_solve_full": 94.641854786,
+     "t_solve_team": 0.71844643,
+     "t_team": 0.722418245
+    },
+    {
+     "Jstar": 718.4133854212805,
+     "Jteam": 718.4133854212783,
+     "active_full": 0,
+     "gap": -2.1600499167107046e-12,
+     "gap_rel": -3.006694976102154e-15,
+     "input_diff": 1.487533984878553e-10,
+     "input_scale": 0.42470488524715794,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 1.4250262220238952e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.211563791,
+     "mpc_t_team": 0.005975223,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 82.395843211,
+     "t_solve_full": 82.366602297,
+     "t_solve_team": 0.659580759,
+     "t_team": 0.663652706
+    },
+    {
+     "Jstar": 720.8895587638754,
+     "Jteam": 720.8895587638758,
+     "active_full": 0,
+     "gap": 4.547473508864641e-13,
+     "gap_rel": 6.308141730700456e-16,
+     "input_diff": 1.8484141994790093e-10,
+     "input_scale": 0.44527964977410717,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 9.215296858933186e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.174473874,
+     "mpc_t_team": 0.006567457,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 84.134402105,
+     "t_solve_full": 84.103644827,
+     "t_solve_team": 0.651021698,
+     "t_team": 0.655107791
+    }
+   ],
+   "teams": 99,
+   "variant": "Rden",
+   "vars_full": 30780,
+   "vars_team": 2970,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 3.006694976102154e-15,
+    "input_diff_max": 1.8484141994790093e-10,
+    "mpc_input_diff_max": 2.006306454305218e-9,
+    "mpc_speedup_med": 30.520621686871745,
+    "mpc_t_full_med": 0.211563791,
+    "mpc_t_team_med": 0.006567457,
+    "speedup_med": 128.42833387246344,
+    "t_full_med": 84.134402105,
+    "t_team_med": 0.663652706
+   }
+  },
+  "Rden_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.045633404,
+   "build_team_s": 0.014615441,
+   "classes": 9,
+   "cone": "soc",
+   "edges": 762,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0706a-s18.ufhpc",
+    "job": "49627799",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 0.779449396,
+   "mpc_build_team_s": 0.037276142,
+   "n": 270,
+   "quotient_edges": 65,
+   "steps": [
+    {
+     "Jstar": 165.60696054659064,
+     "Jteam": 165.60696054659073,
+     "active_full": 0,
+     "gap": 8.526512829121202e-14,
+     "gap_rel": 5.148643994780894e-16,
+     "input_diff": 4.245492846166599e-12,
+     "input_scale": 0.5854645172920688,
+     "iters": [
+      7,
+      7
+     ],
+     "mpc_input_diff": 1.5638423889186015e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 1.044418302,
+     "mpc_t_team": 0.040890366,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 7.304800667,
+     "t_solve_full": 7.294970572,
+     "t_solve_team": 0.079431565,
+     "t_team": 0.081501071
+    },
+    {
+     "Jstar": 162.79538283890525,
+     "Jteam": 162.7953828389056,
+     "active_full": 0,
+     "gap": 3.410605131648481e-13,
+     "gap_rel": 2.0950257139807566e-15,
+     "input_diff": 6.946943020835761e-11,
+     "input_scale": 0.4414030549542396,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 1.0581198417458637e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.065337967,
+     "mpc_t_team": 0.001930237,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 6.45693081,
+     "t_solve_full": 6.448441513,
+     "t_solve_team": 0.077066038,
+     "t_team": 0.078939979
+    },
+    {
+     "Jstar": 171.92907461767857,
+     "Jteam": 171.9290746176783,
+     "active_full": 0,
+     "gap": -2.5579538487363607e-13,
+     "gap_rel": -1.4877959730921158e-15,
+     "input_diff": 8.211095692267634e-11,
+     "input_scale": 0.41505257371359644,
+     "iters": [
+      6,
+      7
+     ],
+     "mpc_input_diff": 6.488701242979289e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.029204984,
+     "mpc_t_team": 0.002111283,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 6.498272317,
+     "t_solve_full": 6.490945497,
+     "t_solve_team": 0.079326139,
+     "t_team": 0.081361501
+    }
+   ],
+   "teams": 29,
+   "variant": "Rden",
+   "vars_full": 8100,
+   "vars_team": 870,
+   "summary": {
+    "active_full_max": 0,
+    "all_solved": true,
+    "gap_rel_max": 2.0950257139807566e-15,
+    "input_diff_max": 8.211095692267634e-11,
+    "mpc_input_diff_max": 1.5638423889186015e-10,
+    "mpc_speedup_med": 25.54191620588576,
+    "mpc_t_full_med": 0.065337967,
+    "mpc_t_team_med": 0.002111283,
+    "speedup_med": 81.79544625923958,
+    "t_full_med": 6.498272317,
+    "t_team_med": 0.081361501
+   }
+  },
+  "W1_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.18499393,
+   "build_team_s": 0.013208598,
+   "classes": 2,
+   "cone": "soc",
+   "edges": 3936,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0704a-s7.ufhpc",
+    "job": "49627811",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 4.077712587,
+   "mpc_build_team_s": 0.007987324,
+   "n": 1024,
+   "quotient_edges": 15,
+   "steps": [
+    {
+     "Jstar": 457.1166265496604,
+     "Jteam": 457.11662649138316,
+     "active_full": 5632,
+     "gap": -5.8277237258153036e-8,
+     "gap_rel": -1.2748877173432216e-10,
+     "input_diff": 1.5171830210491954e-6,
+     "input_scale": 0.3998670167544702,
+     "iters": [
+      10,
+      11
+     ],
+     "mpc_input_diff": 9.084643412538007e-9,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 9.36993267,
+     "mpc_t_team": 0.005934185,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 90.367862992,
+     "t_solve_full": 90.340618018,
+     "t_solve_team": 0.008424439,
+     "t_team": 0.009702472
+    },
+    {
+     "Jstar": 386.39312250199237,
+     "Jteam": 386.39312271472045,
+     "active_full": 6592,
+     "gap": 2.127280822605826e-7,
+     "gap_rel": 5.505483143258734e-10,
+     "input_diff": 9.836140199226406e-6,
+     "input_scale": 0.396380799894872,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 7.838971555207408e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 4.479112569,
+     "mpc_t_team": 0.00233276,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 86.491548526,
+     "t_solve_full": 86.463329645,
+     "t_solve_team": 0.008150249,
+     "t_team": 0.009459771
+    },
+    {
+     "Jstar": 338.21797535745986,
+     "Jteam": 338.2179754098988,
+     "active_full": 7232,
+     "gap": 5.2438963393797167e-8,
+     "gap_rel": 1.5504487405902908e-10,
+     "input_diff": 1.2942613315525264e-6,
+     "input_scale": 0.3786836769572956,
+     "iters": [
+      12,
+      12
+     ],
+     "mpc_input_diff": 6.446837246543158e-7,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 4.830389447,
+     "mpc_t_team": 0.004429693,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 100.899049297,
+     "t_solve_full": 100.872558011,
+     "t_solve_team": 0.009629022,
+     "t_team": 0.010943894
+    }
+   ],
+   "teams": 16,
+   "variant": "W1",
+   "vars_full": 20480,
+   "vars_team": 320,
+   "summary": {
+    "active_full_max": 7232,
+    "all_solved": true,
+    "gap_rel_max": 5.505483143258734e-10,
+    "input_diff_max": 9.836140199226406e-6,
+    "mpc_input_diff_max": 6.446837246543158e-7,
+    "mpc_speedup_med": 1578.9754903158566,
+    "mpc_t_full_med": 4.830389447,
+    "mpc_t_team_med": 0.004429693,
+    "speedup_med": 9219.666171565625,
+    "t_full_med": 90.367862992,
+    "t_team_med": 0.009702472
+   }
+  },
+  "W1_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.034095497,
+   "build_team_s": 0.003407721,
+   "classes": 2,
+   "cone": "soc",
+   "edges": 944,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0704a-s7.ufhpc",
+    "job": "49627809",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 0.431910821,
+   "mpc_build_team_s": 0.004057452,
+   "n": 256,
+   "quotient_edges": 7,
+   "steps": [
+    {
+     "Jstar": 114.16667031123461,
+     "Jteam": 114.16667029343336,
+     "active_full": 1408,
+     "gap": -1.780125558070722e-8,
+     "gap_rel": -1.5592340156876312e-10,
+     "input_diff": 1.572862091542282e-6,
+     "input_scale": 0.3998670180408252,
+     "iters": [
+      10,
+      11
+     ],
+     "mpc_input_diff": 6.459196975366899e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.875056129,
+     "mpc_t_team": 0.003261479,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 4.113373999,
+     "t_solve_full": 4.105976972,
+     "t_solve_team": 0.005180305,
+     "t_team": 0.005525539
+    },
+    {
+     "Jstar": 96.48682196719483,
+     "Jteam": 96.48682195065487,
+     "active_full": 1632,
+     "gap": -1.653995695960475e-8,
+     "gap_rel": -1.7142192708169284e-10,
+     "input_diff": 2.9180438122500263e-6,
+     "input_scale": 0.3963807415680107,
+     "iters": [
+      11,
+      11
+     ],
+     "mpc_input_diff": 6.558444412552156e-10,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.409831289,
+     "mpc_t_team": 0.000950963,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 3.950517505,
+     "t_solve_full": 3.943987638,
+     "t_solve_team": 0.005210997,
+     "t_team": 0.005538488
+    },
+    {
+     "Jstar": 84.44110613272568,
+     "Jteam": 84.44110621973812,
+     "active_full": 1824,
+     "gap": 8.70124381435744e-8,
+     "gap_rel": 1.0304511881548196e-9,
+     "input_diff": 2.3084694222186286e-5,
+     "input_scale": 0.3786837800984144,
+     "iters": [
+      12,
+      11
+     ],
+     "mpc_input_diff": 6.49122648771483e-7,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.381673202,
+     "mpc_t_team": 0.002116246,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 4.422947061,
+     "t_solve_full": 4.416887492,
+     "t_solve_team": 0.005082408,
+     "t_team": 0.00541625
+    }
+   ],
+   "teams": 8,
+   "variant": "W1",
+   "vars_full": 5120,
+   "vars_team": 160,
+   "summary": {
+    "active_full_max": 1824,
+    "all_solved": true,
+    "gap_rel_max": 1.0304511881548196e-9,
+    "input_diff_max": 2.3084694222186286e-5,
+    "mpc_input_diff_max": 6.459196975366899e-6,
+    "mpc_speedup_med": 268.300402670077,
+    "mpc_t_full_med": 0.409831289,
+    "mpc_t_team_med": 0.002116246,
+    "speedup_med": 744.4294572891441,
+    "t_full_med": 4.113373999,
+    "t_team_med": 0.005525539
+   }
+  },
+  "W3_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.372181096,
+   "build_team_s": 0.23954301,
+   "classes": 2,
+   "cone": "soc",
+   "edges": 5826,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0704a-s14.ufhpc",
+    "job": "49627814",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 9.101048075,
+   "mpc_build_team_s": 3.974818058,
+   "n": 1024,
+   "quotient_edges": 2850,
+   "steps": [
+    {
+     "Jstar": 464.24474661202476,
+     "Jteam": 464.24474664706963,
+     "active_full": 5494,
+     "gap": 3.5044877222389914e-8,
+     "gap_rel": 7.54879349268703e-11,
+     "input_diff": 9.797375138675957e-7,
+     "input_scale": 0.39981653526403726,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 1.3934383141817053e-5,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 21.168153135,
+     "mpc_t_team": 3.370199618,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 89.425943872,
+     "t_solve_full": 89.376201509,
+     "t_solve_team": 28.476265438,
+     "t_team": 28.496977554
+    },
+    {
+     "Jstar": 393.38587951390946,
+     "Jteam": 393.3858794002349,
+     "active_full": 6656,
+     "gap": -1.136745595431421e-7,
+     "gap_rel": -2.8896451413966615e-10,
+     "input_diff": 1.1394652890683865e-6,
+     "input_scale": 0.3958903465417701,
+     "iters": [
+      9,
+      9
+     ],
+     "mpc_input_diff": 1.9283234516803693e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 4.063830334,
+     "mpc_t_team": 2.256168737,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 83.160507343,
+     "t_solve_full": 83.115186379,
+     "t_solve_team": 24.936571524,
+     "t_team": 24.957604117
+    },
+    {
+     "Jstar": 345.40458584927137,
+     "Jteam": 345.40458581976964,
+     "active_full": 7168,
+     "gap": -2.950173438875936e-8,
+     "gap_rel": -8.541210973276831e-11,
+     "input_diff": 5.228621429320679e-6,
+     "input_scale": 0.3767095515575144,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 3.65709962313332e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 4.13780966,
+     "mpc_t_team": 1.749520553,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 92.537186012,
+     "t_solve_full": 92.492836653,
+     "t_solve_team": 29.370974065,
+     "t_team": 29.394223796
+    }
+   ],
+   "teams": 512,
+   "variant": "W3",
+   "vars_full": 20480,
+   "vars_team": 10240,
+   "summary": {
+    "active_full_max": 7168,
+    "all_solved": true,
+    "gap_rel_max": 2.8896451413966615e-10,
+    "input_diff_max": 5.228621429320679e-6,
+    "mpc_input_diff_max": 1.3934383141817053e-5,
+    "mpc_speedup_med": 2.3651106315411203,
+    "mpc_t_full_med": 4.13780966,
+    "mpc_t_team_med": 2.256168737,
+    "speedup_med": 3.148141847671194,
+    "t_full_med": 89.425943872,
+    "t_team_med": 28.496977554
+   }
+  },
+  "W3_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.046601666,
+   "build_team_s": 0.044122245,
+   "classes": 2,
+   "cone": "soc",
+   "edges": 1378,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0704a-s7.ufhpc",
+    "job": "49627813",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 1.140003075,
+   "mpc_build_team_s": 0.213272603,
+   "n": 256,
+   "quotient_edges": 658,
+   "steps": [
+    {
+     "Jstar": 115.87295550817299,
+     "Jteam": 115.87295551521044,
+     "active_full": 1342,
+     "gap": 7.0374426286434755e-9,
+     "gap_rel": 6.073412555828953e-11,
+     "input_diff": 1.0909231054484492e-6,
+     "input_scale": 0.3998165315217887,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 3.3190631988921915e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.96194265,
+     "mpc_t_team": 0.308590644,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 3.494430532,
+     "t_solve_full": 3.485696705,
+     "t_solve_team": 1.124276577,
+     "t_team": 1.129417373
+    },
+    {
+     "Jstar": 98.16924995269216,
+     "Jteam": 98.16924992024485,
+     "active_full": 1664,
+     "gap": -3.244730351070757e-8,
+     "gap_rel": -3.30524105321615e-10,
+     "input_diff": 1.0988865011829496e-6,
+     "input_scale": 0.3958903045485522,
+     "iters": [
+      9,
+      9
+     ],
+     "mpc_input_diff": 1.957293488327738e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.398791082,
+     "mpc_t_team": 0.199139864,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 3.179683618,
+     "t_solve_full": 3.170604177,
+     "t_solve_team": 1.028590522,
+     "t_team": 1.03378587
+    },
+    {
+     "Jstar": 86.17219419312318,
+     "Jteam": 86.17219419055834,
+     "active_full": 1792,
+     "gap": -2.5648319024185184e-9,
+     "gap_rel": -2.976403150035143e-11,
+     "input_diff": 4.63518436383259e-6,
+     "input_scale": 0.37670938309964963,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 6.184305845202687e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.363441707,
+     "mpc_t_team": 0.149930847,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 3.464650171,
+     "t_solve_full": 3.45562365,
+     "t_solve_team": 1.11915495,
+     "t_team": 1.124409587
+    }
+   ],
+   "teams": 128,
+   "variant": "W3",
+   "vars_full": 5120,
+   "vars_team": 2560,
+   "summary": {
+    "active_full_max": 1792,
+    "all_solved": true,
+    "gap_rel_max": 3.30524105321615e-10,
+    "input_diff_max": 4.63518436383259e-6,
+    "mpc_input_diff_max": 3.3190631988921915e-6,
+    "mpc_speedup_med": 2.424062254513909,
+    "mpc_t_full_med": 0.398791082,
+    "mpc_t_team_med": 0.199139864,
+    "speedup_med": 3.0813061459604936,
+    "t_full_med": 3.464650171,
+    "t_team_med": 1.124409587
+   }
+  },
+  "W3bal_N1024": {
+   "H": 10,
+   "N": 1024,
+   "build_full_s": 0.2725384,
+   "build_team_s": 0.030417712,
+   "classes": 2,
+   "cone": "soc",
+   "edges": 5826,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s8.ufhpc",
+    "job": "49636402",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 6.343537582,
+   "mpc_build_team_s": 0.014413105,
+   "n": 1024,
+   "quotient_edges": 15,
+   "steps": [
+    {
+     "Jstar": 464.25694718576415,
+     "Jteam": 464.2569471786089,
+     "active_full": 5568,
+     "gap": -7.15522219252307e-9,
+     "gap_rel": -1.541220273793778e-11,
+     "input_diff": 1.4679793819971643e-6,
+     "input_scale": 0.3997807544914596,
+     "iters": [
+      10,
+      11
+     ],
+     "mpc_input_diff": 3.8296295579165474e-8,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 18.537639172,
+     "mpc_t_team": 0.00521925,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 72.169232954,
+     "t_solve_full": 72.134813083,
+     "t_solve_team": 0.007802452,
+     "t_team": 0.009056902
+    },
+    {
+     "Jstar": 393.39420881278465,
+     "Jteam": 393.39420894294835,
+     "active_full": 6656,
+     "gap": 1.3016369848628528e-7,
+     "gap_rel": 3.3087344849102717e-10,
+     "input_diff": 3.132682025591693e-6,
+     "input_scale": 0.39553570038785363,
+     "iters": [
+      9,
+      10
+     ],
+     "mpc_input_diff": 1.912926385752578e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 3.219422974,
+     "mpc_t_team": 0.002159517,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 63.445183674,
+     "t_solve_full": 63.410032963,
+     "t_solve_team": 0.007779219,
+     "t_team": 0.008984076
+    },
+    {
+     "Jstar": 345.4114890473943,
+     "Jteam": 345.41148910474067,
+     "active_full": 7168,
+     "gap": 5.7346369430888444e-8,
+     "gap_rel": 1.6602334099842256e-10,
+     "input_diff": 2.9460248572865666e-6,
+     "input_scale": 0.3754356801433762,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 5.855216311800859e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 3.133884398,
+     "mpc_t_team": 0.00208644,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 67.444239697,
+     "t_solve_full": 67.408400524,
+     "t_solve_team": 0.00767343,
+     "t_team": 0.00894319
+    }
+   ],
+   "teams": 16,
+   "variant": "W3bal",
+   "vars_full": 20480,
+   "vars_team": 320,
+   "summary": {
+    "active_full_max": 7168,
+    "all_solved": true,
+    "gap_rel_max": 3.3087344849102717e-10,
+    "input_diff_max": 3.132682025591693e-6,
+    "mpc_input_diff_max": 1.912926385752578e-6,
+    "mpc_speedup_med": 1502.0246918195587,
+    "mpc_t_full_med": 3.219422974,
+    "mpc_t_team_med": 0.002159517,
+    "speedup_med": 7541.407450473489,
+    "t_full_med": 67.444239697,
+    "t_team_med": 0.008984076
+   }
+  },
+  "W3bal_N256": {
+   "H": 10,
+   "N": 256,
+   "build_full_s": 0.064034001,
+   "build_team_s": 0.009812928,
+   "classes": 2,
+   "cone": "soc",
+   "edges": 1378,
+   "meta": {
+    "cpu": "AMD EPYC 7702 64-Core Processor",
+    "host": "c0700a-s15.ufhpc",
+    "job": "49636396",
+    "julia": "1.12.6"
+   },
+   "mpc_build_full_s": 1.213879624,
+   "mpc_build_team_s": 0.004860538,
+   "n": 256,
+   "quotient_edges": 7,
+   "steps": [
+    {
+     "Jstar": 115.87853891475419,
+     "Jteam": 115.87853890174978,
+     "active_full": 1348,
+     "gap": -1.3004409993300214e-8,
+     "gap_rel": -1.1222449053199473e-10,
+     "input_diff": 1.583131501059487e-6,
+     "input_scale": 0.3997819079578956,
+     "iters": [
+      10,
+      11
+     ],
+     "mpc_input_diff": 3.709150758757218e-8,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 1.245947795,
+     "mpc_t_team": 0.003472954,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 0,
+     "t_full": 4.768332124,
+     "t_solve_full": 4.758117845,
+     "t_solve_team": 0.006285883,
+     "t_team": 0.006719565
+    },
+    {
+     "Jstar": 98.17124167680527,
+     "Jteam": 98.17124166957518,
+     "active_full": 1664,
+     "gap": -7.230084975162754e-9,
+     "gap_rel": -7.364768797531663e-11,
+     "input_diff": 3.5878790126675497e-6,
+     "input_scale": 0.39554586447340634,
+     "iters": [
+      9,
+      10
+     ],
+     "mpc_input_diff": 1.9263004353980984e-6,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.509074132,
+     "mpc_t_team": 0.001294581,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 1,
+     "t_full": 4.34337773,
+     "t_solve_full": 4.330448846,
+     "t_solve_team": 0.005740133,
+     "t_team": 0.006145872
+    },
+    {
+     "Jstar": 86.17302573330034,
+     "Jteam": 86.17302571021258,
+     "active_full": 1792,
+     "gap": -2.3087750378181227e-8,
+     "gap_rel": -2.679231718013041e-10,
+     "input_diff": 2.620835247990616e-6,
+     "input_scale": 0.3754735799296069,
+     "iters": [
+      10,
+      10
+     ],
+     "mpc_input_diff": 3.874606191445196e-11,
+     "mpc_status": [
+      "solved",
+      "solved"
+     ],
+     "mpc_t_full": 0.462804817,
+     "mpc_t_team": 0.0009571,
+     "status": [
+      "SOLVED",
+      "SOLVED"
+     ],
+     "step": 2,
+     "t_full": 4.831875148,
+     "t_solve_full": 4.819382078,
+     "t_solve_team": 0.005735495,
+     "t_team": 0.006125965
+    }
+   ],
+   "teams": 8,
+   "variant": "W3bal",
+   "vars_full": 5120,
+   "vars_team": 160,
+   "summary": {
+    "active_full_max": 1792,
+    "all_solved": true,
+    "gap_rel_max": 2.679231718013041e-10,
+    "input_diff_max": 3.5878790126675497e-6,
+    "mpc_input_diff_max": 1.9263004353980984e-6,
+    "mpc_speedup_med": 393.23466975028987,
+    "mpc_t_full_med": 0.509074132,
+    "mpc_t_team_med": 0.001294581,
+    "speedup_med": 709.6191679074464,
+    "t_full_med": 4.768332124,
+    "t_team_med": 0.006145872
+   }
+  }
+ }
+}
