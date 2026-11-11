@@ -85,7 +85,7 @@ function main()
     isempty(R) && error("no results in $dirs")
     mkpath(joinpath(out, "dat"))
     solvers = sort(unique(vcat([collect(keys(r["solvers"])) for r in R]...)))
-    pkg = "sheafmpc"
+    pkg = "teammpc"
     others = filter(!=(pkg), solvers)
     fams = sort(unique([r["instance"]["family"] for r in R]))
     io = IOBuffer()
@@ -129,7 +129,7 @@ function main()
             hastier(tier) || continue
             println(io, "### $fam, $mode, $tier\n")
             gate = GATE in fs
-            println(io, "| instance | vars | ", join(fs, " | "), " | sheafmpc / best other |", gate ? " sheafmpc / $GATE |" : "")
+            println(io, "| instance | vars | ", join(fs, " | "), " | teammpc / best other |", gate ? " teammpc / $GATE |" : "")
             println(io, "|---|---:|", repeat("---:|", length(fs)), "---:|", gate ? "---:|" : "")
             for r in RF
                 cells = String[]; med = Dict{String,Float64}()
@@ -163,7 +163,7 @@ function main()
         end
         # iterations: the median over the QPs of each solver's iteration count (ADMM
         # iterations against interior-point iterations are not comparable work units,
-        # but cold SheafMPC against cold OSQP is the like-for-like count)
+        # but cold TeamMPC against cold OSQP is the like-for-like count)
         for mode in ("cold", "warm")
             println(io, "### $fam, $mode, iterations (median over the QPs; low / medium / high)\n")
             println(io, "| instance | ", join(fs, " | "), " |")
@@ -258,8 +258,8 @@ function main()
     end
 
     # where the package loses
-    println(io, "## Where sheafmpc loses (median time over the best other solver, ratio > 1, or misses the tier)\n")
-    println(io, "| instance | mode | tier | sheafmpc ms | best other | its ms | ratio |")
+    println(io, "## Where teammpc loses (median time over the best other solver, ratio > 1, or misses the tier)\n")
+    println(io, "| instance | mode | tier | teammpc ms | best other | its ms | ratio |")
     println(io, "|---|---|---|---:|---|---:|---:|")
     L = sort(filter(l -> (isfinite(l.ratio) && l.ratio > 1) || l.pkgfail, losses); by = l -> -(isfinite(l.ratio) ? l.ratio : 1e9))
     for l in L
@@ -268,13 +268,13 @@ function main()
     end
     W = filter(l -> isfinite(l.ratio), losses)
     if !isempty(W)
-        @printf(io, "\nsheafmpc is fastest (ratio <= 1) in %d of %d (instance, mode, tier) cells with a finite ratio; median ratio %.2f.\n",
+        @printf(io, "\nteammpc is fastest (ratio <= 1) in %d of %d (instance, mode, tier) cells with a finite ratio; median ratio %.2f.\n",
                 count(l -> l.ratio <= 1, W), length(W), median([l.ratio for l in W]))
     end
     G = filter(g -> isfinite(g.ratio) || g.pkgmiss, gates)
     if !isempty(G)
-        println(io, "\n## Gate: sheafmpc against $GATE (median time ratio; <= 1 passes)\n")
-        println(io, "| mode | tier | cells | pass | sheafmpc misses the tier | median ratio | worst ratio (instance) |")
+        println(io, "\n## Gate: teammpc against $GATE (median time ratio; <= 1 passes)\n")
+        println(io, "| mode | tier | cells | pass | teammpc misses the tier | median ratio | worst ratio (instance) |")
         println(io, "|---|---|---:|---:|---:|---:|---|")
         for mode in MODES, tier in TIERNAMES
             g = filter(x -> x.mode == mode && x.tier == tier, G)

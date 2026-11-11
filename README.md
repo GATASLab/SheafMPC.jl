@@ -7,10 +7,9 @@ finds the coarsest almost equitable teams by color refinement, certifies the gap
 teams from the team solution, and splits teams in closed loop. The paper's runs
 used commit `baa542b`.
 
-The Julia package and module are still named `SheafMPC` (`using SheafMPC`).
-Internally, each program is posed on a cellular sheaf over the time-expanded
-graph (formation preferences are soft edges, dynamics are hard edges) and
-reduced along a quotient of that graph:
+Each program is posed on the time-expanded graph (formation preferences are
+soft edges, dynamics are hard edges) and reduced along a quotient of that
+graph:
 
 * in time, blocks of instants give partial or full condensing, which is exact;
 * over agents, teams give reduced-order models: each team is one agent
@@ -26,7 +25,7 @@ reduced along a quotient of that graph:
 * distributed MPC by consensus ADMM runs over agents or over teams of the
   pushforward, each agent or team solving its own small QP.
 
-The solver underneath is an ADMM conic QP solver for sheaf programs (below).
+The solver underneath is an ADMM conic QP solver for these graph programs (below).
 
 ## Install
 
@@ -42,7 +41,7 @@ rigid teams, plan one input sequence per team on a much smaller QP, lift it
 back, and certify the cost of the teams.
 
 ```julia
-using SheafMPC
+using TeamMPC
 
 sc = GridScenario(rows = 16, cols = 16, H = 10, coherence = :rows)   # quadrotor and ground-vehicle rows
 fl = fleet(sc)
@@ -55,7 +54,7 @@ lab = lossless_teams(fl; classes)              # here the 16 rows
 
 # 2. the controller: the quotient program (one agent per team), projection onto the
 #    formation, broadcast, and local LQR feedback inside teams
-ctrl = TeamMPC(fl, lab; offsets = slot_offsets(fl, slots(sc)))
+ctrl = TeamController(fl, lab; offsets = slot_offsets(fl, slots(sc)))
 
 # 3. the receding horizon
 let x = formation_start(sc)
@@ -76,21 +75,21 @@ for other teams the certificate bounds the loss from the team solve alone.
 inputs as coordinated MPC to 1e-11 at a 30 times faster step; a perturbed
 6 x 6 grid: quasi-stable teams with certificates within 1.2 times the gap).
 
-**What the sheaf layer is.** Each vehicle is a vertex with its own state space
+**What the graph layer is.** Each vehicle is a vertex with its own state space
 (a quadrotor in 3D, a ground vehicle in 2D), and each formation edge carries
 the maps that compare the coordinates the two ends share. On the
 time-expanded graph, dynamics are hard edges and the formation soft edges.
 Condensing (eliminating the states) and team planning (merging the members of
 each team) are the same operation, a pushforward along a graph morphism, so
 they compose and their optimality gaps add. Everything above is also plain
-matrix algebra (`CondensedQP` is the condensed QP of eq. (4)); the sheaf view
+matrix algebra (`CondensedQP` is the condensed QP of eq. (4)); the graph view
 is the bookkeeping that keeps heterogeneous vehicles and composed reductions
 correct.
 
 ## Example
 
 ```julia
-using SheafMPC
+using TeamMPC
 
 sc = GridScenario(rows = 8, cols = 8, H = 10, coherence = :agents)   # the paper's grid fleet
 fl = fleet(sc)                                    # 64 agents, quadrotors and ground vehicles
@@ -128,10 +127,9 @@ dynamics `x_{i,t+1} = A_{i,t} x_{i,t} + B_{i,t} u_{i,t} + g_{i,t}`. Its stage
 cost tracks references, its inputs lie in a convex set (a ball or a box), its
 states in polyhedra. Agents joined by a formation edge prefer
 `C_j x_j - C_i x_i = o_ij` with a weight. The time-expanded graph has one
-vertex per agent and instant; its vertex holds `(x_{i,t}, u_{i,t})`. A cellular
-sheaf (Curry 2014; Hansen and Ghrist 2019) says which variables each coupling
-term reads: dynamics edges are hard (they must hold), formation edges are soft
-(springs). `FleetProgram(fleet)` is this program (`SheafProgram` in general).
+vertex per agent and instant; its vertex holds `(x_{i,t}, u_{i,t})`. Each edge
+carries linear maps that say which variables its coupling term reads: dynamics edges are hard (they must hold), formation edges are soft
+(springs). `FleetProgram(fleet)` is this program (`GraphProgram` in general).
 
 **Pushforward.** Partition the vertices into blocks and contract the edges
 inside each block. A block's configurations that satisfy every edge inside it
@@ -191,13 +189,13 @@ formula is a lower bound.
 |---|---|
 | modelling | `Agent(A, B; C, Q, R, Cr, g, Cf, Qf, input, state)`, `BallSet`, `BoxSet`, `Polyhedron(G, h; pattern)`, `Fleet(agents, edges; H, offsets, targets, weights, present)`, `FleetProgram(fleet; x0, references, terminal)`, `set_state!`, `set_references!`, `set_targets!`, `set_drift!`, `set_state_bound!`, `set_state_set!`, `set_state_sets!`, `trajectories`, `first_inputs`, `plant_step`, `shift_plan`, `free_response!` |
 | the paper's agents | `quadrotor(h)`, `ground_vehicle(h)`, `grid_graph`, `GridScenario`, `fleet`, `references`, `formation_start`, `row_teams`, `strip_teams`, `block_teams` |
-| programs | `SheafProgram(nodes, edges)`, `NodeData`, `SheafEdge`, `objective`, `quadratic_form`, `coboundary`, `feasibility`, `harden`, `solve` |
+| programs | `GraphProgram(nodes, edges)`, `NodeData`, `GraphEdge`, `objective`, `quadratic_form`, `coboundary`, `feasibility`, `harden`, `solve` |
 | resolutions | `Fine`, `TimeBlocking`, `partial_condensing`, `full_condensing`, `Teams`, `⊠` / `Product`, `Mixed`, `VertexPartition` |
 | reductions | `reduce(program, resolution; basis, reuse)`, `update!(R)`, `update_matrices!(R, verts)`, `lift`, `restrict`, `restrict!`, `reduction_chain`, `composite_partition` |
 | certificates | `gap_bounds(fine, R, sol; fine_solution)`, `Certifier`, `gap_kernel(program, xstar)`, `gap(K, teams)`, `team_front`, `select_teams(K; k, budget, beam, refine)` |
 | receding horizon | `MPCController(fleet, resolution; certify, settings...)`, `step!(ctrl, x, refs; terminal, targets, drift, states)`, `plan`, `StepInfo` |
 | distributed | `DistributedMPC(fleet, teams; rho, eps_abs, eps_rel, maxit, budget, warm, time_limit)`, `step!`, `floats_per_iteration` |
-| team MPC (Algorithm 1) | `data_classes(fleet)`, `lossless_teams(fleet; classes)`, `quasi_stable_teams(fleet; q, classes)`, `team_spread`, `colour_refinement`, `TeamMPC(fleet, teams; offsets, gains, resolution)`, `step!(ctrl, x, refs; terminal)`, `project`, `slot_offsets`, `QuotientFleet`, `lqr_gain` |
+| team MPC (Algorithm 1) | `data_classes(fleet)`, `lossless_teams(fleet; classes)`, `quasi_stable_teams(fleet; q, classes)`, `team_spread`, `colour_refinement`, `TeamController(fleet, teams; offsets, gains, resolution)`, `step!(ctrl, x, refs; terminal)`, `project`, `slot_offsets`, `QuotientFleet`, `lqr_gain` |
 | team certificate (Thm. 2) | `certificate(ctrl, x, refs; terminal)`, `CondensedQP(fleet, x, refs; terminal)`, `team_certificate(cq, teams, u)`, `team_kappa(cq, teams)`, `team_plan(ctrl)`, `stack_inputs` |
 
 Every exported function has a docstring (`?reduce` in the REPL).
@@ -214,7 +212,7 @@ with a few sparse products, without allocating. On the 8 x 8 grid fleet
 (`bench/controller.jl`, H = 10, 30 closed-loop steps, results in
 `bench/results/controller.txt`) the construction of a step (data, program,
 pushforward, QP vectors) went from 15 to 18 ms with the paper repository's
-per-step pipeline (rebuild, pushforward with fiber reuse, `sheaf_qp`) to 0.2
+per-step pipeline (rebuild, pushforward with fiber reuse, `graph_qp`) to 0.2
 to 0.35 ms with `MPCController`, below the warm solve (0.5 to 1 ms); a step
 allocates a constant 48 bytes.
 
@@ -228,13 +226,12 @@ same value as the fine program with the contracted edges hard, exact time
 blocking, commuting legs, teams of teams, zero gap for coherent rows, bounds
 that bracket the true gap, the kernel against pushforward and solve, the
 selector, in-place updates against rebuilds, and a 30-step closed loop without
-allocation growth. When the paper repository is present (`SHEAFMPC_PAPER`,
-default `~/Projects/GATAS/mpc-sheaf-pushforward`), the fleet programs and
-reductions are also compared with its research module, read only.
+allocation growth. When the paper's research code is available (set `TEAMMPC_PAPER` to its
+directory), the fleet programs and reductions are also compared with it.
 
 ## The solver
 
-An operator-splitting conic QP solver for sheaf programs and multi-agent model
+An operator-splitting conic QP solver for graph programs and multi-agent model
 predictive control.
 
     minimize    (1/2) x'Px + q'x + c
@@ -242,7 +239,7 @@ predictive control.
 
 with `C` a product of intervals (equality, one-sided, two-sided rows) and
 translated second-order cones (`b_B - A_B x in SOC`, the convention of
-Clarabel and of sheaf programs).
+Clarabel and of the graph programs).
 
 ### Algorithm
 
@@ -310,10 +307,10 @@ Clarabel and of sheaf programs).
 ### Solver API
 
 ```julia
-using SheafMPC
+using TeamMPC
 p = ConicQP(P, q, A, l, u)                      # OSQP form, or
 p = ConicQP(P, q, A, b, [(:zero, m0), (:nonneg, m1), (:soc, 3), ...])   # b - A x in K
-p = sheaf_qp(program)                           # a sheaf program (fine or pushed forward)
+p = graph_qp(program)                           # a graph program (fine or reduced)
 s = setup(p; eps_abs = 1e-7, eps_rel = 1e-7)    # keywords override Settings()
 info = solve!(s)                                # info.status, info.obj, info.iter, ...
 s.xsol, s.ysol, s.zsol                          # unscaled solution
@@ -323,8 +320,8 @@ solve!(s)
 reset!(s)                                       # next solve is a cold start
 ```
 
-`sheaf_qp` reads a program by its fields (nodes with `Q, q, c, A, b, cones`,
-edges with `tail, head, Ft, Fh, hard, W, b`, stalk `offsets`): node costs and
+`graph_qp` reads a program by its fields (nodes with `Q, q, c, A, b, cones`,
+edges with `tail, head, Ft, Fh, hard, W, b`, space `offsets`): node costs and
 soft edges go into `P, q, c`, hard edges and node cones become rows (hard
 edges first, the row order of the paper's `solve_direct`).
 
@@ -334,12 +331,11 @@ edges first, the row order of the paper's `solve_direct`).
 
 The tests compare with Clarabel on random QPs and SOCPs, box-constrained MPC
 problems on the dense active-set path (cold, warm, degenerate), infeasible problems,
-the fleet QP of the paper repository's `bench/central`, and fine and pushed
-forward sheaf programs of its Resolution module (read only, from
-`SHEAFMPC_PAPER`, default `~/Projects/GATAS/mpc-sheaf-pushforward`).
+and, when `TEAMMPC_PAPER` points to the paper's research code, its fleet QP
+and its fine and reduced graph programs.
 
     julia --project=bench -e 'using Pkg; Pkg.develop(path = "."); Pkg.instantiate()'
-    julia --project=bench bench/single.jl     # one QP: SheafMPC, OSQP, Clarabel
+    julia --project=bench bench/single.jl     # one QP: TeamMPC, OSQP, Clarabel
     julia --project=bench bench/rh.jl         # receding horizon, 30 steps
     julia --project=bench bench/reduced.jl    # fine program vs pushforwards
     julia --project=bench bench/compare.jl    # single solves, solvers interleaved, min/median

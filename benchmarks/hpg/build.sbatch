@@ -7,9 +7,9 @@
 #SBATCH --partition=hpg-default
 #SBATCH --constraint=rome
 #SBATCH --nodes=1 --ntasks=1 --cpus-per-task=8 --mem=24gb --time=02:00:00
-#SBATCH --output=/blue/fairbanksj/itaykadosh/sheafmpc_bench/logs/%x_%j.log
+#SBATCH --output=/blue/fairbanksj/itaykadosh/teammpc_bench/logs/%x_%j.log
 set -euo pipefail
-ROOT=/blue/fairbanksj/itaykadosh/sheafmpc_bench
+ROOT=/blue/fairbanksj/itaykadosh/teammpc_bench
 module load cmake/3.26.4 gcc/12.2.0 julia/1.12.6
 T=$ROOT/tools
 lscpu | grep "Model name"
@@ -28,12 +28,12 @@ if [ ! -f $T/piqp-install/lib/libpiqpc.so ]; then
 fi
 [ -e $T/piqp-install/lib ] || ln -s lib64 $T/piqp-install/lib          # EL9 cmake installs into lib64
 export JULIA_DEPOT_PATH=/blue/fairbanksj/itaykadosh/julia_depot: JULIA_NUM_THREADS=1
-cd ${PKGDIR:-$ROOT/SheafMPC.jl}/benchmarks        # PKGDIR: a ref snapshot (prepare_ref.sh)
+cd ${PKGDIR:-$ROOT/TeamMPC.jl}/benchmarks        # PKGDIR: a ref snapshot (prepare_ref.sh)
 julia --project=. -e 'using Pkg; Pkg.precompile()'
 julia --project=envs/mumblebee_fast -e 'using Pkg; Pkg.precompile()'
 [ -d envs/mumblebee_fast_ct ] && julia --project=envs/mumblebee_fast_ct -e 'using Pkg; Pkg.precompile()'
 export HPIPM_LIB_DIR=/blue/fairbanksj/itaykadosh/central_bench/acados/lib PIQP_LIB=$T/piqp-install/lib/libpiqpc.so
-export SHEAFMPC_PAPER=/blue/fairbanksj/itaykadosh/pushforward_bench/mpc-sheaf-pushforward
+export TEAMMPC_PAPER=${TEAMMPC_PAPER:?set TEAMMPC_PAPER to the paper research code}
 julia --project=. test/test_families.jl
 HPIPM_TEST_HARNESS=1 julia --project=. test/test_hpipm.jl
 julia --project=. test/test_piqp.jl

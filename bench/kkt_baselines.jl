@@ -4,8 +4,8 @@
 #              QDLDL_solve, the very calls of OSQP's linear system), on the
 #              AMD-permuted upper triangle, as OSQP does
 #   QDLDL.jl   the Julia QDLDL (Clarabel's default direct solver) through
-#              SheafMPC's QDLDLSystem (AMD, the package's default)
-#   ChordalLDLt CliqueTrees' multifrontal LDLt through SheafMPC's
+#              TeamMPC's QDLDLSystem (AMD, the package's default)
+#   ChordalLDLt CliqueTrees' multifrontal LDLt through TeamMPC's
 #              ChordalSystem (AMF), and with METIS
 #   Riccati    the HPIPM-like reference: the classical Riccati recursion of the
 #              stacked fleet (state of all agents, dense, cubic in n) for the

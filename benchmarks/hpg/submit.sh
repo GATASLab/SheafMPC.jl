@@ -4,9 +4,9 @@
 # after it; records the job IDs in hpg/submitted_<date>.txt. No polling.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
-ROOT="${HPG_ROOT:-/blue/fairbanksj/itaykadosh/sheafmpc_bench}"
+ROOT="${HPG_ROOT:-/blue/fairbanksj/itaykadosh/teammpc_bench}"
 TIER="${HPG_TIER:-hpg}"
-PKGDIR="${HPG_PKGDIR:-$ROOT/SheafMPC.jl}"
+PKGDIR="${HPG_PKGDIR:-$ROOT/TeamMPC.jl}"
 J="$PKGDIR/benchmarks/hpg"
 LOG="$HERE/hpg/submitted_$(date +%Y%m%d_%H%M).txt"
 SUF="${HPG_SUFFIX:-}"

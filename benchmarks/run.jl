@@ -98,7 +98,7 @@ function tier_specs(t)
 end
 
 function solver_specs()
-    sp = [BH.sheafmpc_spec(time_limit = TLIM), BH.osqp_spec(time_limit = TLIM), BH.clarabel_spec(time_limit = TLIM),
+    sp = [BH.teammpc_spec(time_limit = TLIM), BH.osqp_spec(time_limit = TLIM), BH.clarabel_spec(time_limit = TLIM),
           BH.mumblebee_spec()]
     isdefined(BH, :hpipm_spec) && push!(sp, BH.hpipm_spec())
     isdefined(BH, :piqp_spec) && push!(sp, BH.piqp_spec())
@@ -203,12 +203,12 @@ function main()
     end
     mkpath(OUT)
     solvers = solver_specs()
-    pk = BH.git_state(BH.SHEAFMPC_DIR)
+    pk = BH.git_state(BH.TEAMMPC_DIR)
     if pk["dirty"]
-        write(joinpath(OUT, "sheafmpc_worktree_$(pk["diff_sha1"][1:min(end, 12)]).diff"), BH.package_diff(BH.SHEAFMPC_DIR))
+        write(joinpath(OUT, "teammpc_worktree_$(pk["diff_sha1"][1:min(end, 12)]).diff"), BH.package_diff(BH.TEAMMPC_DIR))
     end
     println("tier $TIER, $(length(specs)) instances, solvers $(join([s.name for s in solvers], ", ")), out $OUT")
-    println("SheafMPC $(pk["sha"][1:min(end, 10)])", pk["dirty"] ? " + worktree diff $(pk["diff_sha1"][1:min(end, 12)])" : "")
+    println("TeamMPC $(pk["sha"][1:min(end, 10)])", pk["dirty"] ? " + worktree diff $(pk["diff_sha1"][1:min(end, 12)])" : "")
     for s in specs
         file = joinpath(OUT, s.key * ".json")
         isfile(file) && (println("skip $(s.key) (done)"); continue)

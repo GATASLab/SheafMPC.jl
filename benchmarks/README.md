@@ -1,6 +1,6 @@
-# SheafMPC benchmark harness
+# TeamMPC benchmark harness
 
-The referee for performance work on SheafMPC: every solver gets the same QPs,
+The referee for performance work on TeamMPC: every solver gets the same QPs,
 is held to the same achieved accuracy by one checker, and is timed by one
 clock around the same call boundary.
 
@@ -26,7 +26,7 @@ forms against the canonical QPs), `test/test_hpipm.jl`, `test/test_piqp.jl`.
 | `src/reference.jl` | high-accuracy reference per QP (Clarabel 1e-11, active-set polish on polyhedral problems), cached by data hash |
 | `src/families/` | fleet (paper), single-agent (double integrator, quadrotor), chain of masses, OSQP random MPC, reduced fleets; closed-loop sequences |
 | `src/protocol.jl` | calibration, cold mode, warm sequence mode |
-| `src/solvers/` | one adapter per solver; `sheafmpc.jl` is the only file touching the package API |
+| `src/solvers/` | one adapter per solver; `teammpc.jl` is the only file touching the package API |
 | `gen/` | data generated outside this environment (OSQP random MPC in numpy, reduced fleets in the paper's environment) |
 | `hpg/` | HPG setup, build and job scripts |
 | `envs/mumblebee_fast/` | the same harness with the local Mumblebee branch |
@@ -48,7 +48,7 @@ forms against the canonical QPs), `test/test_hpipm.jl`, `test/test_piqp.jl`.
   the tier on the first, middle and last QP; the fastest variant wins.
 * **Settings read-back.** After every calibration setup the harness reads the
   settings back from the live solver object (OSQP's C settings struct,
-  Clarabel's and Mumblebee's settings, SheafMPC's `Settings`, HPIPM's ipm arg
+  Clarabel's and Mumblebee's settings, TeamMPC's `Settings`, HPIPM's ipm arg
   struct; for PIQP, which has no getter, the struct passed to setup) and
   disqualifies a variant whose tolerances differ from the requested ones or
   whose warm start is on at setup (OSQP.jl drops unknown keywords silently).
@@ -58,7 +58,7 @@ forms against the canonical QPs), `test/test_hpipm.jl`, `test/test_piqp.jl`.
   from zero (timed).
 * **Warm mode.** k replays of the sequence: setup and a cold solve of QP 1,
   then per QP one timed call of data update (factorization kept) + warm start
-  + solve. ADMM solvers (SheafMPC, OSQP) start from their own previous
+  + solve. ADMM solvers (TeamMPC, OSQP) start from their own previous
   solution moved one stage (the family's shift map; unshifted when the family
   has none). Interior-point solvers have no warm start; they reuse setup.
 * **Statistics.** Per QP the median over repeats; per instance median, p90,

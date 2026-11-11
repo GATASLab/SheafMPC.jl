@@ -19,7 +19,7 @@
 #    timing breakdown of a step.
 # 4. Distributed MPC by consensus ADMM over the vehicles and over the rows.
 
-using SheafMPC, Printf, Statistics, LinearAlgebra
+using TeamMPC, Printf, Statistics, LinearAlgebra
 
 BLAS.set_num_threads(1)
 const ROWS = parse(Int, get(ENV, "ROWS", "8"))

@@ -4,7 +4,7 @@
 # dimensions, reduced value and lifted plans: checked on the partitions the
 # experiments use (time leg, agent leg, teams over the whole horizon, products,
 # corners, random contractions), with the sparsity and kinds of the blocks, the
-# team stalk dimension, the empty fiber, composition, and receding-horizon reuse.
+# team space dimension, the empty fiber, composition, and receding-horizon reuse.
 
 @testset "structured fiber basis" begin
 
@@ -15,7 +15,7 @@ cases = [
     "mixed grid, cones" => test_program(n = 6, H = 6, graph = :grid, seed = 4, umax_scale = 0.3)[1],
     "time varying, switching, incoherent" => test_program(n = 5, H = 6, graph = :rgg, seed = 5, time_varying = true,
                                                           switching = 0.3, coherent = false, start_in_formation = false)[1],
-    "zero-stalk absent edges" => test_program(n = 4, H = 5, graph = :complete, kinds = :rover, switching = 0.4,
+    "zero-dimensional absent edges" => test_program(n = 4, H = 5, graph = :complete, kinds = :rover, switching = 0.4,
                                               absent = :zero, seed = 7)[1],
 ]
 
@@ -94,7 +94,7 @@ end
     @test fiberdim(R.fibers[1]) == ag.nx + fp.fleet.H * ag.nu
 end
 
-@testset "team stalk: one member's coordinates plus ker(C Gam) per other member" begin
+@testset "team space: one member's coordinates plus ker(C Gam) per other member" begin
     fp = cases[2][2]                                          # identical quadrotors, rows of 3 on a 2 x 3 grid
     H = fp.fleet.H
     ag = fp.fleet.agents[1]
@@ -108,10 +108,10 @@ end
 @testset "empty affine fiber and composition" begin
     nodes = [NodeData(sparse([1.0;;]), [0.0]) for _ in 1:3]
     one_ = sparse([1.0;;])
-    edges = [SheafEdge(1, 2, one_, one_, false, [1.0;;], [1.0]),
-             SheafEdge(2, 3, one_, one_, false, [1.0;;], [1.0]),
-             SheafEdge(1, 3, one_, one_, false, [1.0;;], [1.0])]
-    P = SheafProgram(nodes, edges)
+    edges = [GraphEdge(1, 2, one_, one_, false, [1.0;;], [1.0]),
+             GraphEdge(2, 3, one_, one_, false, [1.0;;], [1.0]),
+             GraphEdge(1, 3, one_, one_, false, [1.0;;], [1.0])]
+    P = GraphProgram(nodes, edges)
     R = reduce(P, VertexPartition([1, 1, 1]))
     @test !R.feasible
     @test solve(R).status == :primal_infeasible
@@ -158,8 +158,8 @@ end
     P2 = copy(fp2.program)
     e = fp2.form[1, 2]
     E = P2.edges[e]
-    P2.edges[e] = SheafEdge(E.tail, E.head, 2 * E.Ft, 2 * E.Fh, E.hard, E.W, E.b, E.tag)
-    lab = SheafMPC.vertex_labels(res, nvertices(P2), fp2.layout)[1]
+    P2.edges[e] = GraphEdge(E.tail, E.head, 2 * E.Ft, 2 * E.Fh, E.hard, E.W, E.b, E.tag)
+    lab = TeamMPC.vertex_labels(res, nvertices(P2), fp2.layout)[1]
     Rc = reduce(P2, VertexPartition(lab); reuse = R)
     @test Rc.fibers[R.partition[E.tail]] !== R.fibers[R.partition[E.tail]]
 end

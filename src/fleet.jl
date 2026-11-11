@@ -204,13 +204,13 @@ major order `(1,0), ..., (1,H), (2,0), ...`, then the dynamics edges (hard),
 then the formation edges instant by instant (soft). `vid[i, t+1]`, `dyn[i, t+1]`
 and `form[k, t]` index the vertex of `(i, t)`, the dynamics edge from `t`, and
 the formation edge `k` at `t` (0 when absent). An absent formation edge is
-omitted (`absent = :omit`) or kept with a zero stalk (`:zero`); both give the
+omitted (`absent = :omit`) or kept with a zero space (`:zero`); both give the
 same program. The measured states and the references can be changed in place
 (`set_state!`, `set_references!`, `set_targets!`, `set_drift!`).
 """
 struct FleetProgram
     fleet::Fleet
-    program::SheafProgram
+    program::GraphProgram
     layout::FleetLayout
     vid::Matrix{Int}
     dyn::Matrix{Int}
@@ -220,7 +220,7 @@ struct FleetProgram
     changed::Vector{Int}             # vertices whose constraint matrices changed in place since the controller last read them
 end
 
-_sheaf(F::FleetProgram) = F.program
+_base_program(F::FleetProgram) = F.program
 _layout(F::FleetProgram) = F.layout
 c0dim(F::FleetProgram) = c0dim(F.program)
 
@@ -281,13 +281,13 @@ function FleetProgram(fleet::Fleet; x0 = nothing, references = nothing, terminal
         push!(nodes, _stage_node(fleet.agents[i], t, H))
         vid[i, t+1] = length(nodes)
     end
-    edges = SheafEdge[]
+    edges = GraphEdge[]
     dyn = zeros(Int, n, H)
     for i in 1:n, t in 0:(H-1)
         ag = fleet.agents[i]
         A, B, g = dynamics(ag, t)
         dh = t + 1 < H ? ag.nu : 0
-        push!(edges, SheafEdge(vid[i, t+1], vid[i, t+2], [A B], [Matrix{Float64}(I, ag.nx, ag.nx) zeros(ag.nx, dh)],
+        push!(edges, GraphEdge(vid[i, t+1], vid[i, t+2], [A B], [Matrix{Float64}(I, ag.nx, ag.nx) zeros(ag.nx, dh)],
                                true, Matrix{Float64}(I, ag.nx, ag.nx), g, EdgeTag(:dyn, i, i, t)))
         dyn[i, t+1] = length(edges)
     end
@@ -298,17 +298,17 @@ function FleetProgram(fleet::Fleet; x0 = nothing, references = nothing, terminal
         dj = t < H ? aj.nx + aj.nu : aj.nx
         if fleet.present[k, t]
             Sk = fleet.select[k]; pk = size(Sk, 1)
-            push!(edges, SheafEdge(vid[i, t+1], vid[j, t+1], [Sk*ai.C zeros(pk, di - ai.nx)], [Sk*aj.C zeros(pk, dj - aj.nx)],
+            push!(edges, GraphEdge(vid[i, t+1], vid[j, t+1], [Sk*ai.C zeros(pk, di - ai.nx)], [Sk*aj.C zeros(pk, dj - aj.nx)],
                                    false, fleet.weights[k, t] * Matrix{Float64}(I, pk, pk), Sk * fleet.targets[:, k, t],
                                    EdgeTag(:form, i, j, t)))
             form[k, t] = length(edges)
         elseif absent == :zero
-            push!(edges, SheafEdge(vid[i, t+1], vid[j, t+1], zeros(0, di), zeros(0, dj), false, zeros(0, 0), Float64[],
+            push!(edges, GraphEdge(vid[i, t+1], vid[j, t+1], zeros(0, di), zeros(0, dj), false, zeros(0, 0), Float64[],
                                    EdgeTag(:form, i, j, t)))
             form[k, t] = length(edges)
         end
     end
-    F = FleetProgram(fleet, SheafProgram(nodes, edges), FleetLayout(vid), vid, dyn, form,
+    F = FleetProgram(fleet, GraphProgram(nodes, edges), FleetLayout(vid), vid, dyn, form,
                      [ag.Cr' * ag.Q for ag in fleet.agents], [ag.Cf' * ag.Qf for ag in fleet.agents], Int[])
     x0 === nothing || set_state!(F, x0)
     references === nothing || set_references!(F, references; terminal = terminal)

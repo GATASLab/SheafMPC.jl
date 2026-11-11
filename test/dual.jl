@@ -173,7 +173,7 @@ end
         s1 = setup(p; dual_setup_budget = 1.0)
         @test all(s1.dual.zok)
         for c in eachindex(s.dual.zok)
-            SheafMPC._dual_column!(s.dual, c)
+            TeamMPC._dual_column!(s.dual, c)
         end
         @test norm(s1.dual.Z - s.dual.Z, Inf) <= 1e-10 * norm(s.dual.Z, Inf)
         # second-order cones: no dense path
@@ -194,9 +194,9 @@ end
         p = mpc_box_qp(; x0 = 1.5 * ones(4), umax = 0.3)
         s = setup(p; eps_abs = 1e-8, eps_rel = 1e-8)
         solve!(s)
-        SheafMPC._try_dual!(s, :xbar)
+        TeamMPC._try_dual!(s, :xbar)
         s.dual.xbar_ok = false
-        @test (@allocated SheafMPC._try_dual!(s, :xbar)) == 0
+        @test (@allocated TeamMPC._try_dual!(s, :xbar)) == 0
         for _ in 1:3
             reset!(s); solve!(s)
         end

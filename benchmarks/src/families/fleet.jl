@@ -1,4 +1,4 @@
-# fleet.jl: the fleet formation MPC QP of the paper (mpc-sheaf-pushforward,
+# fleet.jl: the fleet formation MPC QP of the paper (the paper's research code,
 # bench/central/qp.jl), generalized to a measured state x0, a ring or grid
 # agent graph, and box or second-order-cone inputs.
 #

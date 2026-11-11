@@ -26,14 +26,14 @@ fibers of its blocks, the lift `x = xbar + N y` (`N`, and `X` with
 `xbar = X b`, `b` the fine edge targets), the fine edges behind the coarse
 edges (`cross`), the contracted edges (`collapsed`), the coarse `layout` (for
 product resolutions), and the `parent` it was reduced from (a `FleetProgram`,
-another `ReducedProgram` for teams of teams, or a `SheafProgram`).
+another `ReducedProgram` for teams of teams, or a `GraphProgram`).
 `feasible == false` means some affine fiber is empty, so the reduced program
 is infeasible (the fine program with the contracted edges made hard is).
 """
 mutable struct ReducedProgram
     parent::Any
-    fine::SheafProgram
-    program::SheafProgram
+    fine::GraphProgram
+    program::GraphProgram
     resolution::Resolution
     basis::Symbol
     partition::Vector{Int}
@@ -92,9 +92,9 @@ function Base.getproperty(R::ReducedProgram, s::Symbol)
     return getfield(R, s)
 end
 
-_sheaf(P::SheafProgram) = P
-_sheaf(R::ReducedProgram) = R.program
-_layout(::SheafProgram) = nothing
+_base_program(P::GraphProgram) = P
+_base_program(R::ReducedProgram) = R.program
+_layout(::GraphProgram) = nothing
 _layout(R::ReducedProgram) = R.layout
 
 """`fiber_kinds(R)`: the basis of every fiber (`:identity`, `:structured`, `:structured_reduced`, `:orthonormal`)."""
@@ -114,8 +114,8 @@ _member_basis(NtB::SpMat, lr::UnitRange{Int}) = copy(transpose(NtB[:, lr]))
     reduce(program, resolution; basis = :structured, reuse = nothing, consistency_tol = 1e-8) -> ReducedProgram
 
 The pushforward of `program` (a `FleetProgram`, a `ReducedProgram` or a
-`SheafProgram`) along `resolution` (the paper's Def. 4): one coarse vertex per
-block, whose stalk is the space of sections of the block's fiber; coarse costs
+`GraphProgram`) along `resolution` (the paper's Def. 4): one coarse vertex per
+block, whose space is the space of sections of the block's fiber; coarse costs
 and constraints by substitution of the lift `x = xbar + N y`; one coarse edge
 per edge that is not contracted, same kind and stiffness. By Thm. 1 the
 reduced program is the fine one with the contracted edges made hard: same
@@ -132,14 +132,14 @@ costs one `update!`.
 Reducing a `ReducedProgram` composes the reductions (teams of teams, the
 paper's Thm. 4): `lift` then lifts level by level.
 """
-function Base.reduce(prog::Union{SheafProgram,ReducedProgram}, res::Resolution; basis::Symbol = :structured,
+function Base.reduce(prog::Union{GraphProgram,ReducedProgram}, res::Resolution; basis::Symbol = :structured,
                      reuse = nothing, consistency_tol::Real = 1e-8)
-    P = _sheaf(prog)
+    P = _base_program(prog)
     labels, clayout = vertex_labels(res, nvertices(P), _layout(prog))
     return _pushforward(prog, P, res, labels, clayout; basis = basis, reuse = reuse, consistency_tol = consistency_tol)
 end
 
-function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int}, clayout;
+function _pushforward(parent, P::GraphProgram, res::Resolution, Pi::Vector{Int}, clayout;
                       basis::Symbol = :structured, reuse = nothing, consistency_tol::Real = 1e-8)
     nv = nvertices(P)
     nb = nblocks(Pi)
@@ -232,7 +232,7 @@ function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int},
         cnodes[b] = NodeData(Qc, zeros(kdims[b]), 0.0, Ac, zeros(arow), cones)
     end
     # coarse edges: one per edge that is not contracted
-    cedges = Vector{SheafEdge}(undef, length(cross))
+    cedges = Vector{GraphEdge}(undef, length(cross))
     xrows = Int[]
     member_rows = Dict{Tuple{Int,Int},SpMat}()
     for (k, e) in enumerate(cross)
@@ -245,10 +245,10 @@ function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int},
         Nh_ = get!(() -> _member_basis(NtB[bh], lh), member_rows, (bh, local_index[E.head]))
         Ftc = E.Ft * Nt_
         Fhc = E.Fh * Nh_
-        cedges[k] = SheafEdge(bt, bh, Ftc, Fhc, E.hard, E.W, zeros(edgedim(E)), E.tag)
+        cedges[k] = GraphEdge(bt, bh, Ftc, Fhc, E.hard, E.W, zeros(edgedim(E)), E.tag)
         append!(xrows, erange(P, e))
     end
-    Pc = SheafProgram(cnodes, cedges)
+    Pc = GraphProgram(cnodes, cedges)
     Qn = node_hessian(P)
     An, _, _ = node_constraints(P)
     Dx = coboundary(P, cross)
@@ -263,7 +263,7 @@ function _pushforward(parent, P::SheafProgram, res::Resolution, Pi::Vector{Int},
 end
 
 """True when the node matrices of `P` and `Pp` agree and the edges `cross` have the same maps, kind and stiffness."""
-function _same_structure(P::SheafProgram, Pp::SheafProgram, cross)
+function _same_structure(P::GraphProgram, Pp::GraphProgram, cross)
     for v in 1:nvertices(P)
         a, b = P.nodes[v], Pp.nodes[v]
         (a.Q === b.Q || a.Q == b.Q) && (a.A === b.A || a.A == b.A) && a.cones == b.cones || return false
@@ -276,11 +276,11 @@ function _same_structure(P::SheafProgram, Pp::SheafProgram, cross)
     return true
 end
 
-function _reuse_structure(parent, P::SheafProgram, res::Resolution, R0::ReducedProgram, clayout)
+function _reuse_structure(parent, P::GraphProgram, res::Resolution, R0::ReducedProgram, clayout)
     P0c = R0.program
     cnodes = [NodeData(nd.Q, zeros(length(nd.q)), 0.0, nd.A, zeros(length(nd.b)), nd.cones) for nd in P0c.nodes]
-    cedges = [SheafEdge(E.tail, E.head, E.Ft, E.Fh, E.hard, E.W, zeros(edgedim(E)), E.tag) for E in P0c.edges]
-    Pc = SheafProgram(cnodes, cedges)
+    cedges = [GraphEdge(E.tail, E.head, E.Ft, E.Fh, E.hard, E.W, zeros(edgedim(E)), E.tag) for E in P0c.edges]
+    Pc = GraphProgram(cnodes, cedges)
     n = c0dim(P)
     R = ReducedProgram(parent, P, Pc, res, R0.basis, R0.partition, R0.local_index, R0.fibers, R0.collapsed, R0.cross,
                        R0.coarse_offsets, R0.N, R0.Nt, R0.X, R0.Cons, clayout, true, 0.0, R0.consistency_tol,
@@ -429,7 +429,7 @@ end
 """
     lift(reduced, y) -> x
 
-The lift `x = xbar + N y` of a coarse cochain to the program `reduced` was
+The lift `x = xbar + N y` of a coarse vector to the program `reduced` was
 reduced from; for teams of teams, `lift(reduced, y; to = :root)` (the
 default) lifts through every level to the finest program, `to = :parent` one
 level only. A lifted plan satisfies every contracted edge and has the coarse

@@ -124,7 +124,7 @@ function random_teams(fl::Fleet, rng, k)
 end
 
 """Contract every edge of the program independently with probability `p` (connected blocks)."""
-function random_contraction(P::SheafProgram, rng; p = 0.4)
+function random_contraction(P::GraphProgram, rng; p = 0.4)
     parent = collect(1:nvertices(P))
     find(a) = (while parent[a] != a; parent[a] = parent[parent[a]]; a = parent[a]; end; a)
     for E in P.edges

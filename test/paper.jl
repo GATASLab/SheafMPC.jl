@@ -1,5 +1,5 @@
 # Tests against the paper repository (read only): the fleet QP of the
-# centralized benchmark and sheaf programs (fine and pushed forward) of the
+# centralized benchmark and graph programs (fine and reduced) of the
 # Resolution module, both against Clarabel.
 
 haskey(ENV, "BENCH_ABAR") || (ENV["BENCH_ABAR"] = "1.0")
@@ -38,7 +38,7 @@ end
     end
 end
 
-@testset "sheaf programs (Resolution) vs Clarabel" begin
+@testset "graph programs (Resolution) vs Clarabel" begin
     for (cfg, label) in ((Res.MPCConfig(n = 6, H = 8, graph = :ring, fleet = :mixed, obstacle = true, seed = 3), "ring, obstacle"),
                          (Res.MPCConfig(n = 6, H = 8, graph = :grid, fleet = :rows, abar_scale = 0.3, seed = 2), "grid, active inputs"),
                          (Res.MPCConfig(n = 5, H = 6, typing = :virtual, wind = 0.5, seed = 4), "virtual dynamics"))
@@ -46,7 +46,7 @@ end
         P = model.program
         sol = Res.solve_direct(P)
         @test Res.isoptimal(sol)
-        qp = sheaf_qp(P)
+        qp = graph_qp(P)
         s = setup(qp; eps_abs = 1e-8, eps_rel = 1e-8, max_iter = 50_000)
         info = solve!(s)
         @test info.status == :solved
@@ -61,7 +61,7 @@ end
             Pc === nothing && continue
             solc = Res.solve_direct(Pc)
             Res.isoptimal(solc) || continue
-            sc = setup(sheaf_qp(Pc); eps_abs = 1e-8, eps_rel = 1e-8, max_iter = 50_000)
+            sc = setup(graph_qp(Pc); eps_abs = 1e-8, eps_rel = 1e-8, max_iter = 50_000)
             ic = solve!(sc)
             @test ic.status == :solved
             @test relgap(ic.obj, solc.J) <= 1e-6
@@ -130,7 +130,7 @@ end
                 Res.MPCConfig(n = 4, H = 5, graph = :complete, fleet = :rover, switching = 0.4, absent = :zero, seed = 7))
         model = Res.build_model(cfg)
         fp = fleet_from_spec(model.spec)
-        q1, q2 = sheaf_qp(model.program), sheaf_qp(fp.program)
+        q1, q2 = graph_qp(model.program), graph_qp(fp.program)
         @test q1.P ≈ q2.P && q1.q ≈ q2.q && q1.c ≈ q2.c
         @test q1.A ≈ q2.A && q1.l ≈ q2.l && q1.u ≈ q2.u && q1.socs == q2.socs && q1.socb ≈ q2.socb
         sol = Res.solve_direct(model.program)

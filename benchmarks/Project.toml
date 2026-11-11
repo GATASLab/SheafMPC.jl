@@ -11,14 +11,14 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
-SheafMPC = "8f3c2a61-5d4e-4b7a-9c1e-2a6b0d9e7f13"
+TeamMPC = "8f3c2a61-5d4e-4b7a-9c1e-2a6b0d9e7f13"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
-# SheafMPC is the package under test, taken from this repository's working tree.
+# TeamMPC is the package under test, taken from this repository's working tree.
 # Mumblebee is pinned to the commit the paper's numbers were measured on.
 [sources]
-SheafMPC = {path = ".."}
+TeamMPC = {path = ".."}
 Mumblebee = {url = "https://github.com/samuelsonric/Mumblebee.jl.git", rev = "e78d9b9a3a0a2f4c226bf2eb0cf20f662e7d676b"}
 
 [compat]

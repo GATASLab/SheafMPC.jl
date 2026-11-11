@@ -15,7 +15,7 @@
 # label, the structure the structured orderings read.
 
 using SparseArrays, LinearAlgebra
-import SheafMPC
+import TeamMPC
 
 const HS = 0.1
 const W_P, W_U, W_F = 0.3, 1e-3, 0.2
@@ -155,8 +155,8 @@ function fleet_problem(n::Int, N::Int; graph::Symbol = :ring, b::Int = 1, dyn::S
     A = [Aeq; Ab]
     me = size(Aeq, 1)
     l = [zeros(me); fill(-UBOX, nb)]; u = [zeros(me); fill(UBOX, nb)]
-    kinds = [fill(SheafMPC.ROW_EQ, me); fill(SheafMPC.ROW_INTERVAL, nb)]
-    qp = SheafMPC.ConicQP(P, q, A, l, u; kinds = kinds)
+    kinds = [fill(TeamMPC.ROW_EQ, me); fill(TeamMPC.ROW_INTERVAL, nb)]
+    qp = TeamMPC.ConicQP(P, q, A, l, u; kinds = kinds)
     return qp, (var_agent = var_agent, var_block = var_block, row_agent = row_agent, row_block = row_block,
                 nagents = n, nblocks = N ÷ b, edges = E)
 end
@@ -164,22 +164,22 @@ end
 """
     kkt_matrix(qp; rho = 0.1, sigma = 1e-6) -> (K, n, diag_idx)
 
-The ADMM KKT matrix of SheafMPC's setup (Ruiz-scaled data, rho per row type)
+The ADMM KKT matrix of TeamMPC's setup (Ruiz-scaled data, rho per row type)
 as an upper triangular CSC with every diagonal entry stored.
 """
-function kkt_matrix(qp::SheafMPC.ConicQP; settings = SheafMPC.Settings())
+function kkt_matrix(qp::TeamMPC.ConicQP; settings = TeamMPC.Settings())
     st = settings
-    n, m = SheafMPC.nvars(qp), SheafMPC.nrows(qp)
+    n, m = TeamMPC.nvars(qp), TeamMPC.nrows(qp)
     P = copy(qp.P); q = copy(qp.q); A = copy(qp.A)
-    scl = st.scaling > 0 ? SheafMPC.ruiz_scale!(P, q, A, qp.socs, st.scaling) : SheafMPC.identity_scaling(n, m)
+    scl = st.scaling > 0 ? TeamMPC.ruiz_scale!(P, q, A, qp.socs, st.scaling) : TeamMPC.identity_scaling(n, m)
     l = scl.E .* qp.l; u = scl.E .* qp.u
-    rt = SheafMPC._rowtypes(l, u, qp.kinds)
+    rt = TeamMPC._rowtypes(l, u, qp.kinds)
     xdiag = Vector{Float64}(diag(P)) .+ st.sigma
-    res = SheafMPC.kkt_pattern(P, A, qp.socs)
+    res = TeamMPC.kkt_pattern(P, A, qp.socs)
     K, diag_idx = res[1], res[2]
-    rinv = [rt[i] == SheafMPC.ROWT_EQ ? 1 / (st.rho_eq_scale * st.rho) : rt[i] == SheafMPC.ROWT_FREE ? 1 / st.rho_min :
+    rinv = [rt[i] == TeamMPC.ROWT_EQ ? 1 / (st.rho_eq_scale * st.rho) : rt[i] == TeamMPC.ROWT_FREE ? 1 / st.rho_min :
             1 / st.rho for i in 1:m]
-    SheafMPC.set_diagonal!(K, diag_idx, xdiag, rinv)
+    TeamMPC.set_diagonal!(K, diag_idx, xdiag, rinv)
     return K, n, diag_idx
 end
 

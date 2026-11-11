@@ -11,15 +11,15 @@
 # are constant), which is what `update!` handles without refactoring.
 #
 # Per step, timed end to end (data update, warm start, solve):
-#   sheafmpc         update!, warm_start_shifted! (the previous plan moved one
+#   teammpc         update!, warm_start_shifted! (the previous plan moved one
 #                    step, last step repeated), solve! (warm polish first, the
 #                    polish factorization cached across steps)
-#   sheafmpc_cold    update!, reset!, solve! (no warm start)
+#   teammpc_cold    update!, reset!, solve! (no warm start)
 #   osqp             OSQP.update! and solve! with OSQP's own warm start (the
 #                    previous solution, unshifted)
 #   osqp_shift       OSQP.update!, OSQP.warm_start! with the same shifted plan
 #                    and multipliers, solve!
-#   osqp_rho0.03     as osqp, with SheafMPC's default rho
+#   osqp_rho0.03     as osqp, with TeamMPC's default rho
 #   clarabel         setup and solve at 1e-8 (solve timed)
 # Reported: median and max per-step time over steps 1..STEPS-1 (step 0 is the
 # first, cold solve after setup, reported separately), iterations, and the
@@ -53,7 +53,7 @@ end
 
 stats(v) = (med = median(v), max = maximum(v), mean = mean(v))
 
-function run_sheafmpc(seq, xmap, ymap; cold = false)
+function run_teammpc(seq, xmap, ymap; cold = false)
     p0 = seq[1].p
     s = setup(p0; eps_abs = EPS, eps_rel = EPS)
     solve!(s); reset!(s)                     # compile
@@ -64,7 +64,7 @@ function run_sheafmpc(seq, xmap, ymap; cold = false)
             if CONE == "box"
                 update!(s; q = p.q, l = p.l, u = p.u, c = p.c)
             else
-                update!(s; q = p.q, b = p.socb .+ [p.kinds[i] == SheafMPC.ROW_EQ ? p.u[i] : 0.0 for i in 1:nrows(p)], c = p.c)
+                update!(s; q = p.q, b = p.socb .+ [p.kinds[i] == TeamMPC.ROW_EQ ? p.u[i] : 0.0 for i in 1:nrows(p)], c = p.c)
             end
             if cold || k == 1
                 reset!(s)
@@ -102,7 +102,7 @@ function run_osqp(seq, xmap, ymap; shift = false, rho = 0.1)
         end
         xprev = r.x; yprev = r.y
         push!(ts, t); push!(tin, r.info.solve_time); push!(its, r.info.iter)
-        push!(gaps, relgap(SheafMPC.objective(p, r.x), st.ref))
+        push!(gaps, relgap(TeamMPC.objective(p, r.x), st.ref))
     end
     return (; ts, its, gaps, tin, setup = tsetup)
 end
@@ -127,21 +127,21 @@ function main()
         res = Dict{String,Any}()
         # an untimed replay first: a path first taken mid-sequence (the polish
         # corrections, a crossover to the IPM) would otherwise time compilation
-        run_sheafmpc(seq, xmap, ymap); run_sheafmpc(seq, xmap, ymap; cold = true)
-        res["sheafmpc"] = run_sheafmpc(seq, xmap, ymap)
-        res["sheafmpc_cold"] = run_sheafmpc(seq, xmap, ymap; cold = true)
+        run_teammpc(seq, xmap, ymap); run_teammpc(seq, xmap, ymap; cold = true)
+        res["teammpc"] = run_teammpc(seq, xmap, ymap)
+        res["teammpc_cold"] = run_teammpc(seq, xmap, ymap; cold = true)
         if CONE == "box"
             res["osqp"] = run_osqp(seq, xmap, ymap)
             res["osqp_shift"] = run_osqp(seq, xmap, ymap; shift = true)
             res["osqp_rho0.03"] = run_osqp(seq, xmap, ymap; rho = 0.03)
         end
         res["clarabel"] = run_clarabel(seq)
-        for name in ("sheafmpc", "sheafmpc_cold", "osqp", "osqp_shift", "osqp_rho0.03", "clarabel")
+        for name in ("teammpc", "teammpc_cold", "osqp", "osqp_shift", "osqp_rho0.03", "clarabel")
             haskey(res, name) || continue
             r = res[name]
             w = 2:length(r.ts)
             st = stats(r.ts[w]); it = stats(r.its[w])
-            note = name == "sheafmpc" ? @sprintf("warm polish at it 0: %d/%d steps, polish factorizations %d", count(==(2), r.pol[w]), length(w), sum(r.facs[w])) :
+            note = name == "teammpc" ? @sprintf("warm polish at it 0: %d/%d steps, polish factorizations %d", count(==(2), r.pol[w]), length(w), sum(r.facs[w])) :
                    startswith(name, "osqp") ? @sprintf("internal solve med %.3f ms", 1e3 * median(r.tin[w])) : ""
             @printf("%-4s %3d %2d %-14s %10.3f %10.3f %10.3f %8.1f %8d %9.1e  %s\n", CONE, n, b, name, 1e3 * r.ts[1],
                     1e3 * st.med, 1e3 * st.max, it.med, Int(it.max), maximum(r.gaps), note)

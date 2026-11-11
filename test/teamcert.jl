@@ -25,7 +25,7 @@ end
             fl = fleet(sc)
             D = slot_offsets(fl, slots(sc))
             teams_ = part == :rows ? row_teams(sc) : [agent_kind(sc, i) == :quadrotor ? 1 : 2 for i in 1:nagents(sc)]
-            tm = TeamMPC(fl, teams_; offsets = D, eps_abs = 1e-9, eps_rel = 1e-9)
+            tm = TeamController(fl, teams_; offsets = D, eps_abs = 1e-9, eps_rel = 1e-9)
             x = formation_start(sc)
             for k in 0:2
                 refs, term = references(sc, k * sc.h)
@@ -47,7 +47,7 @@ end
         rng = Xoshiro(4)
         for _ in 1:50
             Y = randn(rng, 6, 4); y = randn(rng, 6)
-            c = SheafMPC._nnls(Y, y)
+            c = TeamMPC._nnls(Y, y)
             @test all(c .>= 0)
             g = Y' * (Y * c + y)                       # KKT: g >= 0, g = 0 on the support
             @test all(g .>= -1e-8)

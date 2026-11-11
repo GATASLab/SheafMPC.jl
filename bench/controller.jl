@@ -11,9 +11,9 @@
 #
 #   research   the paper repository's per-step pipeline: rebuild the data and
 #              the time-expanded program, pushforward with fiber reuse, then
-#              `sheaf_qp` of the pushforward (read only from SHEAFMPC_PAPER);
+#              `graph_qp` of the pushforward (read only from TEAMMPC_PAPER);
 #   rebuild    the package without the in-place path: a new FleetProgram,
-#              `reduce(...; reuse)` and `sheaf_qp` every step;
+#              `reduce(...; reuse)` and `graph_qp` every step;
 #   controller `MPCController` and `step!`: data written in place, pushed
 #              through the reduction by `update!` (sparse products), the
 #              reduced QP's vectors refreshed in place.
@@ -22,11 +22,11 @@
 # data update into the solver), solve, lift (to the fine plan and the first
 # inputs); medians over the steps after the first, in milliseconds.
 
-const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
+const PAPER = get(ENV, "TEAMMPC_PAPER", "")
 module Paper
 include(joinpath(Main.PAPER, "scripts", "resolution", "experiments", "common_spatial.jl"))
 end
-using SheafMPC, LinearAlgebra, SparseArrays, Statistics, Printf, JSON
+using TeamMPC, LinearAlgebra, SparseArrays, Statistics, Printf, JSON
 
 const ROWS = parse(Int, get(ENV, "BENCH_ROWS", "8"))
 const COLS = parse(Int, get(ENV, "BENCH_COLS", "8"))
@@ -37,7 +37,7 @@ const SEED = 20261018
 
 ms(t) = 1e3 * t
 med(v) = isempty(v) ? NaN : median(v)
-qp_b(qp) = [qp.kinds[i] == SheafMPC.ROW_SOC ? qp.socb[i] : qp.u[i] for i in 1:nrows(qp)]
+qp_b(qp) = [qp.kinds[i] == TeamMPC.ROW_SOC ? qp.socb[i] : qp.u[i] for i in 1:nrows(qp)]
 
 function levels(sc)
     return [("fine", Fine(), nothing), ("teams k=8 (rows)", Teams(row_teams(sc)), row_teams(sc)),
@@ -45,7 +45,7 @@ function levels(sc)
             ("fleet (k=1)", Teams(ones(Int, nagents(sc))), ones(Int, nagents(sc))), ("full condensing", full_condensing(), :time)]
 end
 
-"The research pipeline: rebuild data and program, pushforward with reuse, sheaf_qp, update, solve, lift."
+"The research pipeline: rebuild data and program, pushforward with reuse, graph_qp, update, solve, lift."
 function run_research(sc0, sc, alpha)
     layout = Paper.sp_grid(sc0.rows, sc0.cols)[2]
     x = Paper.formation_start(sc0, layout)
@@ -62,7 +62,7 @@ function run_research(sc0, sc, alpha)
             Pk, L = Paper.pushforward(model.program, Pi; basis = :structured, reuse = prev)
             prev = (model.program, L)
         end
-        qp = sheaf_qp(Pk)
+        qp = graph_qp(Pk)
         t1 = time_ns()
         if s === nothing
             s = setup(qp; eps_abs = EPS, eps_rel = EPS, max_iter = 20_000)
@@ -83,7 +83,7 @@ function run_research(sc0, sc, alpha)
     return T
 end
 
-"The package, rebuilt every step: FleetProgram, reduce with reuse, sheaf_qp."
+"The package, rebuilt every step: FleetProgram, reduce with reuse, graph_qp."
 function run_rebuild(sc, res)
     fl = fleet(sc)
     x = formation_start(sc)
@@ -95,7 +95,7 @@ function run_rebuild(sc, res)
         fp = FleetProgram(fl; x0 = x, references = refs, terminal = term)
         R = res isa Fine ? nothing : reduce(fp, res; reuse = prev)
         prev = R
-        qp = sheaf_qp(R === nothing ? fp.program : R.program)
+        qp = graph_qp(R === nothing ? fp.program : R.program)
         t1 = time_ns()
         if s === nothing
             s = setup(qp; eps_abs = EPS, eps_rel = EPS, max_iter = 20_000)

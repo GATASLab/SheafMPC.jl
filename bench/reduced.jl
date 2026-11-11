@@ -1,4 +1,4 @@
-# reduced.jl: the same solver on a fine sheaf program and on its pushforwards.
+# reduced.jl: the same solver on a fine graph program and on its reductions.
 #
 #   julia --project=bench bench/reduced.jl
 #
@@ -12,19 +12,19 @@
 # structured fibre basis of pushforward.jl when it is available (otherwise the
 # rref basis; the basis used is printed and recorded).
 #
-# Per level: the program's size, the pushforward time, SheafMPC's setup and
+# Per level: the program's size, the pushforward time, TeamMPC's setup and
 # cold solve time (min and median over REPS), Clarabel's solve time (setup
 # excluded, tolerance 1e-8), the objective J (with its constant) and its
-# gap to the fine optimum (the price of the reduction), and SheafMPC's accuracy
+# gap to the fine optimum (the price of the reduction), and TeamMPC's accuracy
 # against Clarabel on the same program. Then a receding-horizon run of STEPS
 # steps at every level (fibres reused across steps, `pushforward(...; reuse)`;
-# SheafMPC with `update!` and a warm start from the previous solution, the
+# TeamMPC with `update!` and a warm start from the previous solution, the
 # factorizations kept), timed per step for the solve and for the pushforward.
 
-const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
+const PAPER = get(ENV, "TEAMMPC_PAPER", "")
 include(joinpath(PAPER, "scripts", "resolution", "experiments", "common_spatial.jl"))
-import SheafMPC
-using SheafMPC: ConicQP, setup, solve!, sheaf_qp, reset!, update!, warm_start!, nvars, nrows
+import TeamMPC
+using TeamMPC: ConicQP, setup, solve!, graph_qp, reset!, update!, warm_start!, nvars, nrows
 
 const ROWS = parse(Int, get(ENV, "BENCH_ROWS", "8"))
 const COLS = parse(Int, get(ENV, "BENCH_COLS", "8"))
@@ -43,10 +43,10 @@ function clarabel_solve(p::ConicQP; tol = 1e-10, reps = 0)
     m = nrows(p); n = nvars(p)
     rows = Int[]; b = Float64[]; sgn = Float64[]; cones = Clarabel.SupportedCone[]
     # equality rows, then one-sided rows, then SOC blocks
-    eq = [i for i in 1:m if p.kinds[i] != SheafMPC.ROW_SOC && p.l[i] == p.u[i]]
+    eq = [i for i in 1:m if p.kinds[i] != TeamMPC.ROW_SOC && p.l[i] == p.u[i]]
     isempty(eq) || (append!(rows, eq); append!(b, p.u[eq]); append!(sgn, ones(length(eq))); push!(cones, Clarabel.ZeroConeT(length(eq))))
-    ub = [i for i in 1:m if p.kinds[i] != SheafMPC.ROW_SOC && p.l[i] != p.u[i] && p.u[i] < Inf]
-    lb = [i for i in 1:m if p.kinds[i] != SheafMPC.ROW_SOC && p.l[i] != p.u[i] && p.l[i] > -Inf]
+    ub = [i for i in 1:m if p.kinds[i] != TeamMPC.ROW_SOC && p.l[i] != p.u[i] && p.u[i] < Inf]
+    lb = [i for i in 1:m if p.kinds[i] != TeamMPC.ROW_SOC && p.l[i] != p.u[i] && p.l[i] > -Inf]
     if !isempty(ub) || !isempty(lb)
         append!(rows, ub); append!(b, p.u[ub]); append!(sgn, ones(length(ub)))
         append!(rows, lb); append!(b, -p.l[lb]); append!(sgn, -ones(length(lb)))
@@ -66,7 +66,7 @@ function clarabel_solve(p::ConicQP; tol = 1e-10, reps = 0)
     for _ in 1:reps
         push!(ts, @elapsed(r = Clarabel.solve!(s)))
     end
-    return (obj = SheafMPC.objective(p, r.x), x = r.x, status = string(r.status), iters = r.iterations,
+    return (obj = TeamMPC.objective(p, r.x), x = r.x, status = string(r.status), iters = r.iterations,
             t = isempty(ts) ? NaN : minimum(ts), tmed = isempty(ts) ? NaN : median(ts))
 end
 
@@ -93,7 +93,7 @@ end
 level_name(k) = k == 0 ? "fine" : k == ROWS ? "fleet (k=$k)" : "teams k=$k"
 
 function solve_level(P; reps = REPS)
-    qp = sheaf_qp(P)
+    qp = graph_qp(P)
     s = setup(qp; eps_abs = EPS, eps_rel = EPS, max_iter = 20_000)
     reset!(s); solve!(s)
     ts = Float64[]; info = s.info
@@ -133,7 +133,7 @@ function main()
         s, qp, r = solve_level(Pk)
         sol, tc, tcm = clarabel_level(Pk, qp)
         k == 0 && (Jfine = sol.J)
-        nsoc_act = count(B -> SheafMPC.soc_distance(s.ysol, B) < 1e-12 && norm(s.ysol[B]) > 1e-9, qp.socs)
+        nsoc_act = count(B -> TeamMPC.soc_distance(s.ysol, B) < 1e-12 && norm(s.ysol[B]) > 1e-9, qp.socs)
         @printf("%-14s %7d %7d %9.2f %9.2f %9.3f %9.3f %9.3f %10.5f %9.2e %9.1e %d/%s (%s, %d active SOC)\n", level_name(k),
                 nvars(qp), nrows(qp), 1e3 * tp, 1e3 * r.setup, 1e3 * r.t, 1e3 * r.tmed, 1e3 * tc, r.obj,
                 (sol.J - Jfine) / abs(Jfine), relg(r.obj, sol.J), r.iters, r.polish, r.linsys, nsoc_act)
@@ -147,7 +147,7 @@ function main()
         flush(stdout)
     end
     # receding horizon at every level
-    println("\nreceding horizon, $STEPS steps (fibres reused; SheafMPC warm from the previous solution, factorizations kept)")
+    println("\nreceding horizon, $STEPS steps (fibres reused; TeamMPC warm from the previous solution, factorizations kept)")
     @printf("%-14s %10s %10s %10s %10s %10s %8s %9s\n", "level", "push med", "ours med", "ours max", "cold med",
             "clar med", "iters", "max gap")
     rh = Dict{String,Any}[]
@@ -167,7 +167,7 @@ function main()
                 prev = (model.program, L)
                 push!(tps, tp)
             end
-            qp = sheaf_qp(Pk)
+            qp = graph_qp(Pk)
             sol = solve_direct(Pk)
             push!(tcl, clarabel_solve(qp; tol = 1e-8, reps = 1).t)
             if s === nothing || qp.P != s0P || qp.A != s0A
@@ -177,7 +177,7 @@ function main()
                 info = solve!(s)
                 step > 0 && @warn "level $(level_name(k)): structure changed at step $step, new setup"
             else
-                bvec = [qp.kinds[i] == SheafMPC.ROW_SOC ? qp.socb[i] : qp.u[i] for i in 1:nrows(qp)]
+                bvec = [qp.kinds[i] == TeamMPC.ROW_SOC ? qp.socb[i] : qp.u[i] for i in 1:nrows(qp)]
                 t = @elapsed begin
                     update!(s; q = qp.q, b = bvec, c = qp.c)
                     info = solve!(s)

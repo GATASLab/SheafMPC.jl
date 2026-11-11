@@ -9,7 +9,7 @@ using .BenchHarness
 const BH = BenchHarness
 BH.REF_DIR[] = mktempdir()
 
-const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
+const PAPER = get(ENV, "TEAMMPC_PAPER", "")
 module PaperQP
 ENV["BENCH_ABAR"] = "1.0"
 include(joinpath(Main.PAPER, "bench", "central", "qp.jl"))

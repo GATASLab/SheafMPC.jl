@@ -12,13 +12,13 @@
 # environments. HPG_EXCLUSIVE=1 holds the whole node (no neighbours sharing
 # memory bandwidth or L3). The load gate is off on HPG; the load is recorded.
 #
-# HPG_CPUS: cores reserved per job (default 2; one is pinned). HPG_PKGDIR: the SheafMPC.jl tree to run (default $ROOT/SheafMPC.jl; a ref
+# HPG_CPUS: cores reserved per job (default 2; one is pinned). HPG_PKGDIR: the TeamMPC.jl tree to run (default $ROOT/TeamMPC.jl; a ref
 # snapshot from prepare_ref.sh). HPG_SOLVERS=a,b restricts the main pass;
 # HPG_SUFFIX names the job set and its results directory.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
-ROOT="${HPG_ROOT:-/blue/fairbanksj/itaykadosh/sheafmpc_bench}"
-PKGDIR="${HPG_PKGDIR:-$ROOT/SheafMPC.jl}"
+ROOT="${HPG_ROOT:-/blue/fairbanksj/itaykadosh/teammpc_bench}"
+PKGDIR="${HPG_PKGDIR:-$ROOT/TeamMPC.jl}"
 STAMP="${HPG_STAMP:-$(date +%Y%m%d)}"
 SOLVERS_ARG=""; [ -n "${HPG_SOLVERS:-}" ] && SOLVERS_ARG="--solvers ${HPG_SOLVERS}"
 SUF="${HPG_SUFFIX:-}"

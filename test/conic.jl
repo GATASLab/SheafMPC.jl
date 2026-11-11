@@ -13,7 +13,7 @@
                 z = [2 + rand(rng); randn(rng, d - 1)]; z[1] = norm(z[2:end]) + 0.1 + rand(rng)
                 B = 1:d
                 W = zeros(d, d); Wi = zeros(d, d); H = zeros(d, d); lam = zeros(d); wv = zeros(d)
-                SheafMPC._soc_nt!(W, Wi, H, lam, s, z, B, wv)
+                TeamMPC._soc_nt!(W, Wi, H, lam, s, z, B, wv)
                 @test W * z ≈ Wi * s                       # Nesterov-Todd: W z = W^{-1} s = lambda
                 @test lam ≈ W * z
                 @test W * Wi ≈ I(d)
@@ -21,12 +21,12 @@
                 @test H * z ≈ s
                 # inverse Jordan product
                 v = randn(rng, d); u = zeros(d); back = zeros(d)
-                SheafMPC._jdiv!(u, lam, v, B)
-                SheafMPC._jprod!(back, lam, u, B)
+                TeamMPC._jdiv!(u, lam, v, B)
+                TeamMPC._jprod!(back, lam, u, B)
                 @test back ≈ v
                 # step to the boundary: largest a with s + a ds in the cone
                 ds = 3 * randn(rng, d)
-                a = SheafMPC._soc_step(s, ds, B)
+                a = TeamMPC._soc_step(s, ds, B)
                 inK(v) = v[1] >= norm(v[2:end]) - 1e-9
                 if isfinite(a)
                     @test inK(s + 0.999a * ds)
@@ -45,17 +45,17 @@
         s = setup(p; scaling = 0)
         B = s.socs[1]
         w = zeros(3); y = zeros(3)
-        cls(slack, mult, old = SheafMPC.ACT_NONE, band = 0.0) =
-            (w .= s.socb .- slack; SheafMPC._soc_classify!(s, 1, B, w, mult, old, band))
-        @test cls([1.0, 0.2, 0.0], zeros(3)) == SheafMPC.ACT_SOC_IN                  # slack inside, no multiplier
-        @test cls([1.0, 1.3, 0.0], zeros(3)) == SheafMPC.ACT_SOC_ON                  # slack outside, no multiplier
-        @test cls([1.0, 1.0, 0.0], [0.5, -0.5, 0.0]) == SheafMPC.ACT_SOC_ON          # a complementary boundary pair
+        cls(slack, mult, old = TeamMPC.ACT_NONE, band = 0.0) =
+            (w .= s.socb .- slack; TeamMPC._soc_classify!(s, 1, B, w, mult, old, band))
+        @test cls([1.0, 0.2, 0.0], zeros(3)) == TeamMPC.ACT_SOC_IN                  # slack inside, no multiplier
+        @test cls([1.0, 1.3, 0.0], zeros(3)) == TeamMPC.ACT_SOC_ON                  # slack outside, no multiplier
+        @test cls([1.0, 1.0, 0.0], [0.5, -0.5, 0.0]) == TeamMPC.ACT_SOC_ON          # a complementary boundary pair
         @test s.soc_u[2:3] ≈ [1.0, 0.0] && s.soc_tau[1] ≈ 1.0 && s.soc_eta[1] ≈ 0.5
-        @test cls(zeros(3), [1.0, 0.1, 0.0]) == SheafMPC.ACT_SOC_APEX                # multiplier interior: apex
+        @test cls(zeros(3), [1.0, 0.1, 0.0]) == TeamMPC.ACT_SOC_APEX                # multiplier interior: apex
         # hysteresis: just inside the boundary, a block on the boundary stays there
         near = [1.0, 1.0 - 1e-6, 0.0]
-        @test cls(near, zeros(3)) == SheafMPC.ACT_SOC_IN
-        @test cls(near, zeros(3), SheafMPC.ACT_SOC_ON, 1e-4) == SheafMPC.ACT_SOC_ON
+        @test cls(near, zeros(3)) == TeamMPC.ACT_SOC_IN
+        @test cls(near, zeros(3), TeamMPC.ACT_SOC_ON, 1e-4) == TeamMPC.ACT_SOC_ON
     end
 
     @testset "interior point vs Clarabel" begin
@@ -181,7 +181,7 @@
             fp = FleetProgram(fleet(sc); x0 = formation_start(sc), references = refs, terminal = term)
             for res in (Teams(row_teams(sc)), Teams(strip_teams(sc, 2)))
                 R = reduce(fp, res)
-                qp = sheaf_qp(R.program)
+                qp = graph_qp(R.program)
                 ref, _, st = clarabel_ref(qp)
                 nact = 0
                 for meth in (:admm, :ipm, :auto)
@@ -203,7 +203,7 @@
             refs, term = references(sc, step * sc.h)
             info = step!(ctrl, x, refs; terminal = term)
             @test info.status == :solved
-            qp = SheafMPC._current_qp(ctrl.qmap)
+            qp = TeamMPC._current_qp(ctrl.qmap)
             ref, _, _ = clarabel_ref(qp)
             @test relgap(ctrl.solver.info.obj - ctrl.solver.c0 + qp.c, ref) <= 1e-6
             @test relgap(info.J, ref) <= 1e-6

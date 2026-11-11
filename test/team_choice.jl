@@ -17,7 +17,7 @@ end
             W = rand(rng, Bool) ? ones(length(E)) : rand(rng, [0.5, 1.0, 2.0], length(E))
             cls = rand(rng, 1:rand(rng, 1:3), n)
             for within in (false, true)
-                @test colour_refinement(n, E, W, cls; within) == SheafMPC.colour_refinement_rounds(n, E, W, cls; within)
+                @test colour_refinement(n, E, W, cls; within) == TeamMPC.colour_refinement_rounds(n, E, W, cls; within)
             end
         end
     end
@@ -48,7 +48,7 @@ end
             @test all(cls[i] == cls[j] for i in 1:n, j in 1:n if lab[i] == lab[j])        # refines the classes
             @test team_spread(n, E, W, lab)[1] <= q + 1e-9                                # q-quasi-stable
             q == 0 && @test lab == colour_refinement(n, E, W, cls)
-            old = SheafMPC.quasi_stable_teams_rounds(n, E, W, cls; q = q)
+            old = TeamMPC.quasi_stable_teams_rounds(n, E, W, cls; q = q)
             @test team_spread(n, E, W, old)[1] <= q + 1e-9
             nnew += maximum(lab); nold += maximum(old)
         end
@@ -62,7 +62,7 @@ end
             for q in (0.5, 2.0, 8.0)
                 lab = quasi_stable_teams(n, E, W, cls; q)
                 @test team_spread(n, E, W, lab)[1] <= q + 1e-9
-                @test maximum(lab) <= 1.1 * maximum(SheafMPC.quasi_stable_teams_rounds(n, E, W, cls; q))
+                @test maximum(lab) <= 1.1 * maximum(TeamMPC.quasi_stable_teams_rounds(n, E, W, cls; q))
             end
             t = @elapsed quasi_stable_teams(n, E, W, cls; q = 2.0)
             @test t < 0.2

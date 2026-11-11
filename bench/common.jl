@@ -2,9 +2,9 @@
 # paper repository (bench/central/qp.jl, included read-only), its conversion to
 # a ConicQP, reference solves with Clarabel and OSQP, and timing.
 
-using SheafMPC, Clarabel, OSQP, LinearAlgebra, SparseArrays, Printf, Statistics, JSON
+using TeamMPC, Clarabel, OSQP, LinearAlgebra, SparseArrays, Printf, Statistics, JSON
 
-const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
+const PAPER = get(ENV, "TEAMMPC_PAPER", "")
 haskey(ENV, "BENCH_ABAR") || (ENV["BENCH_ABAR"] = "1.0")          # the constrained setting of the paper's latest runs
 isdefined(Main, :blocked_qp) || include(joinpath(PAPER, "bench", "central", "qp.jl"))
 
@@ -16,7 +16,7 @@ function fleet_conic(Q; cone::String = "box")
         Ab = sparse(1:nb, Q.ubox, ones(nb), nb, ny)
         A = [Q.Aeq; Ab]
         l = [Q.beq; fill(-ABAR, nb)]; u = [Q.beq; fill(ABAR, nb)]
-        kinds = [fill(SheafMPC.ROW_EQ, me); fill(SheafMPC.ROW_INTERVAL, nb)]
+        kinds = [fill(TeamMPC.ROW_EQ, me); fill(TeamMPC.ROW_INTERVAL, nb)]
         return ConicQP(Q.P, Q.q, A, l, u; c = Q.c, kinds = kinds)
     end
     I = Int[]; J = Int[]; V = Float64[]; b = Float64[]; row = 0
@@ -37,10 +37,10 @@ function clarabel_setup(p::ConicQP; tol = 1e-10)
     m = nrows(p); n = nvars(p)
     rows = Int[]; b = Float64[]; sgn = Float64[]; cones = Clarabel.SupportedCone[]
     # equality rows, then one-sided rows, then SOC blocks
-    eq = [i for i in 1:m if p.kinds[i] != SheafMPC.ROW_SOC && p.l[i] == p.u[i]]
+    eq = [i for i in 1:m if p.kinds[i] != TeamMPC.ROW_SOC && p.l[i] == p.u[i]]
     isempty(eq) || (append!(rows, eq); append!(b, p.u[eq]); append!(sgn, ones(length(eq))); push!(cones, Clarabel.ZeroConeT(length(eq))))
-    ub = [i for i in 1:m if p.kinds[i] != SheafMPC.ROW_SOC && p.l[i] != p.u[i] && p.u[i] < Inf]
-    lb = [i for i in 1:m if p.kinds[i] != SheafMPC.ROW_SOC && p.l[i] != p.u[i] && p.l[i] > -Inf]
+    ub = [i for i in 1:m if p.kinds[i] != TeamMPC.ROW_SOC && p.l[i] != p.u[i] && p.u[i] < Inf]
+    lb = [i for i in 1:m if p.kinds[i] != TeamMPC.ROW_SOC && p.l[i] != p.u[i] && p.l[i] > -Inf]
     if !isempty(ub) || !isempty(lb)
         append!(rows, ub); append!(b, p.u[ub]); append!(sgn, ones(length(ub)))
         append!(rows, lb); append!(b, -p.l[lb]); append!(sgn, -ones(length(lb)))
@@ -66,7 +66,7 @@ function clarabel_solve(p::ConicQP; tol = 1e-10, reps = 0)
     for _ in 1:reps
         push!(ts, @elapsed(r = Clarabel.solve!(s)))
     end
-    return (obj = SheafMPC.objective(p, r.x), x = r.x, status = string(r.status), iters = r.iterations,
+    return (obj = TeamMPC.objective(p, r.x), x = r.x, status = string(r.status), iters = r.iterations,
             t = isempty(ts) ? NaN : minimum(ts), tmed = isempty(ts) ? NaN : median(ts))
 end
 

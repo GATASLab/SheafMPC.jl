@@ -22,13 +22,13 @@
 # pattern (the operation of a rho update); symbolic times include the ordering.
 # nnz(L) counts the unit diagonal for every kernel.
 
-using SheafMPC, SparseArrays, LinearAlgebra, Printf, Statistics, JSON
+using TeamMPC, SparseArrays, LinearAlgebra, Printf, Statistics, JSON
 import QDLDL, CliqueTrees
 try
     @eval import Metis
 catch
 end
-const BL = SheafMPC.BlockLDL
+const BL = TeamMPC.BlockLDL
 include(joinpath(@__DIR__, "kkt_problems.jl"))
 include(joinpath(@__DIR__, "kkt_baselines.jl"))
 
@@ -45,7 +45,7 @@ const TAG = get(ENV, "BENCH_TAG", "")
 # supernode relaxation of BlockLDL: exact, light (the package default) or cholmod
 const RELAX = Dict("exact" => BL.EXACT, "light" => BL.LIGHT, "cholmod" => BL.Relax())[get(ENV, "BENCH_RELAX", "light")]
 const HN = 24
-const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
+const PAPER = get(ENV, "TEAMMPC_PAPER", "")
 "reduced" in SETS && include(joinpath(PAPER, "scripts", "resolution", "experiments", "common_spatial.jl"))
 
 loadavg() = (s = read("/proc/loadavg", String); parse(Float64, split(s)[1]))
@@ -78,20 +78,20 @@ function bench_kkt(K::SparseMatrixCSC, n::Int; structure = nothing, riccati = no
     out["osqp_qdldl"] = Dict("symbolic" => ts, "factor" => tf.min, "factor_med" => tf.med, "solve" => tso.min,
                              "solve_med" => tso.med, "nnzL" => cqdldl_nnz(C), "res" => relres(K, x, b))
     # QDLDL.jl
-    ts = @elapsed Q = SheafMPC.make_system(:qdldl, copy(K), collect(1:N), n)
-    tf = timeit(() -> SheafMPC.refactor!(Q))
-    tso = timeit(() -> (copyto!(x, b); SheafMPC.solve!(Q, x)))
+    ts = @elapsed Q = TeamMPC.make_system(:qdldl, copy(K), collect(1:N), n)
+    tf = timeit(() -> TeamMPC.refactor!(Q))
+    tso = timeit(() -> (copyto!(x, b); TeamMPC.solve!(Q, x)))
     out["qdldl_jl"] = Dict("symbolic" => ts, "factor" => tf.min, "factor_med" => tf.med, "solve" => tso.min,
-                           "solve_med" => tso.med, "nnzL" => SheafMPC.factor_nnz(Q) + N, "res" => relres(K, x, b))
+                           "solve_med" => tso.med, "nnzL" => TeamMPC.factor_nnz(Q) + N, "res" => relres(K, x, b))
     # CliqueTrees ChordalLDLt (AMF), and METIS when loaded
     for (nm, alg) in (("cliquetrees", nothing), ("cliquetrees_metis", :metis))
         alg === :metis && Base.get_extension(CliqueTrees, :MetisExt) === nothing && continue
-        ts = @elapsed Ct = alg === nothing ? SheafMPC.make_system(:cliquetrees, copy(K), collect(1:N), n) :
-                           SheafMPC.ChordalSystem(copy(K), collect(1:N), n; alg = CliqueTrees.METIS())
-        tf = timeit(() -> SheafMPC.refactor!(Ct))
-        tso = timeit(() -> (copyto!(x, b); SheafMPC.solve!(Ct, x)))
+        ts = @elapsed Ct = alg === nothing ? TeamMPC.make_system(:cliquetrees, copy(K), collect(1:N), n) :
+                           TeamMPC.ChordalSystem(copy(K), collect(1:N), n; alg = CliqueTrees.METIS())
+        tf = timeit(() -> TeamMPC.refactor!(Ct))
+        tso = timeit(() -> (copyto!(x, b); TeamMPC.solve!(Ct, x)))
         out[nm] = Dict("symbolic" => ts, "factor" => tf.min, "factor_med" => tf.med, "solve" => tso.min,
-                       "solve_med" => tso.med, "nnzL" => SheafMPC.factor_nnz(Ct), "res" => relres(K, x, b))
+                       "solve_med" => tso.med, "nnzL" => TeamMPC.factor_nnz(Ct), "res" => relres(K, x, b))
     end
     # BlockLDL: the cost model's choice (one thread), and AMD for reference
     signs = kkt_signs(N, n)
@@ -192,9 +192,9 @@ function reduced_set(rows)
                 var_agent[(offs[v]+1):offs[v+1]] .= vteam[v]
                 var_block[(offs[v]+1):offs[v+1]] .= vtime[v]
             end
-            qp = sheaf_qp(Pk)
+            qp = graph_qp(Pk)
             K, nv, _ = kkt_matrix(qp)
-            st = SheafMPC._kkt_structure(K, nv, (agent = var_agent, block = var_block))
+            st = TeamMPC._kkt_structure(K, nv, (agent = var_agent, block = var_block))
             res = bench_kkt(K, nv; structure = st)
             lvl = k == 0 ? "fine" : k == R ? "fleet" : "teams k=$k"
             print_case("reduced $(R)x$(Cc) $lvl", size(K, 1), nnz(K), res)

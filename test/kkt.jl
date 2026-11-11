@@ -3,7 +3,7 @@
 # and on fleet KKT matrices, sequential and threaded, with every ordering, the
 # rank-one update path, and as the solver's linear system backend.
 
-using SheafMPC: BlockLDL
+using TeamMPC: BlockLDL
 include(joinpath(@__DIR__, "..", "bench", "kkt_problems.jl"))
 
 "A random quasi-definite K = [P + s I, A'; A, -D] (upper triangle, every diagonal stored) and n."
@@ -113,19 +113,19 @@ end
         qp, lab = fleet_problem(8, 24; graph = :ring, b = 4)
         K, nv, di = kkt_matrix(qp)
         N = size(K, 1)
-        A = SheafMPC.BlockLDLSystem(copy(K), di, nv)
-        P = SheafMPC._polish_system(A, copy(K), nv)
+        A = TeamMPC.BlockLDLSystem(copy(K), di, nv)
+        P = TeamMPC._polish_system(A, copy(K), nv)
         @test P.lowrank
         nz = nonzeros(P.K)
         rows = nv .+ [2, 9, 30]
         nz[di[rows]] .= -1e-6                          # three rows turn active
-        SheafMPC.refactor!(P)
+        TeamMPC.refactor!(P)
         @test P.nlowrank == 1
         b = randn(N); x = zeros(N); r = zeros(N); w = zeros(N)
         _, rel, _ = BlockLDL.solve_refined!(P.F, P.K, x, b, r, w; iters = 3, rtol = 1e-15)
         @test rel <= 1e-10
         nz[di] .*= 1.5                                  # every row: a full refactorization
-        SheafMPC.refactor!(P)
+        TeamMPC.refactor!(P)
         @test P.nlowrank == 1 && P.nupd == 0
     end
     @testset "no subnormals in the factor" begin
@@ -157,7 +157,7 @@ end
                 v = nzP[P.diag_idx[n+i]]
                 nzP[P.diag_idx[n+i]] = v ≈ -del ? -1 / del : -del
             end
-            SheafMPC.refactor!(P)
+            TeamMPC.refactor!(P)
             @test nsub(P.F.Lx) == 0 && nsub(P.F.d) == 0
             copyto!(x, b); solve!(P, x)
             @test nsub(x) == 0
@@ -197,8 +197,8 @@ end
         end
         s = setup(random_qp(rng2, 30, 25); linsys = :blockldl)
         solve!(s)
-        SheafMPC.admm_step!(s)
-        @test (@allocated SheafMPC.admm_step!(s)) == 0
+        TeamMPC.admm_step!(s)
+        @test (@allocated TeamMPC.admm_step!(s)) == 0
     end
     @testset "solver backend" begin
         for (graph, n) in ((:ring, 4), (:grid, 16))

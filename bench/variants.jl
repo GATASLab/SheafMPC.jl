@@ -1,8 +1,8 @@
-# variants.jl: SheafMPC settings variants side by side on the fleet QPs, cold
+# variants.jl: TeamMPC settings variants side by side on the fleet QPs, cold
 # solves: iterations, polish attempts and factorizations, rho updates (the
 # deterministic cost drivers) and the min / median time over REPS solves.
 #
-#   SHEAF_VARIANTS='base:;aa10:anderson=10' BENCH_N=4,16,64 BENCH_B=1,8 julia --project=bench bench/variants.jl
+#   TEAMMPC_VARIANTS='base:;aa10:anderson=10' BENCH_N=4,16,64 BENCH_B=1,8 julia --project=bench bench/variants.jl
 
 include(joinpath(@__DIR__, "common.jl"))
 
@@ -16,7 +16,7 @@ const EPS = parse(Float64, get(ENV, "BENCH_EPS", "1e-7"))
 include(joinpath(@__DIR__, "variants_parse.jl"))
 
 function main()
-    vs = parse_variants(get(ENV, "SHEAF_VARIANTS", "base:"))
+    vs = parse_variants(get(ENV, "TEAMMPC_VARIANTS", "base:"))
     println("load: ", strip(read(`uptime`, String)))
     @printf("%-4s %3s %2s %-14s %6s %5s %5s %5s %9s %9s %8s %8s\n", "cone", "n", "b", "variant", "iters", "pol", "fact", "rho+",
             "min ms", "med ms", "gap", "viol")

@@ -1,9 +1,8 @@
-# program.jl: homological programs on cellular sheaves (the paper's Def. 2).
+# program.jl: convex programs on graphs (the paper's Def. 2).
 #
-# A cellular sheaf on a graph G = (V, E) puts a vector space (a stalk) on every
-# vertex and every edge, and a linear restriction map from each vertex stalk to
-# the stalk of each edge it touches (Curry 2014; Hansen and Ghrist 2019). A
-# 0-cochain x picks one vector x_v in every vertex stalk; the coboundary delta
+# A program on a graph G = (V, E) puts a vector space on every vertex and every
+# edge, and a linear map from each vertex space to the space of each edge it
+# touches. A vector x picks one vector x_v in every vertex space; the coboundary delta
 # measures, edge by edge, how far the two ends disagree after restriction:
 #
 #     (delta x)_e = F_{head <| e} x_head - F_{tail <| e} x_tail.
@@ -13,7 +12,7 @@
 # b_e exactly) or soft (a spring of stiffness W_e pulling (delta x)_e toward
 # b_e, with energy (1/2)||(delta x)_e - b_e||^2_{W_e}). The node sets are
 # products of the zero, nonnegative and second-order cones, so every program is
-# a conic QP (`sheaf_qp`).
+# a conic QP (`graph_qp`).
 
 """
     ConeKind
@@ -68,8 +67,8 @@ mutable struct NodeData
     function NodeData(Q::AbstractMatrix, q::AbstractVector, c::Real,
                       A::AbstractMatrix, b::AbstractVector, cones::Vector{ConeBlock})
         d = length(q)
-        size(Q) == (d, d) || throw(DimensionMismatch("Q is $(size(Q)), the stalk has dimension $d"))
-        size(A, 2) == d || throw(DimensionMismatch("A has $(size(A, 2)) columns, the stalk has dimension $d"))
+        size(Q) == (d, d) || throw(DimensionMismatch("Q is $(size(Q)), the space has dimension $d"))
+        size(A, 2) == d || throw(DimensionMismatch("A has $(size(A, 2)) columns, the space has dimension $d"))
         size(A, 1) == length(b) || throw(DimensionMismatch("A has $(size(A, 1)) rows, b has $(length(b))"))
         sum((cb.dim for cb in cones); init = 0) == length(b) ||
             throw(DimensionMismatch("the cone dimensions do not add up to the rows of A"))
@@ -98,15 +97,15 @@ end
 EdgeTag() = EdgeTag(:generic, 0, 0, 0)
 
 """
-    SheafEdge(tail, head, Ft, Fh, hard, W, b, tag = EdgeTag())
+    GraphEdge(tail, head, Ft, Fh, hard, W, b, tag = EdgeTag())
 
-An oriented edge `e : tail -> head` with stalk `R^{d_e}` (`d_e = length(b)`,
+An oriented edge `e : tail -> head` with space `R^{d_e}` (`d_e = length(b)`,
 possibly zero), restriction maps `Ft = F_{tail <| e}` and `Fh = F_{head <| e}`,
 so that `(delta x)_e = Fh x_head - Ft x_tail`, target `b_e`, and, for a soft
 edge, the stiffness `W` (positive definite; ignored when `hard`). The target
 `b` may be changed in place between solves.
 """
-struct SheafEdge
+struct GraphEdge
     tail::Int
     head::Int
     Ft::SpMat
@@ -115,7 +114,7 @@ struct SheafEdge
     W::Matrix{Float64}
     b::Vector{Float64}
     tag::EdgeTag
-    function SheafEdge(tail::Integer, head::Integer, Ft::AbstractMatrix, Fh::AbstractMatrix,
+    function GraphEdge(tail::Integer, head::Integer, Ft::AbstractMatrix, Fh::AbstractMatrix,
                        hard::Bool, W::AbstractMatrix, b::AbstractVector, tag::EdgeTag = EdgeTag())
         tail == head && throw(ArgumentError("self loops are not allowed (edge at vertex $tail)"))
         d = length(b)
@@ -125,38 +124,38 @@ struct SheafEdge
     end
 end
 
-"""`edgedim(E)`: the dimension of the edge stalk (0 for an absent edge)."""
-edgedim(E::SheafEdge) = length(E.b)
+"""`edgedim(E)`: the dimension of the edge space (0 for an absent edge)."""
+edgedim(E::GraphEdge) = length(E.b)
 
 """
-    SheafProgram(nodes, edges)
+    GraphProgram(nodes, edges)
 
 A homological program (the paper's Def. 2):
 
     minimize  J(x) = sum_v f_v(x_v) + (1/2) sum_{e soft} ||(delta x)_e - b_e||^2_{W_e}
     subject to x_v in Omega_v for every vertex,  (delta x)_e = b_e for every hard edge.
 
-Vertices are `1:length(nodes)` with stalk dimensions `dims[v]`. A 0-cochain is
+Vertices are `1:length(nodes)` with space dimensions `dims[v]`. A vector is
 one flat vector; `x[vrange(P, v)]` is `x_v`. The graph may have parallel edges
 (pushforwards make them). `row_offsets[v]+1 : row_offsets[v+1]` are the node
 constraint rows of vertex `v` when all are stacked in vertex order.
 """
-struct SheafProgram
+struct GraphProgram
     dims::Vector{Int}
     nodes::Vector{NodeData}
-    edges::Vector{SheafEdge}
+    edges::Vector{GraphEdge}
     offsets::Vector{Int}
     edge_offsets::Vector{Int}
     row_offsets::Vector{Int}
-    function SheafProgram(nodes::Vector{NodeData}, edges::Vector{SheafEdge})
+    function GraphProgram(nodes::Vector{NodeData}, edges::Vector{GraphEdge})
         dims = [length(nd.q) for nd in nodes]
         nv = length(nodes)
         for (k, E) in enumerate(edges)
             (1 <= E.tail <= nv && 1 <= E.head <= nv) || throw(ArgumentError("edge $k has an endpoint outside 1:$nv"))
             size(E.Ft, 2) == dims[E.tail] ||
-                throw(DimensionMismatch("edge $k: Ft has $(size(E.Ft, 2)) columns, the tail stalk has $(dims[E.tail])"))
+                throw(DimensionMismatch("edge $k: Ft has $(size(E.Ft, 2)) columns, the tail space has $(dims[E.tail])"))
             size(E.Fh, 2) == dims[E.head] ||
-                throw(DimensionMismatch("edge $k: Fh has $(size(E.Fh, 2)) columns, the head stalk has $(dims[E.head])"))
+                throw(DimensionMismatch("edge $k: Fh has $(size(E.Fh, 2)) columns, the head space has $(dims[E.head])"))
         end
         offsets = [0; cumsum(dims)]
         edge_offsets = [0; cumsum([edgedim(E) for E in edges])]
@@ -166,35 +165,35 @@ struct SheafProgram
 end
 
 """`nvertices(P)`: the number of vertices."""
-nvertices(P::SheafProgram) = length(P.nodes)
+nvertices(P::GraphProgram) = length(P.nodes)
 """`nedges(P)`: the number of edges."""
-nedges(P::SheafProgram) = length(P.edges)
+nedges(P::GraphProgram) = length(P.edges)
 """`dim C^0`, the number of scalar decision variables."""
-c0dim(P::SheafProgram) = P.offsets[end]
-"""`dim C^1`, the total edge stalk dimension."""
-c1dim(P::SheafProgram) = P.edge_offsets[end]
+c0dim(P::GraphProgram) = P.offsets[end]
+"""`dim C^1`, the total edge space dimension."""
+c1dim(P::GraphProgram) = P.edge_offsets[end]
 """The number of node constraint rows."""
-noderows(P::SheafProgram) = P.row_offsets[end]
-"""`vrange(P, v)`: the entries of vertex `v` in a flat 0-cochain."""
-vrange(P::SheafProgram, v::Integer) = (P.offsets[v]+1):P.offsets[v+1]
-"""`erange(P, e)`: the entries of edge `e` in a flat 1-cochain (and in the stacked edge targets)."""
-erange(P::SheafProgram, e::Integer) = (P.edge_offsets[e]+1):P.edge_offsets[e+1]
-rrange(P::SheafProgram, v::Integer) = (P.row_offsets[v]+1):P.row_offsets[v+1]
+noderows(P::GraphProgram) = P.row_offsets[end]
+"""`vrange(P, v)`: the entries of vertex `v` in a flat vector."""
+vrange(P::GraphProgram, v::Integer) = (P.offsets[v]+1):P.offsets[v+1]
+"""`erange(P, e)`: the entries of edge `e` in a flat edge vector (and in the stacked edge targets)."""
+erange(P::GraphProgram, e::Integer) = (P.edge_offsets[e]+1):P.edge_offsets[e+1]
+rrange(P::GraphProgram, v::Integer) = (P.row_offsets[v]+1):P.row_offsets[v+1]
 """`hard_edges(P)`, `soft_edges(P)`: the indices of the hard (constraint) and soft (spring) edges."""
-hard_edges(P::SheafProgram) = [e for (e, E) in enumerate(P.edges) if E.hard]
-@doc (@doc hard_edges) soft_edges(P::SheafProgram) = [e for (e, E) in enumerate(P.edges) if !E.hard]
-edgedims(P::SheafProgram, S) = sum((edgedim(P.edges[e]) for e in S); init = 0)
+hard_edges(P::GraphProgram) = [e for (e, E) in enumerate(P.edges) if E.hard]
+@doc (@doc hard_edges) soft_edges(P::GraphProgram) = [e for (e, E) in enumerate(P.edges) if !E.hard]
+edgedims(P::GraphProgram, S) = sum((edgedim(P.edges[e]) for e in S); init = 0)
 
 """`(delta x)_e` for one edge."""
-function edge_value(P::SheafProgram, e::Integer, x::AbstractVector)
+function edge_value(P::GraphProgram, e::Integer, x::AbstractVector)
     E = P.edges[e]
     return E.Fh * view(x, vrange(P, E.head)) - E.Ft * view(x, vrange(P, E.tail))
 end
 
 """`(delta x)_e - b_e`, the defect of edge `e` at `x`."""
-edge_defect(P::SheafProgram, e::Integer, x::AbstractVector) = edge_value(P, e, x) - P.edges[e].b
+edge_defect(P::GraphProgram, e::Integer, x::AbstractVector) = edge_value(P, e, x) - P.edges[e].b
 
-# `_push_block!(I, J, V, r0, c0, M, s)` (sheaf.jl) appends the triplets of `s * M` at offset `(r0, c0)`.
+# `_push_block!(I, J, V, r0, c0, M, s)` (graph.jl) appends the triplets of `s * M` at offset `(r0, c0)`.
 
 """
     coboundary(P, edge_ids = 1:nedges(P))
@@ -203,7 +202,7 @@ The rows `delta_S` of the coboundary for the edges `S = edge_ids`, stacked in
 the given order, as a sparse matrix with `c0dim(P)` columns; `targets(P, S)`
 is the matching right-hand side `b_S`.
 """
-function coboundary(P::SheafProgram, edge_ids = 1:nedges(P))
+function coboundary(P::GraphProgram, edge_ids = 1:nedges(P))
     I = Int[]; J = Int[]; V = Float64[]
     row = 0
     for e in edge_ids
@@ -216,10 +215,10 @@ function coboundary(P::SheafProgram, edge_ids = 1:nedges(P))
 end
 
 """`targets(P, S)`: the stacked targets `b_S` of the edges `S`."""
-targets(P::SheafProgram, edge_ids = 1:nedges(P)) = reduce(vcat, (P.edges[e].b for e in edge_ids); init = Float64[])
+targets(P::GraphProgram, edge_ids = 1:nedges(P)) = reduce(vcat, (P.edges[e].b for e in edge_ids); init = Float64[])
 
 """Block diagonal stiffness of the edges `S` (as a sparse matrix)."""
-function weight_matrix(P::SheafProgram, edge_ids)
+function weight_matrix(P::GraphProgram, edge_ids)
     I = Int[]; J = Int[]; V = Float64[]
     row = 0
     for e in edge_ids
@@ -234,7 +233,7 @@ function weight_matrix(P::SheafProgram, edge_ids)
 end
 
 """The block diagonal of the node Hessians `Q_v` (`c0dim x c0dim`)."""
-function node_hessian(P::SheafProgram)
+function node_hessian(P::GraphProgram)
     I = Int[]; J = Int[]; V = Float64[]
     for (v, nd) in enumerate(P.nodes)
         _push_block!(I, J, V, P.offsets[v], P.offsets[v], nd.Q, 1.0)
@@ -246,11 +245,11 @@ end
     quadratic_form(P) -> (H, g, c)
 
 The objective as one quadratic, `J(x) = (1/2) x'Hx + g'x + c`, with `H =
-blockdiag(Q_v) + delta_s' W delta_s` (the node costs plus the weighted sheaf
+blockdiag(Q_v) + delta_s' W delta_s` (the node costs plus the weighted graph
 Laplacian of the soft edges), `g = q - delta_s' W b_s` and `c = sum c_v +
 (1/2) b_s' W b_s`.
 """
-function quadratic_form(P::SheafProgram)
+function quadratic_form(P::GraphProgram)
     Qb = node_hessian(P)
     q = reduce(vcat, (nd.q for nd in P.nodes); init = Float64[])
     c = sum((nd.c for nd in P.nodes); init = 0.0)
@@ -264,12 +263,12 @@ function quadratic_form(P::SheafProgram)
 end
 
 """
-    objective(P::SheafProgram, x)
+    objective(P::GraphProgram, x)
 
 `J(x)` evaluated term by term (node costs plus soft edge energies), without
 the constraints.
 """
-function objective(P::SheafProgram, x::AbstractVector)
+function objective(P::GraphProgram, x::AbstractVector)
     J = 0.0
     for v in 1:nvertices(P)
         nd = P.nodes[v]
@@ -290,7 +289,7 @@ end
 All node constraints stacked in vertex order: `x in Omega` iff `b - A x in K`;
 `rrange(P, v)` are the rows of vertex `v`.
 """
-function node_constraints(P::SheafProgram)
+function node_constraints(P::GraphProgram)
     I = Int[]; J = Int[]; V = Float64[]
     b = Float64[]; cones = ConeBlock[]
     for (v, nd) in enumerate(P.nodes)
@@ -336,7 +335,7 @@ Refresh the rows of the vertices `verts` in `An`, the matrix of
 `node_constraints(P)` (or one with its pattern), from the current node
 matrices of `P` (changed in place on their patterns).
 """
-function _refresh_node_rows!(An::SparseMatrixCSC, P::SheafProgram, verts)
+function _refresh_node_rows!(An::SparseMatrixCSC, P::GraphProgram, verts)
     rv = rowvals(An); nz = nonzeros(An)
     for v in verts
         A = P.nodes[v].A
@@ -370,7 +369,7 @@ end
 Residuals of `x`: `hard`, the largest `|(delta x)_e - b_e|` over hard edges, and
 `cone`, the largest violation of a node constraint.
 """
-function feasibility(P::SheafProgram, x::AbstractVector)
+function feasibility(P::GraphProgram, x::AbstractVector)
     hard = 0.0
     for (e, E) in enumerate(P.edges)
         (E.hard && edgedim(E) > 0) || continue
@@ -396,26 +395,26 @@ end
 `P[S]`: the program `P` with every edge in `S` made hard (the paper's notation
 `P[S]`). The stiffnesses of `S` are kept but ignored.
 """
-function harden(P::SheafProgram, S)
+function harden(P::GraphProgram, S)
     mark = falses(nedges(P))
     for e in S
         mark[e] = true
     end
-    edges = [mark[e] && !E.hard ? SheafEdge(E.tail, E.head, E.Ft, E.Fh, true, E.W, E.b, E.tag) : E
+    edges = [mark[e] && !E.hard ? GraphEdge(E.tail, E.head, E.Ft, E.Fh, true, E.W, E.b, E.tag) : E
              for (e, E) in enumerate(P.edges)]
-    return SheafProgram(P.nodes, edges)
+    return GraphProgram(P.nodes, edges)
 end
 
 """Copy of a program whose vectors (`q`, `c`, `b` of nodes and edges) can be changed independently."""
-function Base.copy(P::SheafProgram)
+function Base.copy(P::GraphProgram)
     nodes = [NodeData(nd.Q, copy(nd.q), nd.c, nd.A, copy(nd.b), copy(nd.cones)) for nd in P.nodes]
-    edges = [SheafEdge(E.tail, E.head, E.Ft, E.Fh, E.hard, E.W, copy(E.b), E.tag) for E in P.edges]
-    return SheafProgram(nodes, edges)
+    edges = [GraphEdge(E.tail, E.head, E.Ft, E.Fh, E.hard, E.W, copy(E.b), E.tag) for E in P.edges]
+    return GraphProgram(nodes, edges)
 end
 
-function Base.show(io::IO, P::SheafProgram)
+function Base.show(io::IO, P::GraphProgram)
     nh = count(E -> E.hard, P.edges)
-    print(io, "SheafProgram($(nvertices(P)) vertices, $(nedges(P)) edges ($nh hard), dim C^0 = $(c0dim(P)), ",
+    print(io, "GraphProgram($(nvertices(P)) vertices, $(nedges(P)) edges ($nh hard), dim C^0 = $(c0dim(P)), ",
           "$(noderows(P)) node rows)")
 end
 
@@ -433,10 +432,10 @@ mutable struct FlatData
     be::Vector{Float64}
 end
 
-FlatData(P::SheafProgram) = gather!(FlatData(zeros(c0dim(P)), 0.0, zeros(noderows(P)), zeros(c1dim(P))), P)
+FlatData(P::GraphProgram) = gather!(FlatData(zeros(c0dim(P)), 0.0, zeros(noderows(P)), zeros(c1dim(P))), P)
 
 """Read the program's vectors into `fd` (no allocation)."""
-function gather!(fd::FlatData, P::SheafProgram)
+function gather!(fd::FlatData, P::GraphProgram)
     c = 0.0
     @inbounds for (v, nd) in enumerate(P.nodes)
         o = P.offsets[v]

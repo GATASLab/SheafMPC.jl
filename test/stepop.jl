@@ -1,4 +1,4 @@
-using SheafMPC: noderows
+using TeamMPC: noderows
 
 @testset "step operator" begin
 
@@ -43,7 +43,7 @@ end
         @test relerr(q, M.q) < 1e-12
         @test relerr(b, M.bfull) < 1e-12 && relerr(bk, M.b) < 1e-12
         @test relerr(u, lift(R3, y)) < 1e-12
-        @test M.c != c0 && M.c ≈ sheaf_qp(R3.program).c                    # sync! recomputes it
+        @test M.c != c0 && M.c ≈ graph_qp(R3.program).c                    # sync! recomputes it
         c0 = M.c
     end
 end

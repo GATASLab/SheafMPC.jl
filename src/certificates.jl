@@ -72,7 +72,7 @@ multipliers to the finest program. `certify!(cert, sol)` evaluates the bound
 for a reduced solution without allocating much.
 """
 mutable struct Certifier
-    P0::SheafProgram
+    P0::GraphProgram
     labels::Vector{Int}
     collapsed::Vector{Int}
     edge_map::Vector{Int}
@@ -258,7 +258,7 @@ end
 `(1/2) sum_{e in S soft} ||(delta x*)_e - b_e||^2_{W_e}`: bound (b) of the paper's
 Thm. 2, the energy the contracted springs store at the fine optimum.
 """
-function gap_lower_bound(P::SheafProgram, collapsed, xstar::AbstractVector)
+function gap_lower_bound(P::GraphProgram, collapsed, xstar::AbstractVector)
     tot = 0.0
     for e in collapsed
         E = P.edges[e]
@@ -274,7 +274,7 @@ end
 
 Certify the optimality gap `Gamma = J*(reduced) - J*(fine)` of a reduction
 (the paper's Thm. 2). `fine` is the finest program (a `FleetProgram` or a
-`SheafProgram`), `reduced` the `ReducedProgram` (possibly teams of teams),
+`GraphProgram`), `reduced` the `ReducedProgram` (possibly teams of teams),
 `sol` its solution (`solve(reduced)`).
 
 * `upper`: bound (a), from the reduced solve alone. The multipliers of the
@@ -294,7 +294,7 @@ soft edge (one block per team and instant for `Teams`).
 """
 function gap_bounds(fine, R::ReducedProgram, sol::ProgramSolution; fine_solution = nothing, cert = nothing)
     P0 = root_program(R)
-    _sheaf(fine) === P0 || throw(ArgumentError("`fine` must be the program the reduction starts from"))
+    _base_program(fine) === P0 || throw(ArgumentError("`fine` must be the program the reduction starts from"))
     C = cert === nothing ? Certifier(R) : cert
     x = lift(R, sol.x)
     up = isoptimal(sol) ? certify!(C, x, sol.hard_duals, sol.node_duals) : Inf
@@ -358,7 +358,7 @@ function _union_find_roots(nv, pairs)
 end
 
 """Active node constraints at `x`: half-space rows (node row indices) and SOC blocks on their boundary."""
-function _active(P::SheafProgram, x::AbstractVector; tol::Real = 1e-7)
+function _active(P::GraphProgram, x::AbstractVector; tol::Real = 1e-7)
     A, b, cones = node_constraints(P)
     s = b - A * x
     nn = Int[]; nsoc = 0
@@ -381,7 +381,7 @@ end
 """
     gap_kernel(program, xstar) -> GapKernel
 
-Assemble the gap kernel of `program` (a `FleetProgram` or `SheafProgram`) at
+Assemble the gap kernel of `program` (a `FleetProgram` or `GraphProgram`) at
 its fine minimizer `xstar` (`solve(program).x`): one sparse factorization of
 the KKT matrix of the equality constraints (hard edges, pinned states, active
 half-spaces) and one solve per soft row. Then `gap(kernel, teams)` costs a
@@ -389,7 +389,7 @@ small Cholesky factorization and no pushforward or solve.
 """
 gap_kernel(F::FleetProgram, xstar::AbstractVector) = gap_kernel(F.program, xstar)
 
-function gap_kernel(P::SheafProgram, xstar::AbstractVector)
+function gap_kernel(P::GraphProgram, xstar::AbstractVector)
     nv = nvertices(P)
     Jstar = objective(P, xstar)
     roots = _union_find_roots(nv, [(E.tail, E.head) for E in P.edges if E.hard])

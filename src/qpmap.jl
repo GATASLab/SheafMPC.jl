@@ -1,6 +1,6 @@
 # qpmap.jl: a program as a conic QP whose vectors are refreshed in place.
 #
-# `sheaf_qp(P)` builds min (1/2)x'Hx + g'x + c s.t. b - A x in K with the hard
+# `graph_qp(P)` builds min (1/2)x'Hx + g'x + c s.t. b - A x in K with the hard
 # edges first and the node rows after. For a fixed program structure H, A and
 # the cones are fixed, and
 #
@@ -14,7 +14,7 @@
 """
     QPMap(P; dedup = true)
 
-The conic QP of the program `P` (`qp`, as `sheaf_qp(P)` with duplicate rows
+The conic QP of the program `P` (`qp`, as `graph_qp(P)` with duplicate rows
 merged when `dedup`) and the maps from the program's vectors to the QP's
 `q`, `b` and constant: `refresh!(map, P)` recomputes them in place.
 """
@@ -44,8 +44,8 @@ mutable struct QPMap
     gmembers::Vector{Vector{Int}}
 end
 
-function QPMap(P::SheafProgram; dedup::Bool = true)
-    full = sheaf_qp(P)
+function QPMap(P::GraphProgram; dedup::Bool = true)
+    full = graph_qp(P)
     S = [e for (e, E) in enumerate(P.edges) if !E.hard && edgedim(E) > 0]
     Ds = coboundary(P, S)
     Wsm = weight_matrix(P, S)
@@ -102,7 +102,7 @@ function QPMap(P::SheafProgram; dedup::Bool = true)
     return M
 end
 
-function _node_positions!(M::QPMap, P::SheafProgram)
+function _node_positions!(M::QPMap, P::GraphProgram)
     A = M.qp.A
     rv = rowvals(A)
     M.apos = Vector{Vector{Int}}(undef, nvertices(P))
@@ -129,7 +129,7 @@ function _node_positions!(M::QPMap, P::SheafProgram)
 end
 
 "The nonzero entries `(column, value)` of full node row `i` of the QP, read off the node matrices of `P`."
-function _full_row_entries(M::QPMap, P::SheafProgram, i::Int)
+function _full_row_entries(M::QPMap, P::GraphProgram, i::Int)
     r = i - M.nh
     v = searchsortedlast(P.row_offsets, r - 1)
     Av = P.nodes[v].A
@@ -150,7 +150,7 @@ rows must stay duplicates; when they stop agreeing `map.valid` becomes false
 (then the QP must be rebuilt without merging, as when their right-hand sides
 disagree).
 """
-function refresh_matrices!(M::QPMap, P::SheafProgram, verts)
+function refresh_matrices!(M::QPMap, P::GraphProgram, verts)
     isempty(verts) && return M
     length(M.apos) == nvertices(P) || _node_positions!(M, P)
     nz = nonzeros(M.qp.A)
@@ -186,7 +186,7 @@ Recompute the QP's `q`, `b` and constant from the program's current vectors
 `map.valid` becomes false if duplicate equality rows or cones stop agreeing
 (then the QP must be rebuilt without merging).
 """
-function refresh!(M::QPMap, P::SheafProgram)
+function refresh!(M::QPMap, P::GraphProgram)
     fd = gather!(M.fd, P)
     q = M.q
     copyto!(q, fd.q)
@@ -230,7 +230,7 @@ end
 """
     expand_duals(map, y) -> y_full
 
-The multipliers of the full row set (`sheaf_qp` order) from those of the
+The multipliers of the full row set (`graph_qp` order) from those of the
 merged QP: each kept dual is shared equally by its copies (any split is a
 valid multiplier; the even one is canonical).
 """
@@ -246,7 +246,7 @@ expand_duals(M::QPMap, y::AbstractVector) = expand_duals!(zeros(length(M.group))
 """
     ProgramSolution
 
-The solution of a program by `solve`: `status`, the flat cochain `x`, the
+The solution of a program by `solve`: `status`, the flat vector `x`, the
 objective `J` (with its constant), `hard_duals` (the multiplier of every hard
 edge row, laid out like the edge targets, zero on soft edges: the convention
 of the paper's Thm. 2, `J*` moves by `-mu` per unit of target), `node_duals`
@@ -266,7 +266,7 @@ end
 isoptimal(s::ProgramSolution) = s.status == :solved
 
 """Split a full-QP dual vector into hard edge duals (flat over C^1) and node duals."""
-function _split_duals(P::SheafProgram, M::QPMap, yfull::AbstractVector)
+function _split_duals(P::GraphProgram, M::QPMap, yfull::AbstractVector)
     he = zeros(c1dim(P))
     @inbounds for k in 1:M.nh
         he[M.hard_rows[k]] = yfull[k]
@@ -279,12 +279,12 @@ const SOLVE_DEFAULTS = (eps_abs = 1e-8, eps_rel = 1e-8, max_iter = 50_000)
 """
     solve(program; dedup = true, settings...) -> ProgramSolution
 
-Solve a program (a `SheafProgram`, `FleetProgram` or `ReducedProgram`; for a
+Solve a program (a `GraphProgram`, `FleetProgram` or `ReducedProgram`; for a
 reduction, the coarse program) with the package's conic QP solver. Keyword
 arguments are solver `Settings` (defaults here `eps_abs = eps_rel = 1e-8`).
 For a `ReducedProgram`, `lift(reduced, sol)` gives the fine plan.
 """
-function solve(P::SheafProgram; dedup::Bool = true, kwargs...)
+function solve(P::GraphProgram; dedup::Bool = true, kwargs...)
     M = QPMap(P; dedup = dedup)
     s = setup(M.qp; merge(SOLVE_DEFAULTS, kwargs)...)
     info = solve!(s)

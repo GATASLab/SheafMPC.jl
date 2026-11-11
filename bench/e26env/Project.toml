@@ -1,8 +1,8 @@
 # The environment of E26 (scripts/resolution/experiments/e26_flagship.jl): the
-# SheafMPC.jl package (a sibling checkout of this repository,
-# ~/Projects/GATAS/SheafMPC.jl locally, /blue/fairbanksj/itaykadosh/e26_bench/SheafMPC.jl
+# TeamMPC.jl package (a sibling checkout of this repository,
+# ~/Projects/GATAS/TeamMPC.jl locally, /blue/fairbanksj/itaykadosh/e26_bench/TeamMPC.jl
 # on HiPerGator) and the baseline solvers of bench/central (Clarabel, OSQP,
-# Mumblebee at e78d9b9), with the versions of bench/central/envs/sheafmpc.
+# Mumblebee at e78d9b9), with the versions of bench/central/envs/teammpc.
 [deps]
 Clarabel = "61c947e1-3e6d-4ee4-985a-eec8c727bd6e"
 CliqueTrees = "60701a23-6482-424a-84db-faee86b9b1f8"
@@ -13,13 +13,13 @@ OSQP = "ab2f91bb-94b4-55e3-9ba0-7f65df51de79"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
-SheafMPC = "8f3c2a61-5d4e-4b7a-9c1e-2a6b0d9e7f13"
+TeamMPC = "8f3c2a61-5d4e-4b7a-9c1e-2a6b0d9e7f13"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [sources]
 Mumblebee = {url = "https://github.com/samuelsonric/Mumblebee.jl.git", rev = "e78d9b9a3a0a2f4c226bf2eb0cf20f662e7d676b"}
-SheafMPC = {path = "../.."}
+TeamMPC = {path = "../.."}
 
 [compat]
 Clarabel = "=0.11.1"

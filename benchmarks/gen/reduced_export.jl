@@ -15,12 +15,12 @@
 # solver (Clarabel, `solve_direct`), the fibres reused across steps; every QP
 # of the loop is written, so all benchmarked solvers see the same sequence.
 #
-# The program becomes a canonical QP as in SheafMPC's `sheaf_qp`: node costs,
+# The program becomes a canonical QP as in TeamMPC's `graph_qp`: node costs,
 # soft edges as quadratic penalties, hard edges then node constraints as rows
 # (b - A x in K: zero rows are equalities, nonnegative rows a'x <= b, cone
 # blocks second-order cones).
 
-const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
+const PAPER = get(ENV, "TEAMMPC_PAPER", "")
 include(joinpath(PAPER, "scripts", "resolution", "experiments", "common_spatial.jl"))
 using JSON, SparseArrays, LinearAlgebra
 module BQ

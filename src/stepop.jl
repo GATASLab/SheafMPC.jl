@@ -48,7 +48,7 @@ layout `StepOperator` declares active entries in): `kind = :q` the cost
 vector of vertex `i`, `:bn` its node right-hand side, `:be` the target of edge
 `i`.
 """
-function data_index(P::SheafProgram, kind::Symbol, i::Integer)
+function data_index(P::GraphProgram, kind::Symbol, i::Integer)
     kind === :q && return vrange(P, i)
     kind === :bn && return c0dim(P) .+ rrange(P, i)
     kind === :be && return (c0dim(P) + noderows(P)) .+ erange(P, i)
@@ -219,7 +219,7 @@ class's first entry since the build (`linkboundW`, the size of the links along
 mutable struct StepOperator
     chain::Vector{ReducedProgram}
     qmap::QPMap
-    root::SheafProgram
+    root::GraphProgram
     active::Vector{Int}
     kind::Vector{Int8}            # runs of active entries read from one vector: 1 q, 2 b_n, 3 b_e,
     owner::Vector{Int32}          # the vertex or edge,
@@ -708,7 +708,7 @@ function StepOperator(Rtop::ReducedProgram, M::QPMap, active::AbstractVector{<:I
     # chains of duplicate rows of the QP
     prev = zeros(Int32, nout)
     if chains === :auto
-        full = sheaf_qp(Pc)
+        full = graph_qp(Pc)
         At = SparseMatrixCSC{Float64,Int}(sparse(transpose(full.A)))
         insoc = falses(nb)
         units = Vector{Int}[]
@@ -843,7 +843,7 @@ function _chain_dust(F::ChainedMap)
     return maximum(cum; init = 0.0)
 end
 
-function _gather!(a::Vector{Float64}, P::SheafProgram, kind, owner, loc, len, dest)
+function _gather!(a::Vector{Float64}, P::GraphProgram, kind, owner, loc, len, dest)
     nodes, edges = P.nodes, P.edges
     @inbounds for s in eachindex(kind)
         k = kind[s]; o = owner[s]

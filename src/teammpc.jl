@@ -173,7 +173,7 @@ function lqr_gain(A::AbstractMatrix, B::AbstractMatrix, Q::AbstractMatrix, R::Ab
 end
 
 """
-    TeamMPC(fleet, teams; offsets = nothing, gains = :lqr, resolution = full_condensing(), check = true, settings...)
+    TeamController(fleet, teams; offsets = nothing, gains = :lqr, resolution = full_condensing(), check = true, settings...)
 
 Team MPC (the paper's Algorithm 1): the quotient program of `fleet` by the
 coherent `teams` (one label per agent; see `lossless_teams` and
@@ -185,7 +185,7 @@ formation, the broadcast of each team's input and the local feedback
 with state weight `Cr'Q Cr + 1e-6 I` and input weight `R`), `nothing` (no
 feedback) or one gain matrix per team. Other keywords go to the solver.
 """
-mutable struct TeamMPC
+mutable struct TeamController
     fleet::Fleet
     quotient::QuotientFleet
     inner::MPCController
@@ -201,7 +201,7 @@ mutable struct TeamMPC
     t_team::Float64
 end
 
-function TeamMPC(fl::Fleet, teams::AbstractVector; offsets = nothing, gains = :lqr, resolution = full_condensing(),
+function TeamController(fl::Fleet, teams::AbstractVector; offsets = nothing, gains = :lqr, resolution = full_condensing(),
                  check::Bool = true, certify::Bool = false, kwargs...)
     Q = QuotientFleet(fl, teams; offsets = offsets, check = check)
     inner = MPCController(Q.fleet, resolution; certify = certify, kwargs...)
@@ -226,16 +226,16 @@ function TeamMPC(fl::Fleet, teams::AbstractVector; offsets = nothing, gains = :l
     dev = [zeros(ag.nx) for ag in fl.agents]
     CrD = [ag.Cr * Q.offsets[i] for (i, ag) in enumerate(fl.agents)]
     CfD = [ag.Cf * Q.offsets[i] for (i, ag) in enumerate(fl.agents)]
-    return TeamMPC(fl, Q, inner, K, xq, rq, tq, u, dev, CrD, CfD, 0.0)
+    return TeamController(fl, Q, inner, K, xq, rq, tq, u, dev, CrD, CfD, 0.0)
 end
 
-function Base.show(io::IO, C::TeamMPC)
-    print(io, "TeamMPC($(nagents(C.fleet)) agents in $(length(C.quotient.teams)) teams, H = $(C.fleet.H), ",
+function Base.show(io::IO, C::TeamController)
+    print(io, "TeamController($(nagents(C.fleet)) agents in $(length(C.quotient.teams)) teams, H = $(C.fleet.H), ",
           "$(length(C.quotient.fleet.edges)) quotient edges)")
 end
 
-"""The teams of a `TeamMPC` (one vector of members per team)."""
-teams(C::TeamMPC) = C.quotient.teams
+"""The teams of a `TeamController` (one vector of members per team)."""
+teams(C::TeamController) = C.quotient.teams
 
 """
     project(ctrl, x) -> xtilde
@@ -243,13 +243,13 @@ teams(C::TeamMPC) = C.quotient.teams
 The projection of the measured states onto the formation: every member of
 team `c` gets `mu_c + Delta_i`, with `mu_c` the team mean of `x_i - Delta_i`.
 """
-function project(C::TeamMPC, x::AbstractVector)
+function project(C::TeamController, x::AbstractVector)
     _team_means!(C, x)
     Q = C.quotient
     return [C.xq[Q.team[i]] .+ Q.offsets[i] for i in eachindex(x)]
 end
 
-function _team_means!(C::TeamMPC, x::AbstractVector)
+function _team_means!(C::TeamController, x::AbstractVector)
     Q = C.quotient
     @inbounds for (c, m) in enumerate(Q.teams)
         xc = C.xq[c]; fill!(xc, 0.0); w = 1.0 / length(m)
@@ -264,7 +264,7 @@ function _team_means!(C::TeamMPC, x::AbstractVector)
 end
 
 """
-    step!(ctrl::TeamMPC, x, refs; terminal = nothing) -> inputs
+    step!(ctrl::TeamController, x, refs; terminal = nothing) -> inputs
 
 One step of Algorithm 1 from the measured states `x[i]` with the references
 `refs[i]` (`ny x (H+1)` matrices, as for `MPCController`) and optional
@@ -275,7 +275,7 @@ inputs to apply, one vector per agent (overwritten by the next step); the
 solver's diagnostics are `ctrl.inner.info`, the projection, broadcast and
 feedback time `ctrl.t_team`.
 """
-function step!(C::TeamMPC, x::AbstractVector, refs::AbstractVector; terminal = nothing)
+function step!(C::TeamController, x::AbstractVector, refs::AbstractVector; terminal = nothing)
     fl = C.fleet; Q = C.quotient
     length(x) == nagents(fl) && length(refs) == nagents(fl) || throw(DimensionMismatch("need one state and one reference per agent"))
     t0 = time_ns()
@@ -317,5 +317,5 @@ function step!(C::TeamMPC, x::AbstractVector, refs::AbstractVector; terminal = n
     return C.u
 end
 
-"""The solver diagnostics of the last step of a `TeamMPC` (the inner controller's `StepInfo`)."""
-stepinfo(C::TeamMPC) = C.inner.info
+"""The solver diagnostics of the last step of a `TeamController` (the inner controller's `StepInfo`)."""
+stepinfo(C::TeamController) = C.inner.info

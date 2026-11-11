@@ -16,10 +16,10 @@
 set -e
 module load julia/1.12.6
 export JULIA_DEPOT_PATH=/blue/fairbanksj/itaykadosh/julia_depot:
-export SHEAFMPC_PAPER=/blue/fairbanksj/itaykadosh/mpc-sheaf-pushforward
+export TEAMMPC_PAPER=${TEAMMPC_PAPER:?set TEAMMPC_PAPER to the paper research code}
 B=/blue/fairbanksj/itaykadosh
 echo "host $(hostname) $(lscpu | grep 'Model name')"; uptime
-for tree in SheafMPC.jl-main SheafMPC.jl-kernel; do
+for tree in TeamMPC.jl-main TeamMPC.jl-kernel; do
     cd $B/$tree
     echo "===== $tree single"; julia --project=bench bench/single.jl
     echo "===== $tree rh";     julia --project=bench bench/rh.jl

@@ -2,7 +2,7 @@
 # step, for before/after measurements.
 #
 #   BENCH_N=1,4,16,64 BENCH_CONE=box BENCH_WARMUP=0 BENCH_STEPS=30 BENCH_REPLAYS=3 \
-#   SHEAF_VARIANTS='base:' julia --project=bench bench/rh_compare.jl
+#   TEAMMPC_VARIANTS='base:' julia --project=bench bench/rh_compare.jl
 #
 # The QP sequence is fixed by a reference closed loop (Clarabel at 1e-10,
 # untimed; fleet.jl), so every solver sees the same QPs. BENCH_WARMUP steps of
@@ -18,9 +18,9 @@
 # iterations; the largest relative objective gap to the reference and the
 # largest constraint violation over all steps (`ok` when both within TARGET).
 #
-#   sheafmpc:<v>       update!, warm_start_shifted! (the previous plan moved one
+#   teammpc:<v>       update!, warm_start_shifted! (the previous plan moved one
 #                      stage), solve!
-#   sheafmpc_cold:<v>  update!, reset!, solve!
+#   teammpc_cold:<v>  update!, reset!, solve!
 #   osqp_warm          OSQP 0.6, update! and solve! from its own previous
 #                      solution (warm_start = true; OSQP's default)
 #   osqp_shift         the same with warm_start! from the shifted previous plan
@@ -42,7 +42,7 @@ const COLD = get(ENV, "BENCH_COLD", "1") == "1"
 const N = 24
 const T0 = 0.4
 include(joinpath(@__DIR__, "variants_parse.jl"))
-const VARIANTS = parse_variants(get(ENV, "SHEAF_VARIANTS", "base:"))
+const VARIANTS = parse_variants(get(ENV, "TEAMMPC_VARIANTS", "base:"))
 
 function reference_sequence(n)
     x0 = [zeros(4) for _ in 1:n]
@@ -58,7 +58,7 @@ function reference_sequence(n)
     return seq
 end
 
-rhs_b(p) = p.socb .+ [p.kinds[i] == SheafMPC.ROW_EQ ? p.u[i] : 0.0 for i in 1:nrows(p)]
+rhs_b(p) = p.socb .+ [p.kinds[i] == TeamMPC.ROW_EQ ? p.u[i] : 0.0 for i in 1:nrows(p)]
 
 mutable struct RHEntry
     name::String
@@ -73,7 +73,7 @@ end
 RHEntry(name, make, step) = RHEntry(name, make, step, fill(Inf, REPLAYS, STEPS), zeros(Int, STEPS), zeros(STEPS),
                                     zeros(STEPS), fill("", STEPS))
 
-function sheaf_entry(p0, xmap, ymap, name, kw; cold = false)
+function team_entry(p0, xmap, ymap, name, kw; cold = false)
     make = () -> setup(p0; eps_abs = EPS, eps_rel = EPS, kw...)
     step = (s, k, p) -> begin
         if CONE == "box"
@@ -87,7 +87,7 @@ function sheaf_entry(p0, xmap, ymap, name, kw; cold = false)
          @sprintf("%s%d/%d", info.polish == :success ? (info.polish_iter == 0 ? "W" : "P") : "-", info.polish_attempts,
                   info.polish_factorizations + info.rho_updates))
     end
-    return RHEntry((cold ? "sheafmpc_cold:" : "sheafmpc:") * name, make, step)
+    return RHEntry((cold ? "teammpc_cold:" : "teammpc:") * name, make, step)
 end
 
 function osqp_entry(p0, xmap, ymap, mode)
@@ -108,7 +108,7 @@ function osqp_entry(p0, xmap, ymap, mode)
         end
         OSQP.solve!(m, r)
         xp[] = copy(r.x); yp[] = copy(r.y)
-        (SheafMPC.objective(p, r.x), r.x, r.info.iter, "")
+        (TeamMPC.objective(p, r.x), r.x, r.info.iter, "")
     end
     return RHEntry("osqp_" * string(mode), make, step)
 end
@@ -129,8 +129,8 @@ function main()
         xmap, ymap = shift_maps(seq[1].Q, CONE)
         es = RHEntry[]
         for (name, kw) in VARIANTS
-            push!(es, sheaf_entry(p0, xmap, ymap, name, kw))
-            COLD && push!(es, sheaf_entry(p0, xmap, ymap, name, kw; cold = true))
+            push!(es, team_entry(p0, xmap, ymap, name, kw))
+            COLD && push!(es, team_entry(p0, xmap, ymap, name, kw; cold = true))
         end
         if CONE == "box"
             for mode in (:warm, :shift, :cold)
@@ -161,7 +161,7 @@ function main()
                 r = Clarabel.solve!(s)
                 cl.ts[rep, k] = (time_ns() - t0) / 1e9
                 if rep == 1
-                    cl.its[k] = r.iterations; cl.gaps[k] = relgap(SheafMPC.objective(st.p, r.x), st.ref)
+                    cl.its[k] = r.iterations; cl.gaps[k] = relgap(TeamMPC.objective(st.p, r.x), st.ref)
                     cl.viols[k] = violation(st.p, r.x)
                 end
             end

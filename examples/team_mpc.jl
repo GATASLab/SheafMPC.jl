@@ -10,7 +10,7 @@
 # centre plus its slot (coherent across the fleet). The exact teams fragment; quasi-stable colouring gives
 # coarser, lossy teams; the certificate (Thm. 2) bounds their gap from the team solve alone.
 
-using SheafMPC, LinearAlgebra, Printf, Random, Statistics
+using TeamMPC, LinearAlgebra, Printf, Random, Statistics
 
 function closed_loop(ctrl, fl, sc; steps = 20)
     x = formation_start(sc); us = Vector{Vector{Vector{Float64}}}(); ts = Float64[]
@@ -30,7 +30,7 @@ fl = fleet(sc)
 rowclass = [2 * (div(i - 1, sc.cols) + 1) + (agent_kind(sc, i) == :quadrotor ? 0 : 1) for i in 1:nagents(sc)]
 teams1 = lossless_teams(fl; classes = rowclass)       # the data classes: one per row (each row its own reference)
 @printf("  %d vehicles, %d teams (the rows: %s)\n", nagents(fl), maximum(teams1), teams1 == canonical_partition(row_teams(sc)))
-tm = TeamMPC(fl, teams1; offsets = slot_offsets(fl, slots(sc)))
+tm = TeamController(fl, teams1; offsets = slot_offsets(fl, slots(sc)))
 co = MPCController(fl, full_condensing(); certify = false)
 ut, tt = closed_loop(tm, fl, sc)
 uc, tc = closed_loop(co, fl, sc)
@@ -50,7 +50,7 @@ x0 = formation_start(sc2); refs, term = references(sc2)
 co2 = MPCController(fl2, full_condensing(); certify = false, eps_abs = 1e-9, eps_rel = 1e-9)
 for (name, lab) in (("lossless", lossless_teams(fl2)), ("q = 0.2", quasi_stable_teams(fl2; q = 0.2)),
                     ("q = 0.5", quasi_stable_teams(fl2; q = 0.5)), ("data classes", data_classes(fl2)))
-    t = TeamMPC(fl2, lab; offsets = D2, eps_abs = 1e-9, eps_rel = 1e-9)
+    t = TeamController(fl2, lab; offsets = D2, eps_abs = 1e-9, eps_rel = 1e-9)
     step!(t, x0, refs; terminal = term)
     cert, Jt, cq = certificate(t, x0, refs; terminal = term)
     step!(co2, project(t, x0), refs; terminal = term)

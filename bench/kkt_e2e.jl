@@ -1,5 +1,5 @@
 # kkt_e2e.jl: end-to-end ADMM solves of the fleet QPs with each linear system
-# backend of SheafMPC, against OSQP.
+# backend of TeamMPC, against OSQP.
 #
 #   julia --project=bench -t 8 bench/kkt_e2e.jl
 #
@@ -64,8 +64,8 @@ function run_backend(p, kw)
     end
     return (obj = info.obj, x = copy(s.xsol), status = string(info.status), iters = info.iter, t_setup = minimum(tsetup),
             t = minimum(ts), tmed = median(ts), polish = string(info.polish), rho_updates = info.rho_updates,
-            linsys = string(info.linsys), nnzL = SheafMPC.factor_nnz(s.kkt),
-            ordering = s.kkt isa SheafMPC.BlockLDLSystem ? "blockldl " * string(s.kkt.ordering) : string(nameof(typeof(s.kkt))),
+            linsys = string(info.linsys), nnzL = TeamMPC.factor_nnz(s.kkt),
+            ordering = s.kkt isa TeamMPC.BlockLDLSystem ? "blockldl " * string(s.kkt.ordering) : string(nameof(typeof(s.kkt))),
             polish_factorizations = info.polish_factorizations)
 end
 
@@ -80,7 +80,7 @@ function run_osqp_single(p)
         r = OSQP.solve!(m)
         push!(ts, r.info.solve_time)
     end
-    return (obj = SheafMPC.objective(p, r.x), x = r.x, status = string(r.info.status), iters = r.info.iter,
+    return (obj = TeamMPC.objective(p, r.x), x = r.x, status = string(r.info.status), iters = r.info.iter,
             t_setup = t_setup, t = minimum(ts), tmed = median(ts), polish = string(r.info.status_polish))
 end
 
@@ -165,7 +165,7 @@ function rh_osqp(seq, xmap, ymap)
             r = OSQP.solve!(m)
         end
         xprev = r.x; yprev = r.y
-        push!(ts, t); push!(its, r.info.iter); push!(gaps, relgap(SheafMPC.objective(p, r.x), st.ref))
+        push!(ts, t); push!(its, r.info.iter); push!(gaps, relgap(TeamMPC.objective(p, r.x), st.ref))
     end
     return (; ts, its, gaps)
 end

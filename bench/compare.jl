@@ -1,7 +1,7 @@
 # compare.jl: single solves, interleaved, for before/after measurements.
 #
 #   BENCH_N=1,4,16,64 BENCH_CONE=box,soc BENCH_B=1 BENCH_REPS=21 \
-#   SHEAF_VARIANTS='base:;nopol:polish=false' julia --project=bench bench/compare.jl
+#   TEAMMPC_VARIANTS='base:;nopol:polish=false' julia --project=bench bench/compare.jl
 #
 # Every solver is set up once per problem; then REPS rounds, each one timed
 # cold solve of every solver in turn (interleaved, so that load drifts hit all
@@ -9,7 +9,7 @@
 # time_ns around the call. Reported: min and median.
 #
 # Solvers:
-#   sheafmpc:<variant>  reset! then solve! (cold), settings from SHEAF_VARIANTS
+#   teammpc:<variant>  reset! then solve! (cold), settings from TEAMMPC_VARIANTS
 #   osqp_cold           OSQP 0.6 with warm_start = false (zero start each solve;
 #                       rho as left by the previous solve, as OSQP does), polish on
 #   osqp_warm           warm_start = true: every solve starts from the previous
@@ -31,7 +31,7 @@ const TARGET = parse(Float64, get(ENV, "BENCH_TARGET", "1e-6"))
 const N = 24
 
 include(joinpath(@__DIR__, "variants_parse.jl"))
-const VARIANTS = parse_variants(get(ENV, "SHEAF_VARIANTS", "base:"))
+const VARIANTS = parse_variants(get(ENV, "TEAMMPC_VARIANTS", "base:"))
 
 timed(f) = (t = time_ns(); r = f(); ((time_ns() - t) / 1e9, r))
 
@@ -45,7 +45,7 @@ mutable struct Entry
     last::Any
 end
 
-function sheaf_entry(p, name, kw)
+function team_entry(p, name, kw)
     setupf = () -> setup(p; eps_abs = EPS, eps_rel = EPS, kw...)
     solvef = s -> begin
         reset!(s)
@@ -53,7 +53,7 @@ function sheaf_entry(p, name, kw)
         (info.obj, s.xsol, string(info.status), info.iter,
          @sprintf("pol %s %d/%d rho+%d %s", info.polish, info.polish_attempts, info.polish_factorizations, info.rho_updates, info.linsys))
     end
-    return Entry("sheafmpc:" * name, setupf, solvef, nothing, Float64[], Float64[], nothing)
+    return Entry("teammpc:" * name, setupf, solvef, nothing, Float64[], Float64[], nothing)
 end
 
 function osqp_entry(p, warm)
@@ -67,7 +67,7 @@ function osqp_entry(p, warm)
     solvef = h -> begin
         m, r = h
         OSQP.solve!(m, r)
-        (SheafMPC.objective(p, r.x), r.x, string(r.info.status), r.info.iter, @sprintf("pol %d", r.info.status_polish))
+        (TeamMPC.objective(p, r.x), r.x, string(r.info.status), r.info.iter, @sprintf("pol %d", r.info.status_polish))
     end
     return Entry(warm ? "osqp_warm" : "osqp_cold", setupf, solvef, nothing, Float64[], Float64[], nothing)
 end
@@ -84,7 +84,7 @@ function clarabel_entry(p)
     setupf = () -> clarabel_setup(p; tol = 1e-8)
     solvef = s -> begin
         r = Clarabel.solve!(s)
-        (SheafMPC.objective(p, r.x), r.x, string(r.status), r.iterations, "")
+        (TeamMPC.objective(p, r.x), r.x, string(r.status), r.iterations, "")
     end
     return Entry("clarabel", setupf, solvef, nothing, Float64[], Float64[], nothing)
 end
@@ -101,7 +101,7 @@ function main()
         ref = clarabel_solve(p; tol = 1e-10)
         es = Entry[]
         for (name, kw) in VARIANTS
-            push!(es, sheaf_entry(p, name, kw))
+            push!(es, team_entry(p, name, kw))
         end
         if cone == "box"
             push!(es, osqp_entry(p, false)); push!(es, osqp_entry(p, true))

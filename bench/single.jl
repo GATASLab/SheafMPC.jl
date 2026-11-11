@@ -6,12 +6,12 @@
 #   BENCH_N=1,4,16,32,64 BENCH_B=1,8 BENCH_CONE=box julia --project=bench bench/single.jl
 #
 # Solvers (equal tolerances eps_abs = eps_rel = EPS, polishing on):
-#   sheafmpc          cold start: zero iterate, rho reset, no cached polish
+#   teammpc          cold start: zero iterate, rho reset, no cached polish
 #                     factorization; only the ordering, symbolic analysis and
 #                     KKT factorization from setup are reused
-#   sheafmpc_resolve  the same QP solved again from the previous solution
+#   teammpc_resolve  the same QP solved again from the previous solution
 #   osqp              cold start (warm_start = false), default rho 0.1
-#   osqp_rho0.03      cold start with SheafMPC's default rho
+#   osqp_rho0.03      cold start with TeamMPC's default rho
 #   osqp_nopolish     cold, no polish (its per-iteration cost)
 #   osqp_paper        the settings of the paper's run_julia.jl, which in effect
 #                     re-solve from the previous solution (see run_osqp)
@@ -29,12 +29,12 @@ const REPS = parse(Int, get(ENV, "BENCH_REPS", "15"))
 const EPS = parse(Float64, get(ENV, "BENCH_EPS", "1e-7"))
 const N = 24
 
-function run_sheafmpc(p; eps = EPS, resolve = false, kw...)
+function run_teammpc(p; eps = EPS, resolve = false, kw...)
     s = setup(p; eps_abs = eps, eps_rel = eps, kw...)
     # per-iteration and per-factorization costs (min over repeats)
-    SheafMPC.admm_step!(s)
-    t_iter = minimum(@elapsed(SheafMPC.admm_step!(s)) for _ in 1:30)
-    t_fact = minimum(@elapsed(SheafMPC.refactor!(s.pol)) for _ in 1:5)
+    TeamMPC.admm_step!(s)
+    t_iter = minimum(@elapsed(TeamMPC.admm_step!(s)) for _ in 1:30)
+    t_fact = minimum(@elapsed(TeamMPC.refactor!(s.pol)) for _ in 1:5)
     reset!(s); solve!(s)                                   # warm-up (compilation)
     ts = Float64[]; info = s.info
     for _ in 1:REPS
@@ -45,7 +45,7 @@ function run_sheafmpc(p; eps = EPS, resolve = false, kw...)
     return (obj = info.obj, x = copy(s.xsol), status = string(info.status), iters = info.iter, t_setup = info.setup_time,
             t = minimum(ts), tmed = median(ts), polish = string(info.polish), polish_attempts = info.polish_attempts,
             polish_factorizations = info.polish_factorizations, linsys = string(info.linsys), rho_updates = info.rho_updates,
-            t_iter = t_iter, t_fact = t_fact, nnz_L = SheafMPC.factor_nnz(s.kkt))
+            t_iter = t_iter, t_fact = t_fact, nnz_L = TeamMPC.factor_nnz(s.kkt))
 end
 
 # OSQP 0.6.2 through OSQP.jl. `warm_start = false`: a cold start every solve
@@ -65,7 +65,7 @@ function run_osqp(p; eps = EPS, paper = false, rho = 0.1, polish = true)
         r = OSQP.solve!(m)
         push!(ts, r.info.solve_time)
     end
-    return (obj = SheafMPC.objective(p, r.x), x = r.x, status = string(r.info.status), iters = r.info.iter,
+    return (obj = TeamMPC.objective(p, r.x), x = r.x, status = string(r.info.status), iters = r.info.iter,
             t_setup = t_setup, t = minimum(ts), tmed = median(ts), polish = string(r.info.status_polish),
             t_iter = r.info.solve_time / max(r.info.iter, 1))
 end
@@ -81,8 +81,8 @@ function main()
             N % b == 0 || continue
             p = fleet_conic(blocked_qp(n, N, b); cone = CONE)
             res = Dict{String,Any}()
-            res["sheafmpc"] = run_sheafmpc(p)
-            res["sheafmpc_resolve"] = run_sheafmpc(p; resolve = true)
+            res["teammpc"] = run_teammpc(p)
+            res["teammpc_resolve"] = run_teammpc(p; resolve = true)
             if CONE == "box"
                 res["osqp"] = run_osqp(p)
                 res["osqp_rho0.03"] = run_osqp(p; rho = 0.03)
@@ -91,11 +91,11 @@ function main()
             end
             c = clarabel_solve(p; tol = 1e-8, reps = REPS)
             res["clarabel"] = (obj = c.obj, x = c.x, status = c.status, iters = c.iters, t_setup = NaN, t = c.t, tmed = c.tmed)
-            for name in ("sheafmpc", "sheafmpc_resolve", "osqp", "osqp_rho0.03", "osqp_nopolish", "osqp_paper", "clarabel")
+            for name in ("teammpc", "teammpc_resolve", "osqp", "osqp_rho0.03", "osqp_nopolish", "osqp_paper", "clarabel")
                 haskey(res, name) || continue
                 r = res[name]
                 gap = relgap(r.obj, ref.obj); viol = violation(p, r.x)
-                note = startswith(name, "sheafmpc") ? @sprintf("polish %s (%d tries, %d fact.) %s rho+%d, it %.1f us, fact %.0f us, nnzL %d",
+                note = startswith(name, "teammpc") ? @sprintf("polish %s (%d tries, %d fact.) %s rho+%d, it %.1f us, fact %.0f us, nnzL %d",
                                                      r.polish, r.polish_attempts, r.polish_factorizations, r.linsys, r.rho_updates,
                                                      1e6 * r.t_iter, 1e6 * r.t_fact, r.nnz_L) :
                        startswith(name, "osqp") ? @sprintf("polish %s, %.1f us/it", r.polish, 1e6 * r.t_iter) : ""

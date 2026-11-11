@@ -552,7 +552,7 @@ version = "3.8.0"
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 version = "1.11.0"
 
-[[deps.SheafMPC]]
+[[deps.TeamMPC]]
 deps = ["CliqueTrees", "LinearAlgebra", "Printf", "QDLDL", "Random", "SparseArrays"]
 path = ".."
 uuid = "8f3c2a61-5d4e-4b7a-9c1e-2a6b0d9e7f13"

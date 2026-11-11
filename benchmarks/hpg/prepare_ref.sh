@@ -4,7 +4,7 @@
 #   benchmarks/hpg/prepare_ref.sh master        # or opt/admm, opt/conic, a SHA
 #   HPG_TIER=all HPG_AFTER=<build id or none> benchmarks/hpg/submit_ref.sh REF
 #
-# Builds $ROOT/refs/<sha>/SheafMPC.jl (sha: the last commit at REF touching src
+# Builds $ROOT/refs/<sha>/TeamMPC.jl (sha: the last commit at REF touching src
 # or Project.toml) from `git archive REF src Project.toml`
 # (the package under test, exactly as committed at REF) and `git archive HEAD
 # benchmarks` (the harness at its own commit), records both in PACKAGE_REF and
@@ -16,7 +16,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 PKG="$(dirname "$HERE")"
-ROOT="${HPG_ROOT:-/blue/fairbanksj/itaykadosh/sheafmpc_bench}"
+ROOT="${HPG_ROOT:-/blue/fairbanksj/itaykadosh/teammpc_bench}"
 REF="${1:?usage: prepare_ref.sh REF}"
 # the snapshot is named by the last commit at REF that touched the package (src, Project.toml)
 FULL=$(git -C "$PKG" log -1 --format=%H "$REF" -- src Project.toml)
@@ -35,13 +35,13 @@ MB="${MUMBLEBEE_DIR:-$HOME/Projects/GATAS/Mumblebee.jl}"          # the fast-sym
 ssh hpg "mkdir -p $DEST && rm -f $DEST/Mumblebee.jl && ln -sfn $ROOT/CliqueTrees-fast-0015e2b $DEST/CliqueTrees-fast-0015e2b"
 rsync -a --delete "$MB/" "hpg:$DEST/Mumblebee.jl/"
 echo "Mumblebee: $(git -C "$MB" rev-parse --abbrev-ref HEAD) $(git -C "$MB" rev-parse HEAD)"
-rsync -a --delete "$TMP/" "hpg:$DEST/SheafMPC.jl/"
+rsync -a --delete "$TMP/" "hpg:$DEST/TeamMPC.jl/"
 rm -rf "$TMP"
-rsync -a "$HERE/data/osqprand" "$HERE/data/reduced" "hpg:$DEST/SheafMPC.jl/benchmarks/data/"
-ssh hpg "mkdir -p $DEST/SheafMPC.jl/benchmarks/data/refcache && cp -n $ROOT/SheafMPC.jl/benchmarks/data/refcache/*.jls $DEST/SheafMPC.jl/benchmarks/data/refcache/ 2>/dev/null || true"
+rsync -a "$HERE/data/osqprand" "$HERE/data/reduced" "hpg:$DEST/TeamMPC.jl/benchmarks/data/"
+ssh hpg "mkdir -p $DEST/TeamMPC.jl/benchmarks/data/refcache && cp -n $ROOT/TeamMPC.jl/benchmarks/data/refcache/*.jls $DEST/TeamMPC.jl/benchmarks/data/refcache/ 2>/dev/null || true"
 ssh hpg "bash -lc 'module load julia/1.12.6; export JULIA_DEPOT_PATH=/blue/fairbanksj/itaykadosh/julia_depot: JULIA_PKG_PRECOMPILE_AUTO=0;
-  cd $DEST/SheafMPC.jl/benchmarks && for e in . envs/mumblebee_fast envs/mumblebee_fast_ct; do
+  cd $DEST/TeamMPC.jl/benchmarks && for e in . envs/mumblebee_fast envs/mumblebee_fast_ct; do
     julia --project=\$e -e \"using Pkg; Pkg.resolve(); Pkg.instantiate()\" 2>&1 | tail -1; done'"
-HPG_PKGDIR="$DEST/SheafMPC.jl" HPG_EXCLUSIVE=1 HPG_QOS="${HPG_QOS:-fairbanksj-b}" HPG_GROUPING=coarse HPG_SUFFIX="_${SHA}_excl" bash "$HERE/hpg/make_jobs.sh"
-rsync -a "$HERE/hpg/jobs/" "hpg:$DEST/SheafMPC.jl/benchmarks/hpg/jobs/"
-echo "prepared $DEST ($REF = $FULL); submit with: HPG_TIER=all HPG_SUFFIX=_${SHA}_excl HPG_PKGDIR=$DEST/SheafMPC.jl benchmarks/hpg/submit.sh"
+HPG_PKGDIR="$DEST/TeamMPC.jl" HPG_EXCLUSIVE=1 HPG_QOS="${HPG_QOS:-fairbanksj-b}" HPG_GROUPING=coarse HPG_SUFFIX="_${SHA}_excl" bash "$HERE/hpg/make_jobs.sh"
+rsync -a "$HERE/hpg/jobs/" "hpg:$DEST/TeamMPC.jl/benchmarks/hpg/jobs/"
+echo "prepared $DEST ($REF = $FULL); submit with: HPG_TIER=all HPG_SUFFIX=_${SHA}_excl HPG_PKGDIR=$DEST/TeamMPC.jl benchmarks/hpg/submit.sh"

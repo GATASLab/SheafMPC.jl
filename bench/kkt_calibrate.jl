@@ -10,9 +10,9 @@
 # (multifrontal): ordering time, symbolic time, numeric factorization, solve.
 # Output: bench/results/kkt_calibrate[_TAG].json.
 
-using SheafMPC, SparseArrays, LinearAlgebra, Printf, Statistics, JSON
+using TeamMPC, SparseArrays, LinearAlgebra, Printf, Statistics, JSON
 import QDLDL, CliqueTrees
-const BL = SheafMPC.BlockLDL
+const BL = TeamMPC.BlockLDL
 include(joinpath(@__DIR__, "kkt_problems.jl"))
 
 const TAG = get(ENV, "BENCH_TAG", "")
@@ -57,9 +57,9 @@ function main()
             tord = @elapsed perm = BL.make_ordering(K, ord; structure = st)
             perm === nothing && continue
             fe = features(K, perm)
-            Q = SheafMPC.QDLDLSystem(copy(K), di; perm = perm)
-            tqf = timeit(() -> SheafMPC.refactor!(Q))
-            tqs = timeit(() -> (copyto!(x, bb); SheafMPC.solve!(Q, x)))
+            Q = TeamMPC.QDLDLSystem(copy(K), di; perm = perm)
+            tqf = timeit(() -> TeamMPC.refactor!(Q))
+            tqs = timeit(() -> (copyto!(x, bb); TeamMPC.solve!(Q, x)))
             tsym = @elapsed S = BL.symbolic(K, perm, signs; relax = RELAX)
             F = BL.Factor(S); BL.factor!(F, K)
             tbf = timeit(() -> BL.factor!(F, K))

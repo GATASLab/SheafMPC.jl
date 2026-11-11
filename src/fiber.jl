@@ -1,7 +1,7 @@
 # fiber.jl: the affine fiber of one block of a partition, A = xbar + range(N).
 #
-# A partition of the vertices contracts the edges inside each block. The stalk
-# of the coarse vertex is the space of sections of the sheaf over the block's
+# A partition of the vertices contracts the edges inside each block. The space
+# of the coarse vertex is the space of the block's
 # fiber: configurations of the block's vertices that satisfy every internal
 # edge, D x = r with D the internal coboundary and r the internal targets. The
 # affine version is xbar + range(N), N a basis of ker D. Here the particular
@@ -27,10 +27,10 @@
     Fiber
 
 The fiber of one block (one coarse vertex): its fine `members` (ascending),
-the stalk `offsets` of the members inside the block, the `internal` (collapsed)
+the space `offsets` of the members inside the block, the `internal` (collapsed)
 edges with row offsets `roffsets`, the internal coboundary `D` (rows: internal
-edge rows, columns: the block's stacked stalk), a basis `N` of `ker D` (the
-coarse stalk), the particular-solution operator `X` (`xbar = X r` for the
+edge rows, columns: the block's stacked space), a basis `N` of `ker D` (the
+coarse space), the particular-solution operator `X` (`xbar = X r` for the
 stacked internal targets `r`), the consistency operator `C = D X - I`
 (`C r = 0` exactly when the affine fiber is nonempty; empty `C` when `D` has
 full row rank), and the basis `kind`.
@@ -47,14 +47,14 @@ struct Fiber
     kind::Symbol
 end
 
-"""`fiberdim(F)`: the dimension of the fiber's section space, the coarse stalk."""
+"""`fiberdim(F)`: the dimension of the fiber's section space, the coarse space."""
 fiberdim(F::Fiber) = size(F.N, 2)
 Base.length(F::Fiber) = F.offsets[end]
 
 _spI(n) = SpMat(sparse(1.0I, n, n))
 
 """Sparse internal coboundary `D` of the block and the row offsets of its internal edges."""
-function _internal_coboundary(P::SheafProgram, internal::Vector{Int}, local_index::Vector{Int}, offs::Vector{Int})
+function _internal_coboundary(P::GraphProgram, internal::Vector{Int}, local_index::Vector{Int}, offs::Vector{Int})
     I_ = Int[]; J_ = Int[]; V_ = Float64[]
     roffs = zeros(Int, length(internal) + 1)
     row = 0
@@ -116,7 +116,7 @@ _padcols(M::SpMat, w::Int) = size(M, 2) == w ? M : SpMat([M spzeros(size(M, 1), 
 """Selector of the rows `roffs[k]+1:roffs[k+1]` of the stacked targets (`d x m`)."""
 _selector(roffs, k, m) = sparse(1:(roffs[k+1]-roffs[k]), (roffs[k]+1):roffs[k+1], 1.0, roffs[k+1] - roffs[k], m)
 
-function _structured_fiber(P::SheafProgram, members::Vector{Int}, internal::Vector{Int}, local_index::Vector{Int},
+function _structured_fiber(P::GraphProgram, members::Vector{Int}, internal::Vector{Int}, local_index::Vector{Int},
                            offs::Vector{Int}, D::SpMat, roffs::Vector{Int})
     nm = length(members)
     n = offs[end]
@@ -297,7 +297,7 @@ end
 The fiber of one block. `basis` is `:structured` (falls back to
 `:orthonormal` when forward substitution fails) or `:orthonormal`.
 """
-function _make_fiber(P::SheafProgram, members::Vector{Int}, internal::Vector{Int}, local_index::Vector{Int},
+function _make_fiber(P::GraphProgram, members::Vector{Int}, internal::Vector{Int}, local_index::Vector{Int},
                      basis::Symbol)
     offs = zeros(Int, length(members) + 1)
     for (l, v) in enumerate(members)
@@ -322,7 +322,7 @@ function _make_fiber(P::SheafProgram, members::Vector{Int}, internal::Vector{Int
 end
 
 """True when the internal edges of `F` have the same endpoints and restriction maps in `P` as in `Pp` (targets may differ)."""
-function _same_maps(P::SheafProgram, Pp::SheafProgram, internal)
+function _same_maps(P::GraphProgram, Pp::GraphProgram, internal)
     for e in internal
         E = P.edges[e]; G = Pp.edges[e]
         (E.tail == G.tail && E.head == G.head && E.Ft == G.Ft && E.Fh == G.Fh && E.hard == G.hard &&

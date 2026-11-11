@@ -102,9 +102,9 @@ end
         update!(R)
         refresh!(M, R.program)
         R2 = reduce(fp, R.resolution)
-        q2 = sheaf_qp(R2.program)
+        q2 = graph_qp(R2.program)
         @test M.q ≈ q2.q && M.c ≈ q2.c
-        @test M.b ≈ [q2.kinds[i] == SheafMPC.ROW_SOC ? q2.socb[i] : q2.u[i] for i in 1:nrows(q2)]
+        @test M.b ≈ [q2.kinds[i] == TeamMPC.ROW_SOC ? q2.socb[i] : q2.u[i] for i in 1:nrows(q2)]
         J1, J2 = test_solve(R).J, test_solve(R2).J
         @test isfinite(J1) && srelerr(J1, J2) < 1e-8
     end
@@ -114,11 +114,11 @@ end
     # a rigid fleet of identical quadrotors over the whole horizon repeats input cones
     fp, _ = test_program(n = 4, H = 4, graph = :ring, kinds = :quad, seed = 1, umax_scale = 0.1)
     R = reduce(fp, Teams(ones(Int, 4)) ⊠ full_condensing())
-    full = sheaf_qp(R.program)
+    full = graph_qp(R.program)
     M = QPMap(R.program)
     s = setup(M.qp; eps_abs = 1e-9, eps_rel = 1e-9, max_iter = 50_000)
     solve!(s)
-    y = SheafMPC.expand_duals(M, s.ysol)
+    y = TeamMPC.expand_duals(M, s.ysol)
     @test norm(full.P * s.xsol + full.q + full.A' * y, Inf) < 1e-6
 end
 

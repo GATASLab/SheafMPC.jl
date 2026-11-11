@@ -75,7 +75,7 @@ function _shift_rows(inst::Vector{Int})
     return shift
 end
 
-function _interfaces(Pc::SheafProgram)
+function _interfaces(Pc::GraphProgram)
     bypair = Dict{Tuple{Int,Int},Vector{Int}}()
     for (e, E) in enumerate(Pc.edges)
         edgedim(E) == 0 && continue

@@ -1,4 +1,4 @@
-# variants_parse.jl: SHEAF_VARIANTS="name:key=val,key=val;name2:..." -> [name => Dict(settings)]
+# variants_parse.jl: TEAMMPC_VARIANTS="name:key=val,key=val;name2:..." -> [name => Dict(settings)]
 
 function parse_variants(s)
     out = Pair{String,Dict{Symbol,Any}}[]

@@ -19,9 +19,9 @@
 set -e
 module load julia/1.12.6
 export JULIA_DEPOT_PATH=/blue/fairbanksj/itaykadosh/julia_depot:
-export SHEAFMPC_PAPER=/blue/fairbanksj/itaykadosh/mpc-sheaf-pushforward
+export TEAMMPC_PAPER=${TEAMMPC_PAPER:?set TEAMMPC_PAPER to the paper research code}
 # no OPENBLAS_NUM_THREADS: it caps the pool that BLAS.set_num_threads can use later
-cd /blue/fairbanksj/itaykadosh/SheafMPC.jl-kernel
+cd /blue/fairbanksj/itaykadosh/TeamMPC.jl-kernel
 NT=${SLURM_CPUS_PER_TASK:-1}
 # sbatch --export splits on commas: lists are passed with + (BENCH_N=64+256)
 for v in $(env | grep -o '^BENCH_[A-Z_0-9]*'); do export "$v=${!v//+/,}"; done

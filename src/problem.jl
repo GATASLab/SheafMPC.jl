@@ -7,7 +7,7 @@
 #   * intervals  l_i <= z_i <= u_i  (one row each; l_i = u_i is an equality row,
 #     an infinite bound is a one-sided row), and
 #   * translated second-order cones  { z_B : b_B - z_B in SOC }  over blocks of
-#     consecutive rows (the convention b - A x in K of Clarabel and of sheaf
+#     consecutive rows (the convention b - A x in K of Clarabel and of graph
 #     programs).
 #
 # This is the form of OSQP (Stellato et al. 2020) with second-order cones added

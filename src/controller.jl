@@ -162,7 +162,7 @@ function _shift_maps!(C::MPCController)
     for v in 1:nvertices(P), (k, j) in enumerate(vrange(P, v))
         xmap[j] = P.offsets[src[v]] + k
     end
-    # multipliers, in the full row order of sheaf_qp: hard edges, then node rows
+    # multipliers, in the full row order of graph_qp: hard edges, then node rows
     M = C.qmap
     bytag = Dict{EdgeTag,Int}()
     for (e, E) in enumerate(P.edges)

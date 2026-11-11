@@ -3,7 +3,7 @@
 # are read back from the live objects (src/protocol.jl check_readback), and
 # behaviour is checked: a warm-mode step without warm! (update! then solve!,
 # what interior-point solvers get) takes the same iterations as the cold solve
-# (no hidden warm start), and OSQP's and SheafMPC's warm! from the solution
+# (no hidden warm start), and OSQP's and TeamMPC's warm! from the solution
 # takes (almost) none.
 #
 #   julia --project=benchmarks benchmarks/test/test_settings.jl
@@ -13,7 +13,7 @@ include(joinpath(@__DIR__, "..", "src", "BenchHarness.jl"))
 using .BenchHarness
 const BH = BenchHarness
 
-specs = [BH.sheafmpc_spec(), BH.osqp_spec(), BH.clarabel_spec(), BH.mumblebee_spec()]
+specs = [BH.teammpc_spec(), BH.osqp_spec(), BH.clarabel_spec(), BH.mumblebee_spec()]
 isdefined(BH, :hpipm_spec) && push!(specs, BH.hpipm_spec())
 isdefined(BH, :piqp_spec) && push!(specs, BH.piqp_spec())
 problems = [BH.fleet_qp(n = 4, N = 24, b = 1), BH.stage_canonical("quad", BH.quad_ocp(N = 12, x0 = zeros(12))),
@@ -36,7 +36,7 @@ problems = [BH.fleet_qp(n = 4, N = 24, b = 1), BH.stage_canonical("quad", BH.qua
             # survives it, so the count can differ by one; a warm start would take one or two)
             if s.name == "mumblebee"
                 @test abs(r2.iters - r1.iters) <= 1
-            elseif !(s.name in ("osqp", "sheafmpc"))
+            elseif !(s.name in ("osqp", "teammpc"))
                 @test r2.iters == r1.iters
             end
             @test r1.status in (:solved, :almost_solved)   # accuracy itself is judged by check()
@@ -55,8 +55,8 @@ end
     @test r3.iters <= 25 < r1.iters
 end
 
-@testset "SheafMPC: a fresh setup has no iterate; warm! sets one" begin
-    s = BH.sheafmpc_spec(); p = problems[1]
+@testset "TeamMPC: a fresh setup has no iterate; warm! sets one" begin
+    s = BH.teammpc_spec(); p = problems[1]
     h = s.setup(p, 1e-6, s.variants[1])
     @test s.readback(h)["has_iterate"] == false
     r1 = s.solve!(h)

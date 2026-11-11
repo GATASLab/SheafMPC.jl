@@ -1,8 +1,8 @@
-using SheafMPC
+using TeamMPC
 using Test, LinearAlgebra, SparseArrays, Random, Printf
 import Clarabel
 
-const PAPER = get(ENV, "SHEAFMPC_PAPER", joinpath(homedir(), "Projects", "GATAS", "mpc-sheaf-pushforward"))
+const PAPER = get(ENV, "TEAMMPC_PAPER", "")
 
 relgap(a, b) = abs(a - b) / max(1.0, abs(b))
 
@@ -38,7 +38,7 @@ function clarabel_ref(p::ConicQP; tol = 1e-10)
     s = Clarabel.Solver()
     Clarabel.setup!(s, SparseMatrixCSC(triu(p.P)), p.q, A, b, cones, st)
     r = Clarabel.solve!(s)
-    return SheafMPC.objective(p, r.x), r.x, r.status
+    return TeamMPC.objective(p, r.x), r.x, r.status
 end
 
 "A random feasible convex QP with equality, two-sided, one-sided and free rows."
@@ -78,17 +78,17 @@ function random_socp(rng, n, nsoc, d)
     return ConicQP(P, q, A, b, cones)
 end
 
-@testset "SheafMPC" begin
+@testset "TeamMPC" begin
 
     @testset "cones" begin
         v = [1.0, 3.0, 4.0]                   # ||s|| = 5 > t = 1
-        SheafMPC.project_soc!(v, 1:3)
+        TeamMPC.project_soc!(v, 1:3)
         @test v ≈ [3.0, 1.8, 2.4]
         w = [-6.0, 3.0, 4.0]                  # inside the polar cone
-        SheafMPC.project_soc!(w, 1:3)
+        TeamMPC.project_soc!(w, 1:3)
         @test w == zeros(3)
         u = [5.0, 3.0, 4.0]
-        SheafMPC.project_soc!(u, 1:3)
+        TeamMPC.project_soc!(u, 1:3)
         @test u == [5.0, 3.0, 4.0]
     end
 
@@ -158,7 +158,7 @@ end
         p = random_qp(rng, 15, 12)
         A2 = [p.A; p.A[3:4, :]]
         p2 = ConicQP(p.P, p.q, A2, [p.l; p.l[3:4] .- 1], [p.u; p.u[3:4] .+ 1]; c = p.c)
-        p3, keep = SheafMPC.dedup_rows(p2)
+        p3, keep = TeamMPC.dedup_rows(p2)
         @test nrows(p3) == nrows(p) && keep == collect(1:nrows(p))
         @test relgap(solve!(setup(p3; eps_abs = 1e-7, eps_rel = 1e-7)).obj, clarabel_ref(p)[1]) <= 1e-8
     end
@@ -168,20 +168,20 @@ end
         p = random_qp(rng, 30, 25)
         s = setup(p)
         solve!(s)
-        SheafMPC.admm_step!(s)
-        @test (@allocated SheafMPC.admm_step!(s)) == 0
-        resid(s) = (SheafMPC._residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty); nothing)
+        TeamMPC.admm_step!(s)
+        @test (@allocated TeamMPC.admm_step!(s)) == 0
+        resid(s) = (TeamMPC._residuals!(s, s.x, s.z, s.y, s.Ax, s.Px, s.Aty); nothing)
         resid(s)
         @test (@allocated resid(s)) == 0
         p = random_socp(rng, 15, 3, 3)
         s = setup(p)
         solve!(s)
-        SheafMPC.admm_step!(s)
-        @test (@allocated SheafMPC.admm_step!(s)) == 0
+        TeamMPC.admm_step!(s)
+        @test (@allocated TeamMPC.admm_step!(s)) == 0
         s = setup(random_qp(rng, 30, 25); linsys = :cliquetrees)
         solve!(s)
-        SheafMPC.admm_step!(s)
-        @test (@allocated SheafMPC.admm_step!(s)) == 0
+        TeamMPC.admm_step!(s)
+        @test (@allocated TeamMPC.admm_step!(s)) == 0
     end
 
     @testset "spectral rho" begin
@@ -191,8 +191,8 @@ end
         s = setup(p; rho_spectral_iter = 60)
         P = Matrix(s.P) + s.settings.polish_delta * I
         A = Matrix(s.A)
-        eq = findall(==(SheafMPC.ROWT_EQ), s.rowtype)
-        iq = findall(==(SheafMPC.ROWT_INEQ), s.rowtype)
+        eq = findall(==(TeamMPC.ROWT_EQ), s.rowtype)
+        iq = findall(==(TeamMPC.ROWT_INEQ), s.rowtype)
         Z = nullspace(A[eq, :])
         M = A[iq, :] * Z * ((Z' * P * Z) \ (Z' * A[iq, :]'))
         ev = eigvals(Symmetric((M + M') / 2))
@@ -232,10 +232,10 @@ end
         s = setup(p; anderson = 8, polish = false, eps_abs = 1e-9, eps_rel = 1e-9, max_iter = 20_000)
         info = solve!(s)
         @test info.status == :solved && s.aa.accepted > 0
-        SheafMPC._aa_load_point!(s.aa.w, s)
-        SheafMPC.admm_step!(s)
-        SheafMPC._aa_update!(s.aa, s)
-        step(s) = (SheafMPC._aa_load_point!(s.aa.w, s); SheafMPC.admm_step!(s); SheafMPC._aa_update!(s.aa, s); nothing)
+        TeamMPC._aa_load_point!(s.aa.w, s)
+        TeamMPC.admm_step!(s)
+        TeamMPC._aa_update!(s.aa, s)
+        step(s) = (TeamMPC._aa_load_point!(s.aa.w, s); TeamMPC.admm_step!(s); TeamMPC._aa_update!(s.aa, s); nothing)
         step(s)
         @test (@allocated step(s)) == 0
     end
@@ -293,6 +293,6 @@ end
     if isdir(PAPER)
         include(joinpath(@__DIR__, "paper.jl"))
     else
-        @info "paper repository not found at $PAPER: skipping the fleet QP and sheaf program tests"
+        @info "paper repository not found at $PAPER: skipping the fleet QP and graph program tests"
     end
 end

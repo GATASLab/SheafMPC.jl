@@ -277,25 +277,25 @@ function team_kappa(cq::CondensedQP, teams::AbstractVector; iters::Integer = 100
 end
 
 """
-    team_plan(ctrl::TeamMPC) -> U
+    team_plan(ctrl::TeamController) -> U
 
-The lifted open-loop plan of the last step of a `TeamMPC`: every member gets
+The lifted open-loop plan of the last step of a `TeamController`: every member gets
 its team's input sequence (`nu x H` per agent).
 """
-function team_plan(C::TeamMPC)
+function team_plan(C::TeamController)
     _, Uq = trajectories(C.inner.fp, plan(C.inner))
     return [copy(Uq[C.quotient.team[i]]) for i in 1:nagents(C.fleet)]
 end
 
 """
-    certificate(ctrl::TeamMPC, x, refs; terminal = nothing, tol = 1e-6) -> (cert, J_team, cq)
+    certificate(ctrl::TeamController, x, refs; terminal = nothing, tol = 1e-6) -> (cert, J_team, cq)
 
 Thm. 2 for the last step of `ctrl` taken from the measured states `x`: the
 certificate of the lifted team plan from the projected states on the fleet's
 condensed QP (`CondensedQP` from `project(ctrl, x)`), its objective, and the
 QP (for the coordinated optimum, solve it or use `MPCController`).
 """
-function certificate(C::TeamMPC, x::AbstractVector, refs::AbstractVector; terminal = nothing, tol::Real = 1e-6)
+function certificate(C::TeamController, x::AbstractVector, refs::AbstractVector; terminal = nothing, tol::Real = 1e-6)
     xt = project(C, x)
     cq = CondensedQP(C.fleet, xt, refs; terminal = terminal)
     u = stack_inputs(cq, team_plan(C))

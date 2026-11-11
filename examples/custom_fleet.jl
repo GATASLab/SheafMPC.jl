@@ -10,7 +10,7 @@
 # program, teams of two, a time blocking, their product, teams that form only
 # from instant 2 on, and the gap certificates.
 
-using SheafMPC, LinearAlgebra, Printf
+using TeamMPC, LinearAlgebra, Printf
 
 h, H = 0.2, 12
 A = [1.0 0 h 0; 0 1 0 h; 0 0 1 0; 0 0 0 1]
