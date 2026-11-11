@@ -5,7 +5,7 @@ Code for "Exact and Certified Team Reduction for Large-Fleet Formation MPC"
 share one input sequence, so the solver sees one vehicle per team. The package
 finds the coarsest almost equitable teams by color refinement, certifies the gap of other
 teams from the team solution, and splits teams in closed loop. The paper's runs
-used commit `baa542b` of this branch.
+used commit `baa542b`.
 
 The Julia package and module are still named `SheafMPC` (`using SheafMPC`).
 Internally, each program is posed on a cellular sheaf over the time-expanded
@@ -32,7 +32,7 @@ The solver underneath is an ADMM conic QP solver for sheaf programs (below).
 
 ```julia
 using Pkg
-Pkg.add(url = "https://github.com/GATASLab/SheafMPC.jl", rev = "team-mpc")   # not registered yet
+Pkg.add(url = "https://github.com/GATASLab/TeamMPC.jl")   # not registered yet
 ```
 
 ## Team MPC in four steps
