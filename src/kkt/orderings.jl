@@ -6,7 +6,7 @@
 # loaded.
 #
 # Structure-given orders read a label per KKT index: the agent it belongs to
-# and its block (time instant, or block of instants after a time pushforward).
+# and its block (time instant, or block of instants after a time reduction).
 #
 #  :stage   time-major, Riccati-like: blocks in time order, each block's
 #           indices that do not touch the next block first. The front is the
@@ -462,7 +462,7 @@ an elimination order, for the two engines:
   `max(flops / nthreads, critical path)` and the solve term likewise.
 
 The coefficients are least-squares fits (seconds per unit) to measured times on
-the fleet KKT matrices (bench/kkt_calibrate.jl, AMD EPYC 7702, one thread).
+the fleet KKT matrices (AMD EPYC 7702, one thread).
 Defaults: 4 factorizations (setup, a rho update, two polish attempts) and 60
 solves (ADMM iterations and polish refinement) per cold solve.
 """
@@ -477,7 +477,7 @@ end
 
 # fitted coefficients (seconds per column, per flop, per column, per entry of L);
 # BlockLDL refitted after the blocked Schur updates and light relaxation
-# (bench/kkt_calibrate.jl, relative least squares, scaled by the QDLDL times of
+# (relative least squares, scaled by the QDLDL times of
 # the same run against the original fit to remove the node's load)
 const QCOEF = (2.63e-8, 1.20e-9, 1.92e-9, 1.85e-9)
 const BCOEF = (6.84e-8, 2.46e-10, 1.07e-8, 7.50e-10)

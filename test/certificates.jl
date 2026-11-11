@@ -46,7 +46,7 @@ end
     @test srelerr(b12.upper, b2.upper) < 1e-5
 end
 
-@testset "the kernel matches pushforward and solve on equality-constrained QPs" begin
+@testset "the kernel matches reduction and solve on equality-constrained QPs" begin
     for (graph, n, seed) in ((:grid, 6, 1), (:ring, 5, 2), (:grid, 8, 3))
         fp, _ = test_program(n = n, H = 5, graph = graph, seed = seed, coherent = false, input = :none)
         fine = test_solve(fp)
@@ -93,7 +93,7 @@ end
     @test g2.gap <= g1.gap + 1e-12
     @test maximum(g2.teams) == 4
     @test abs(gap(K2, g2.teams) - g2.gap) < 1e-9
-    # the selected teams' true gap (pushforward and solve) agrees with the kernel
+    # the selected teams' true gap (reduction and solve) agrees with the kernel
     fine2 = test_solve(fp2)
     if K2.active_soc == 0
         @test abs(test_solve(reduce(fp2, Teams(g2.teams))).J - fine2.J - g2.gap) < 1e-6 * abs(fine2.J)

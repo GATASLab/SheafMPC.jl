@@ -19,7 +19,7 @@ rng = Xoshiro(7)
             x = lift(R, y)
             @test srelerr(objective(Pc, y), objective(P, x)) < 1e-11
             S = R.collapsed
-            @test norm(coboundary(P, S) * x - targets(P, S), Inf) < 1e-10
+            @test norm(edge_operator(P, S) * x - targets(P, S), Inf) < 1e-10
         end
         # same value as the fine program with the contracted edges hard, and J* <= J*(reduced)
         sr = test_solve(R)

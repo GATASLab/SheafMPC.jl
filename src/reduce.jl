@@ -1,4 +1,4 @@
-# reduce.jl: the pushforward of a program along a partition (the paper's
+# reduce.jl: the reduction of a program along a partition (the paper's
 # Defs. 3 and 4), its lift, and the in-place update of the reduced data.
 #
 # The partition defines the quotient map of the graph: one coarse vertex per
@@ -10,9 +10,9 @@
 #
 #   coarse node cost   f'_B(y) = sum_{v in B} f_v(x_v(y)),
 #   coarse node set    the members' sets, b - A xbar - (A N) y in K,
-#   coarse edge e      restriction maps F N, target b_e - (delta xbar)_e.
+#   coarse edge e      edge maps F N, target b_e - (delta xbar)_e.
 #
-# The basis N and the operator X depend only on the restriction maps of the
+# The basis N and the operator X depend only on the edge maps of the
 # internal edges; the data that change from one MPC step to the next (measured
 # states, references, formation targets, drifts) enter the coarse program
 # affinely. `update!(reduced)` recomputes the coarse vectors from the fine ones
@@ -21,7 +21,7 @@
 """
     ReducedProgram
 
-The pushforward of a program along a resolution: the coarse `program`, the
+The reduction of a program along a resolution: the coarse `program`, the
 fibers of its blocks, the lift `x = xbar + N y` (`N`, and `X` with
 `xbar = X b`, `b` the fine edge targets), the fine edges behind the coarse
 edges (`cross`), the contracted edges (`collapsed`), the coarse `layout` (for
@@ -113,7 +113,7 @@ _member_basis(NtB::SpMat, lr::UnitRange{Int}) = copy(transpose(NtB[:, lr]))
 """
     reduce(program, resolution; basis = :structured, reuse = nothing, consistency_tol = 1e-8) -> ReducedProgram
 
-The pushforward of `program` (a `FleetProgram`, a `ReducedProgram` or a
+The reduction of `program` (a `FleetProgram`, a `ReducedProgram` or a
 `GraphProgram`) along `resolution` (the paper's Def. 4): one coarse vertex per
 block, whose space is the space of sections of the block's fiber; coarse costs
 and constraints by substitution of the lift `x = xbar + N y`; one coarse edge
@@ -124,7 +124,7 @@ optimal value, and every lifted plan is feasible for the fine program.
 `basis = :structured` (forward substitution, sparse) or `:orthonormal` (dense
 SVD per block); the lifted plans and values do not depend on it.
 `reuse = R0`, a previous reduction along the same resolution (receding
-horizon), keeps every fiber whose internal restriction maps are unchanged: the
+horizon), keeps every fiber whose internal edge maps are unchanged: the
 targets may change, since the particular solution is an operator of them.
 When nothing structural changed (the same node matrices and edge maps), the
 coarse matrices and the update operators are shared too, and the reduction
@@ -136,10 +136,10 @@ function Base.reduce(prog::Union{GraphProgram,ReducedProgram}, res::Resolution; 
                      reuse = nothing, consistency_tol::Real = 1e-8)
     P = _base_program(prog)
     labels, clayout = vertex_labels(res, nvertices(P), _layout(prog))
-    return _pushforward(prog, P, res, labels, clayout; basis = basis, reuse = reuse, consistency_tol = consistency_tol)
+    return _reduce_program(prog, P, res, labels, clayout; basis = basis, reuse = reuse, consistency_tol = consistency_tol)
 end
 
-function _pushforward(parent, P::GraphProgram, res::Resolution, Pi::Vector{Int}, clayout;
+function _reduce_program(parent, P::GraphProgram, res::Resolution, Pi::Vector{Int}, clayout;
                       basis::Symbol = :structured, reuse = nothing, consistency_tol::Real = 1e-8)
     nv = nvertices(P)
     nb = nblocks(Pi)
@@ -251,7 +251,7 @@ function _pushforward(parent, P::GraphProgram, res::Resolution, Pi::Vector{Int},
     Pc = GraphProgram(cnodes, cedges)
     Qn = node_hessian(P)
     An, _, _ = node_constraints(P)
-    Dx = coboundary(P, cross)
+    Dx = edge_operator(P, cross)
     R = ReducedProgram(parent, P, Pc, res, basis, Pi, local_index, fibers, collapsed, cross, coarse_offsets,
                        N, _compact(SpMat(transpose(N))), _compact(X), _compact(Cons), clayout, true, 0.0, Float64(consistency_tol),
                        _compact(Qn), _compact(An), _compact(Dx), xrows, rowmap, vertex_block, FlatData(P), zeros(n), zeros(n), zeros(noderows(P)),
@@ -507,7 +507,7 @@ root_program(R::ReducedProgram) = reduction_chain(R)[1].fine
 """
     composite_partition(R) -> (labels, collapsed, edge_map, row_map)
 
-The reduction `R` (possibly a chain) seen as one pushforward of the finest
+The reduction `R` (possibly a chain) seen as one reduction of the finest
 program (Thm. 4): block labels of the finest vertices, the finest edges it
 contracts, the finest edge behind every coarse edge, and the finest node row
 behind every coarse node row.

@@ -65,8 +65,8 @@ end
     Certifier(reduced)
 
 The precomputed part of the upper bound of `gap_bounds` for a reduction (or a
-chain of them, seen as one pushforward of the finest program): the blocks
-whose contracted edges include soft ones, each with its internal coboundary
+chain of them, seen as one reduction of the finest program): the blocks
+whose contracted edges include soft ones, each with its internal edge operator
 and a factorized least-norm system, and the maps from the reduced program's
 multipliers to the finest program. `certify!(cert, sol)` evaluates the bound
 for a reduced solution without allocating much.
@@ -79,7 +79,7 @@ mutable struct Certifier
     row_map::Vector{Int}
     qmap::QPMap                       # the finest program's QP: gradient H x + g
     hard_coarse::Vector{Int}          # coarse edges that are hard (with their fine edges)
-    Dh::SpMat                         # coboundary rows of their fine edges (rows in coarse C^1 order of those edges)
+    Dh::SpMat                         # edge-operator rows of their fine edges (rows in coarse edge-row order of those edges)
     hrows::Vector{Int}                # positions in the coarse C^1 of those rows
     An::SpMat
     blocks::Vector{CertBlock}
@@ -96,7 +96,7 @@ function Certifier(R::ReducedProgram; delta::Real = 1e-9, max_dense::Integer = 2
     labels, collapsed, edge_map, row_map = composite_partition(R)
     Pc = R.program
     hard_coarse = [k for (k, E) in enumerate(Pc.edges) if E.hard && edgedim(E) > 0]
-    Dh = coboundary(P0, edge_map[hard_coarse])
+    Dh = edge_operator(P0, edge_map[hard_coarse])
     hrows = reduce(vcat, (collect(erange(Pc, k)) for k in hard_coarse); init = Int[])
     An, _, _ = node_constraints(P0)
     members = block_members(labels)
@@ -318,7 +318,7 @@ edges is free, so the vertices joined by hard edges form the base vertices
 (for MPC: one agent's path over the horizon, so base vertex `i` is agent `i`),
 and a team structure is a partition `alpha` of the base vertices. With `s` the
 defects of the soft edges at `x*`, `Z` a basis of the directions of the
-equality constraints, `H` the reduced Hessian and `D` the soft coboundary,
+equality constraints, `H` the reduced Hessian and `D` the soft edge operator,
 `K = D Z H^{-1} Z' D'` and, for the soft edges `S` a team structure contracts,
 
     Gamma_S = (1/2) s_S' K_SS^+ s_S       (infinite when s_S is not in range K_SS).
@@ -385,7 +385,7 @@ Assemble the gap kernel of `program` (a `FleetProgram` or `GraphProgram`) at
 its fine minimizer `xstar` (`solve(program).x`): one sparse factorization of
 the KKT matrix of the equality constraints (hard edges, pinned states, active
 half-spaces) and one solve per soft row. Then `gap(kernel, teams)` costs a
-small Cholesky factorization and no pushforward or solve.
+small Cholesky factorization and no reduction or solve.
 """
 gap_kernel(F::FleetProgram, xstar::AbstractVector) = gap_kernel(F.program, xstar)
 
@@ -416,7 +416,7 @@ function gap_kernel(P::GraphProgram, xstar::AbstractVector)
     for (k, (a, b)) in enumerate(bedges)
         push!(adj[a], (b, k)); push!(adj[b], (a, k))
     end
-    D = coboundary(P, soft)
+    D = edge_operator(P, soft)
     s = D * xstar - targets(P, soft)
     Hq, _, _ = quadratic_form(P)
     hard = [e for e in hard_edges(P) if edgedim(P.edges[e]) > 0]
@@ -428,7 +428,7 @@ function gap_kernel(P::GraphProgram, xstar::AbstractVector)
         r += cb.dim
     end
     act, nsoc = _active(P, xstar)
-    A = [coboundary(P, hard); An[zrows, :]; An[act, :]]
+    A = [edge_operator(P, hard); An[zrows, :]; An[act, :]]
     n, m = size(Hq, 1), size(A, 1)
     K = [Hq SpMat(A'); A spzeros(m, m)]
     F = try

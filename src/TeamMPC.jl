@@ -14,7 +14,7 @@ Team Reduction for Large-Fleet Formation MPC".
   edges hard, the initial state pinned).
 * Reductions: `TimeBlocking` (condensing, exact), `Teams` (agreement
   subspaces), products `teams ⊠ blocking`, `Mixed` resolutions;
-  `reduce(program, resolution)` is the pushforward, `lift` maps reduced plans
+  `reduce(program, resolution)` is the reduction, `lift` maps reduced plans
   back, and reductions compose (teams of teams); `StepOperator` precomposes a
   chain's map from the changing data to the reduced QP vectors.
 * Certificates: `gap_bounds` (from the reduced solve, and the fine one when
@@ -79,7 +79,7 @@ export Settings, Info, Solver, setup, solve!, update!, warm_start!, warm_start_s
 export ConeKind, ZERO_CONE, NONNEG_CONE, SOC_CONE, ConeBlock, zero_cone, nonneg_cone, soc_cone
 export NodeData, EdgeTag, GraphEdge, GraphProgram
 export nvertices, nedges, c0dim, c1dim, vrange, erange, edgedim, hard_edges, soft_edges
-export coboundary, targets, quadratic_form, node_constraints, feasibility, harden, edge_defect
+export edge_operator, targets, quadratic_form, node_constraints, feasibility, harden, edge_defect
 # fleets
 export Agent, BallSet, BoxSet, Polyhedron, Fleet, FleetProgram, nagents, edge_maps, edge_residual
 export set_state!, set_references!, set_targets!, set_drift!, set_state_bound!, set_state_set!, set_state_sets!

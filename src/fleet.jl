@@ -10,8 +10,8 @@
 #
 # On the time-expanded graph, vertex (i, t) holds (x_{i,t}, u_{i,t}) (only the
 # state at t = H). The dynamics edge (i,t) -> (i,t+1) is hard, with
-# restriction maps [A B] and the projection onto x_{i,t+1}, and target g_{i,t};
-# the formation edge (i,t) -> (j,t) is soft, with restriction maps C_i, C_j,
+# edge maps [A B] and the projection onto x_{i,t+1}, and target g_{i,t};
+# the formation edge (i,t) -> (j,t) is soft, with edge maps C_i, C_j,
 # target o_{ij,t} and stiffness w_{ij,t} I. The vertex (i, 0) also pins the
 # initial state, x_{i,0} = xhat_i.
 
@@ -133,7 +133,7 @@ present (`present[k, t]`, a switching topology; all by default), their targets
 the slot positions `offsets`, or zero) and weights `weights[k, t]` (a number
 for all). `select[k]` (`p_k x p`, by default the identity) picks the
 coordinates of the formation output that edge `k` compares: the edge's
-restriction maps are `S_k C_i` and `S_k C_j`, its target `S_k targets[:, k, t]`
+edge maps are `S_k C_i` and `S_k C_j`, its target `S_k targets[:, k, t]`
 and its stiffness `weights[k, t] I`. A drone (output its 3D position) and a car
 (its planar position, altitude row zero) compare only their horizontal
 positions with `S_k = [I_2 0]`.
@@ -183,7 +183,7 @@ function Fleet(agents::Vector{Agent}, edges::AbstractVector; H::Integer, offsets
     return Fleet(agents, Int(H), E, pres, T, Wm, S)
 end
 
-"""`edge_maps(fl, k)`: the restriction maps `(S_k C_i, S_k C_j)` of formation edge `k` on the agents' states."""
+"""`edge_maps(fl, k)`: the edge maps `(S_k C_i, S_k C_j)` of formation edge `k` on the agents' states."""
 edge_maps(fl::Fleet, k::Integer) = (fl.select[k] * fl.agents[fl.edges[k][1]].C, fl.select[k] * fl.agents[fl.edges[k][2]].C)
 
 """`edge_residual(fl, k, xi, xj, t = 1)`: `S_k (C_j x_j - C_i x_i - targets[:, k, t])`."""
@@ -522,7 +522,7 @@ end
 function Base.reduce(F::FleetProgram, res::Resolution; basis::Symbol = :structured, reuse = nothing,
                      consistency_tol::Real = 1e-8)
     labels, clayout = vertex_labels(res, nvertices(F.program), F.layout)
-    return _pushforward(F, F.program, res, labels, clayout; basis = basis, reuse = reuse, consistency_tol = consistency_tol)
+    return _reduce_program(F, F.program, res, labels, clayout; basis = basis, reuse = reuse, consistency_tol = consistency_tol)
 end
 
 solve(F::FleetProgram; kwargs...) = solve(F.program; kwargs...)

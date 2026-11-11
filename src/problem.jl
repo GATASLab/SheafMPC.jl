@@ -143,7 +143,7 @@ end
 For every SOC block `k` of `p`, the first block `rep[k]` with exactly the same
 rows of `A` and the same right-hand side up to rounding (`|b_B - b_B'| <=
 1e-9 max(1, |b_B|)`): the same cone, so all but one copy can be dropped. A
-pushforward along a team of identical members creates such copies (one input
+reduction along a team of identical members creates such copies (one input
 ball per member per instant), whose centers agree up to the rounding of the
 particular solution.
 """
@@ -172,7 +172,7 @@ end
 
 Drop exact duplicate constraints: interval rows with the same row of `A` and
 the same bounds (the tightest bounds are kept when only the row repeats), and
-second-order cone blocks with the same rows and shift (up to rounding, `soc_twins`). A pushforward along
+second-order cone blocks with the same rows and shift (up to rounding, `soc_twins`). A reduction along
 rigid teams repeats every member's identical input cone; duplicates make the
 active constraint gradients linearly dependent (the polish system singular,
 the multipliers non-unique). `keep` lists the kept rows of `p`.

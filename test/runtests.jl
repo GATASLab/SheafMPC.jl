@@ -2,8 +2,6 @@ using TeamMPC
 using Test, LinearAlgebra, SparseArrays, Random, Printf
 import Clarabel
 
-const PAPER = get(ENV, "TEAMMPC_PAPER", "")
-
 relgap(a, b) = abs(a - b) / max(1.0, abs(b))
 
 include("fixtures.jl")
@@ -289,10 +287,4 @@ end
     include("conic.jl")
     include("dual.jl")
     include(joinpath(@__DIR__, "kkt.jl"))
-
-    if isdir(PAPER)
-        include(joinpath(@__DIR__, "paper.jl"))
-    else
-        @info "paper repository not found at $PAPER: skipping the fleet QP and graph program tests"
-    end
 end

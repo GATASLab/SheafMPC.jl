@@ -3,13 +3,13 @@
 # A partition of the vertices contracts the edges inside each block. The space
 # of the coarse vertex is the space of the block's
 # fiber: configurations of the block's vertices that satisfy every internal
-# edge, D x = r with D the internal coboundary and r the internal targets. The
+# edge, D x = r with D the internal edge operator and r the internal targets. The
 # affine version is xbar + range(N), N a basis of ker D. Here the particular
 # solution is kept as a linear operator of the targets, xbar = X r, so a new
 # target (a moved formation slot, a new drift) changes xbar by one sparse
 # product and the basis N is reused.
 #
-# Three bases, any of which gives the same pushforward program up to an
+# Three bases, any of which gives the same reduced program up to an
 # invertible change of coordinates (the lifted plans, values and fiber
 # dimensions are basis independent):
 #
@@ -28,7 +28,7 @@
 
 The fiber of one block (one coarse vertex): its fine `members` (ascending),
 the space `offsets` of the members inside the block, the `internal` (collapsed)
-edges with row offsets `roffsets`, the internal coboundary `D` (rows: internal
+edges with row offsets `roffsets`, the internal edge operator `D` (rows: internal
 edge rows, columns: the block's stacked space), a basis `N` of `ker D` (the
 coarse space), the particular-solution operator `X` (`xbar = X r` for the
 stacked internal targets `r`), the consistency operator `C = D X - I`
@@ -53,8 +53,8 @@ Base.length(F::Fiber) = F.offsets[end]
 
 _spI(n) = SpMat(sparse(1.0I, n, n))
 
-"""Sparse internal coboundary `D` of the block and the row offsets of its internal edges."""
-function _internal_coboundary(P::GraphProgram, internal::Vector{Int}, local_index::Vector{Int}, offs::Vector{Int})
+"""Sparse internal edge operator `D` of the block and the row offsets of its internal edges."""
+function _internal_edge_operator(P::GraphProgram, internal::Vector{Int}, local_index::Vector{Int}, offs::Vector{Int})
     I_ = Int[]; J_ = Int[]; V_ = Float64[]
     roffs = zeros(Int, length(internal) + 1)
     row = 0
@@ -69,7 +69,7 @@ function _internal_coboundary(P::GraphProgram, internal::Vector{Int}, local_inde
 end
 
 """
-Columns `S` on which the restriction map `F` (`d x n`) is square and
+Columns `S` on which the edge map `F` (`d x n`) is square and
 invertible, and the factorized block `F[:, S]`; `nothing` if there are none.
 Unit columns covering every row are preferred, so that the identity blocks of
 dynamics and agreement maps are used exactly.
@@ -304,7 +304,7 @@ function _make_fiber(P::GraphProgram, members::Vector{Int}, internal::Vector{Int
         offs[l+1] = offs[l] + P.dims[v]
     end
     n = offs[end]
-    D, roffs = _internal_coboundary(P, internal, local_index, offs)
+    D, roffs = _internal_edge_operator(P, internal, local_index, offs)
     m = size(D, 1)
     if m == 0
         return Fiber(members, offs, internal, roffs, D, _spI(n), spzeros(n, 0), spzeros(0, 0), :identity)
@@ -321,7 +321,7 @@ function _make_fiber(P::GraphProgram, members::Vector{Int}, internal::Vector{Int
     return Fiber(members, offs, internal, roffs, D, N, X, C, kind)
 end
 
-"""True when the internal edges of `F` have the same endpoints and restriction maps in `P` as in `Pp` (targets may differ)."""
+"""True when the internal edges of `F` have the same endpoints and edge maps in `P` as in `Pp` (targets may differ)."""
 function _same_maps(P::GraphProgram, Pp::GraphProgram, internal)
     for e in internal
         E = P.edges[e]; G = Pp.edges[e]

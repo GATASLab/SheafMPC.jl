@@ -1,6 +1,6 @@
 # controller.jl: receding-horizon control on a reduced program.
 #
-# The structure of the time-expanded program (its graph, restriction maps,
+# The structure of the time-expanded program (its graph, edge maps,
 # costs' Hessians, constraint matrices) does not change between sampling
 # instants of an LTI fleet, and neither do the fibers of a resolution, the
 # reduced program's Hessian and constraint matrix, or the solver's KKT
@@ -31,7 +31,7 @@ What `step!` returns (one object, overwritten by the next step):
 * `gap_upper`: bound (a) of the paper's Thm. 2 on the optimality gap of the
   reduction, from this solve alone (`NaN` when not certified), and
   `gap_residual`, the stationarity residual of the recovered forces;
-* the timing breakdown in seconds: `t_construct` (fine data, pushforward update,
+* the timing breakdown in seconds: `t_construct` (fine data, reduction update,
   reduced QP vectors), `t_setup` (scaling and factorization on the first step,
   the data update into the solver afterwards), `t_solve`, `t_lift` (lift to
   the fine plan and read the inputs), `t_certify`, and `t_total`.
@@ -57,7 +57,7 @@ end
     MPCController(fleet, resolution = Fine(); certify = true, dedup = true, basis = :structured, settings...)
 
 A receding-horizon controller for `fleet` that solves, at every step, the
-pushforward of the fleet's MPC program along `resolution` (a `Resolution`, or
+reduction of the fleet's MPC program along `resolution` (a `Resolution`, or
 a vector of them for teams of teams, applied in order) and applies the first
 inputs of the lifted plan, which every agent can execute (Cor. 1). The fibers,
 the reduced QP's structure and the solver's factorizations are built once;

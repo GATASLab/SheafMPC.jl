@@ -1,11 +1,11 @@
 # distributed.jl: distributed MPC by consensus ADMM over agents or teams.
 #
-# The program is the fully condensed pushforward along (alpha box !): one
+# The program is the fully condensed reduction along (alpha box !): one
 # vertex u per agent (alpha = singletons) or per team, with its own costs, its
 # own input and state constraints, and soft formation springs to its
 # neighbours (every dynamics edge is contracted). For a neighbour pair (u, v),
 # the interface y_{u->v} = R x_u is the part of x_u that enters the springs
-# between u and v (independent rows of their restriction maps, by pivoted QR).
+# between u and v (independent rows of their edge maps, by pivoted QR).
 # General-form consensus ADMM (Boyd et al. 2011, Sec. 7.2; Summers and Lygeros
 # 2012): u owns y_{u->v}, v holds a copy c_{v,u}, both must equal a global
 # z_{u->v}. Every iteration, each u solves
@@ -117,7 +117,7 @@ end
                    warm = :shift, time_limit = Inf, settings...)
 
 Distributed MPC of `fleet` over agents (`teams = 1:n`, the default) or teams:
-consensus ADMM on the fully condensed pushforward along `Teams(teams) ⊠
+consensus ADMM on the fully condensed reduction along `Teams(teams) ⊠
 full_condensing()` (see the file header). Every vertex is one agent or one
 team; it solves its own QP (its dynamics, constraints and half of each spring)
 and exchanges its interface (the positions its neighbours' springs read) with

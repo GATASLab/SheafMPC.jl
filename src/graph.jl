@@ -18,7 +18,7 @@
 # `Q, q, c, A, b, cones` (each cone with `kind` named ZERO_CONE, NONNEG_CONE or
 # SOC_CONE and `dim`), `edges` with `tail, head, Ft, Fh, hard, W, b`, and the
 # space `offsets` (`offsets[v] + 1 : offsets[v + 1]` are the rows of x_v). Both a
-# fine program and any of its pushforwards have this shape.
+# fine program and any of its reductions have this shape.
 
 function _push_block!(I, J, V, r0::Int, c0::Int, M::SparseMatrixCSC, s::Float64)
     rows = rowvals(M); vals = nonzeros(M)

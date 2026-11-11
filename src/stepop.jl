@@ -16,7 +16,7 @@
 # active entries, and a step costs one sparse product of the size of the
 # reduced QP and of the data.
 #
-# Duplicate rows. A pushforward along teams repeats the node rows of every
+# Duplicate rows. A reduction along teams repeats the node rows of every
 # member (one input cone per member and instant), and the composed row of
 # each copy depends on the data of its whole team, so the stacked rows of K
 # grow like (team size)^2. The difference of two copies (two members of the

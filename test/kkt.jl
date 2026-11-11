@@ -4,7 +4,7 @@
 # rank-one update path, and as the solver's linear system backend.
 
 using TeamMPC: BlockLDL
-include(joinpath(@__DIR__, "..", "bench", "kkt_problems.jl"))
+include(joinpath(@__DIR__, "kkt_problems.jl"))
 
 "A random quasi-definite K = [P + s I, A'; A, -D] (upper triangle, every diagonal stored) and n."
 function random_quasidefinite(rng, n, m; dens = 0.1)

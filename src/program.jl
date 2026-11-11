@@ -2,7 +2,7 @@
 #
 # A program on a graph G = (V, E) puts a vector space on every vertex and every
 # edge, and a linear map from each vertex space to the space of each edge it
-# touches. A vector x picks one vector x_v in every vertex space; the coboundary delta
+# touches. A vector x picks one vector x_v in every vertex space; the edge operator delta
 # measures, edge by edge, how far the two ends disagree after restriction:
 #
 #     (delta x)_e = F_{head <| e} x_head - F_{tail <| e} x_tail.
@@ -82,7 +82,7 @@ NodeData(Q::AbstractMatrix, q::AbstractVector, c::Real = 0.0) =
 """
     EdgeTag(kind, i, j, t)
 
-Bookkeeping an edge keeps through every pushforward (a coarse edge is a fine
+Bookkeeping an edge keeps through every reduction (a coarse edge is a fine
 edge that survived). For multi-agent MPC: `kind = :dyn` for the dynamics edge
 of agent `i` from instant `t` to `t + 1` (`j == i`), `kind = :form` for the
 formation edge `ij` at instant `t`; `kind = :generic` otherwise. The
@@ -100,7 +100,7 @@ EdgeTag() = EdgeTag(:generic, 0, 0, 0)
     GraphEdge(tail, head, Ft, Fh, hard, W, b, tag = EdgeTag())
 
 An oriented edge `e : tail -> head` with space `R^{d_e}` (`d_e = length(b)`,
-possibly zero), restriction maps `Ft = F_{tail <| e}` and `Fh = F_{head <| e}`,
+possibly zero), edge maps `Ft = F_{tail <| e}` and `Fh = F_{head <| e}`,
 so that `(delta x)_e = Fh x_head - Ft x_tail`, target `b_e`, and, for a soft
 edge, the stiffness `W` (positive definite; ignored when `hard`). The target
 `b` may be changed in place between solves.
@@ -118,7 +118,7 @@ struct GraphEdge
                        hard::Bool, W::AbstractMatrix, b::AbstractVector, tag::EdgeTag = EdgeTag())
         tail == head && throw(ArgumentError("self loops are not allowed (edge at vertex $tail)"))
         d = length(b)
-        size(Ft, 1) == d && size(Fh, 1) == d || throw(DimensionMismatch("restriction maps must have $d rows"))
+        size(Ft, 1) == d && size(Fh, 1) == d || throw(DimensionMismatch("edge maps must have $d rows"))
         size(W) == (d, d) || throw(DimensionMismatch("W must be $d x $d"))
         new(tail, head, _spmat(Ft), _spmat(Fh), hard, Matrix{Float64}(W), Vector{Float64}(b), tag)
     end
@@ -137,7 +137,7 @@ A homological program (the paper's Def. 2):
 
 Vertices are `1:length(nodes)` with space dimensions `dims[v]`. A vector is
 one flat vector; `x[vrange(P, v)]` is `x_v`. The graph may have parallel edges
-(pushforwards make them). `row_offsets[v]+1 : row_offsets[v+1]` are the node
+(reductions make them). `row_offsets[v]+1 : row_offsets[v+1]` are the node
 constraint rows of vertex `v` when all are stacked in vertex order.
 """
 struct GraphProgram
@@ -196,13 +196,13 @@ edge_defect(P::GraphProgram, e::Integer, x::AbstractVector) = edge_value(P, e, x
 # `_push_block!(I, J, V, r0, c0, M, s)` (graph.jl) appends the triplets of `s * M` at offset `(r0, c0)`.
 
 """
-    coboundary(P, edge_ids = 1:nedges(P))
+    edge_operator(P, edge_ids = 1:nedges(P))
 
-The rows `delta_S` of the coboundary for the edges `S = edge_ids`, stacked in
+The rows `delta_S` of the edge operator for the edges `S = edge_ids`, stacked in
 the given order, as a sparse matrix with `c0dim(P)` columns; `targets(P, S)`
 is the matching right-hand side `b_S`.
 """
-function coboundary(P::GraphProgram, edge_ids = 1:nedges(P))
+function edge_operator(P::GraphProgram, edge_ids = 1:nedges(P))
     I = Int[]; J = Int[]; V = Float64[]
     row = 0
     for e in edge_ids
@@ -255,7 +255,7 @@ function quadratic_form(P::GraphProgram)
     c = sum((nd.c for nd in P.nodes); init = 0.0)
     S = [e for e in soft_edges(P) if edgedim(P.edges[e]) > 0]
     isempty(S) && return SpMat((Qb + Qb') / 2), q, c
-    Ds = coboundary(P, S); bs = targets(P, S); Ws = weight_matrix(P, S)
+    Ds = edge_operator(P, S); bs = targets(P, S); Ws = weight_matrix(P, S)
     H = Qb + Ds' * (Ws * Ds)
     g = q - Ds' * (Ws * bs)
     c += 0.5 * dot(bs, Ws * bs)

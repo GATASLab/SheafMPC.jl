@@ -66,7 +66,7 @@ ts = @elapsed sel = select_teams(K; k = k)
         k, sel.gap, ts, gap(K, block_teams(sc2, 2, 2)), gap(K, block_teams(sc2, 1, 4)), K.Jstar)
 R = reduce(fp2, Teams(sel.teams))
 red = solve(R)
-@printf("   the selected teams by pushforward and solve: gap %.4f (the kernel is exact while no constraint is active)\n",
+@printf("   the selected teams by reduction and solve: gap %.4f (the kernel is exact while no constraint is active)\n",
         red.J - fine2.J)
 
 println("\n3. closed loop on the selected teams, 30 steps")

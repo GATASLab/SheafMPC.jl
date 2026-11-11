@@ -1,5 +1,4 @@
-# The structured fiber basis (ported from the paper repository's
-# scripts/resolution/test/structured_basis.jl). Thm. 1 holds for any basis of
+# The structured fiber basis. Thm. 1 holds for any basis of
 # the fiber, so the structured basis must give the orthonormal basis's fiber
 # dimensions, reduced value and lifted plans: checked on the partitions the
 # experiments use (time leg, agent leg, teams over the whole horizon, products,
@@ -29,7 +28,7 @@ cases = [
         @test all(F -> F.kind in (:identity, :structured, :structured_reduced), Rs.fibers)
         S = Rs.collapsed
         isempty(S) && continue
-        DS = coboundary(P, S)
+        DS = edge_operator(P, S)
         @test norm(DS * Rs.N, Inf) < 1e-10 * max(1.0, norm(Rs.N, Inf))
         @test norm(DS * Rs.xbar - targets(P, S), Inf) < 1e-10
         @test rank(Matrix(Rs.N)) == size(Rs.N, 2)
@@ -73,7 +72,7 @@ end
         @test srelerr(so.J, ss.J) < 1e-7
         x = lift(Rs, ss)
         S = Rs.collapsed
-        isempty(S) || @test norm(coboundary(P, S) * x - targets(P, S), Inf) < 1e-8
+        isempty(S) || @test norm(edge_operator(P, S) * x - targets(P, S), Inf) < 1e-8
         f = feasibility(P, x)
         @test f.hard < 1e-8 && f.cone < 1e-7
         @test srelerr(objective(P, x), ss.J) < 1e-9
@@ -154,7 +153,7 @@ end
     @test quadratic_form(R.program)[2] ≈ quadratic_form(Ra.program)[2]
     @test targets(R.program) ≈ targets(Ra.program)
     @test node_constraints(R.program)[2] ≈ node_constraints(Ra.program)[2]
-    # a changed restriction map is not reused
+    # a changed edge map is not reused
     P2 = copy(fp2.program)
     e = fp2.form[1, 2]
     E = P2.edges[e]

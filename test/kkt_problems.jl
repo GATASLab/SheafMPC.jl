@@ -1,18 +1,16 @@
-# kkt_problems.jl: the multi-agent MPC programs of the KKT kernel benchmark and
-# their KKT matrices.
+# kkt_problems.jl: multi-agent MPC programs and their KKT matrices, the test
+# problems of the KKT kernels.
 #
-# `fleet_problem(n, N; graph, b, dyn)` is the fleet QP of the paper's
-# centralized benchmark (bench/central/qp.jl: stage cost h * (1/2)(WP ||p - r||^2
-# + WU ||u||^2 + WF sum_edges ||p_i - p_j||^2), terminal (1/2) WP ||p||^2, x_0 = 0,
-# box inputs), generalized to
-#   graph  :ring (the paper's) or :grid (sqrt(n) x sqrt(n), 4-neighbour),
+# `fleet_problem(n, N; graph, b, dyn)` is a formation-tracking fleet QP (stage
+# cost h * (1/2)(WP ||p - r||^2 + WU ||u||^2 + WF sum_edges ||p_i - p_j||^2),
+# terminal (1/2) WP ||p||^2, x_0 = 0, box inputs) with
+#   graph  :ring or :grid (sqrt(n) x sqrt(n), 4-neighbour),
 #   dyn    :di (planar double integrator, 4 + 2) or :quad (hover-linearized
 #          quadrotor, 12 + 4, formation on the 3 positions),
-#   b      the time blocking of the pushforward: b = 1 is the time-expanded
+#   b      the time blocking of the reduction: b = 1 is the time-expanded
 #          program, b = N full condensing (inputs only), between partial.
-# For graph = :ring, dyn = :di it reproduces qp.jl's `blocked_qp` (checked by
-# `check_against_paper`). Every variable and row carries its (agent, block)
-# label, the structure the structured orderings read.
+# Every variable and row carries its (agent, block) label, the structure the
+# structured orderings read.
 
 using SparseArrays, LinearAlgebra
 import TeamMPC
@@ -96,7 +94,7 @@ function fleet_problem(n::Int, N::Int; graph::Symbol = :ring, b::Int = 1, dyn::S
         u = U(i, k)[a]; add!(u, u, HS * W_U)
     end
     Pz = sparse(I_, J_, V_, n * nz1, n * nz1)
-    # pushforward along the time blocking (kept states at the block starts after the first)
+    # reduction along the time blocking (kept states at the block starts after the first)
     starts = [k for k in b:b:(N-1)]
     ns = length(starts)
     ny1 = nx * ns + nu * N
@@ -186,18 +184,3 @@ end
 "Agent and block of every KKT index (variables, then rows)."
 kkt_labels(lab) = (agent = [lab.var_agent; lab.row_agent], block = [lab.var_block; lab.row_block],
                    nagents = lab.nagents, nblocks = lab.nblocks, edges = lab.edges)
-
-"qp.jl's `blocked_qp` (the paper's fleet) equals `fleet_problem(...; graph = :ring, dyn = :di)`."
-function check_against_paper(paper_dir; ns = (1, 4, 6), bs = (1, 4, 24))
-    haskey(ENV, "BENCH_ABAR") || (ENV["BENCH_ABAR"] = "1.0")
-    isdefined(Main, :blocked_qp) || Base.include(Main, joinpath(paper_dir, "bench", "central", "qp.jl"))
-    ok = true
-    for n in ns, b in bs
-        Q = Base.invokelatest(Main.blocked_qp, n, 24, b)
-        qp, _ = fleet_problem(n, 24; b = b)
-        me = size(Q.Aeq, 1)
-        ok &= isapprox(Q.P, qp.P; rtol = 1e-12, atol = 1e-12) && isapprox(Q.q, qp.q; atol = 1e-12) &&
-              isapprox(Q.Aeq, qp.A[1:me, :]; atol = 1e-12)
-    end
-    return ok
-end

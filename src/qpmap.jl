@@ -8,7 +8,7 @@
 #     b = (b_hard ; b_nodes),
 #
 # are linear in the program's flat vectors. `QPMap` stores these maps (and the
-# grouping of exact duplicate rows, which a pushforward along rigid teams can
+# grouping of exact duplicate rows, which a reduction along rigid teams can
 # create) so that a receding-horizon step costs a few sparse products.
 
 """
@@ -47,7 +47,7 @@ end
 function QPMap(P::GraphProgram; dedup::Bool = true)
     full = graph_qp(P)
     S = [e for (e, E) in enumerate(P.edges) if !E.hard && edgedim(E) > 0]
-    Ds = coboundary(P, S)
+    Ds = edge_operator(P, S)
     Wsm = weight_matrix(P, S)
     srows = reduce(vcat, (collect(erange(P, e)) for e in S); init = Int[])
     Sel = sparse(1:length(srows), srows, 1.0, length(srows), c1dim(P))
